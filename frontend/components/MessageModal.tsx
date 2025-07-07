@@ -1,5 +1,6 @@
 import React from 'react';
-import { Dimensions, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Modal from 'react-native-modal';
 
 interface MessageModalProps {
   visible: boolean;
@@ -10,28 +11,27 @@ interface MessageModalProps {
 export default function MessageModal({ visible, onClose, message }: MessageModalProps) {
   return (
     <Modal
-      animationType="fade"
-      transparent={true}
-      visible={visible}
-      onRequestClose={onClose}
+      isVisible={visible}
+      onBackdropPress={onClose}
+      onBackButtonPress={onClose}
+      useNativeDriver
+      hideModalContentWhileAnimating
+      style={styles.modal}
     >
-      <View style={styles.overlay}>
-        <View style={styles.modalContainer}>
-          <Text style={styles.modalTitle}>Message</Text>
-          <Text style={styles.modalMessage}>{message}</Text>
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <Text style={styles.closeButtonText}>Close</Text>
-          </TouchableOpacity>
-        </View>
+      <View style={styles.modalContainer}>
+        <Text style={styles.modalTitle}>Message</Text>
+        <Text style={styles.modalMessage}>{message}</Text>
+        <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+          <Text style={styles.closeButtonText}>Close</Text>
+        </TouchableOpacity>
       </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  modal: {
+    margin: 0,
     justifyContent: 'center',
     alignItems: 'center',
   },

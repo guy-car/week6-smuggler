@@ -1,6 +1,6 @@
-import MessageModal from '@/components/MessageModal';
 import { useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import MessageModal from '../components/MessageModal';
 
 export default function EncrypterScreen() {
   const [gameStarted, setGameStarted] = useState(false);
@@ -11,13 +11,22 @@ export default function EncrypterScreen() {
   };
 
   const openMessage = () => {
-    setModalVisible(true);
+    console.log('Encrypter: openMessage called');
+    try {
+      setModalVisible(true);
+      console.log('Encrypter: modalVisible set to true');
+    } catch (error) {
+      console.error('Encrypter: error setting modal visible:', error);
+    }
   };
 
   const closeModal = () => {
+    console.log('Encrypter: closeModal called');
     setModalVisible(false);
   };
 
+  console.log('Encrypter: rendering with modalVisible:', modalVisible);
+  
   return (
     <View style={styles.container}>
       <TouchableOpacity 
