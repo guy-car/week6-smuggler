@@ -8,18 +8,31 @@ export default function EncrypterScreen() {
     setGameStarted(!gameStarted);
   };
 
+  const openEnvelope = () => {
+    console.log('Open envelope pressed');
+  };
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Encrypter</Text>
-      
       <TouchableOpacity 
         style={[styles.button, gameStarted ? styles.stopButton : styles.startButton]} 
         onPress={toggleGame}
       >
         <Text style={styles.buttonText}>
-          {gameStarted ? 'Stop Game' : 'Start Game'}
+          {gameStarted ? 'Stop' : 'Start'}
         </Text>
       </TouchableOpacity>
+      
+      <Text style={styles.title}>Encrypter</Text>
+      
+      {gameStarted && (
+        <TouchableOpacity 
+          style={styles.envelopeButton} 
+          onPress={openEnvelope}
+        >
+          <Text style={styles.envelopeButtonText}>Open Envelope</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -27,30 +40,32 @@ export default function EncrypterScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     backgroundColor: '#f5f5f5',
   },
   title: {
     fontSize: 48,
     fontWeight: 'bold',
     color: '#333',
-    marginBottom: 60,
+    textAlign: 'center',
+    marginTop: 100,
   },
   button: {
-    paddingVertical: 20,
-    paddingHorizontal: 40,
-    borderRadius: 15,
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 4,
+      height: 2,
     },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
-    elevation: 8,
-    minWidth: 200,
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    minWidth: 80,
   },
   startButton: {
     backgroundColor: '#34C759', // Green color
@@ -60,7 +75,30 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: 'white',
-    fontSize: 24,
+    fontSize: 16,
     fontWeight: 'bold',
+  },
+  envelopeButton: {
+    backgroundColor: '#007AFF',
+    paddingVertical: 15,
+    paddingHorizontal: 30,
+    borderRadius: 10,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    alignSelf: 'center',
+    marginTop: 50,
+    minWidth: 200,
+  },
+  envelopeButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: '600',
   },
 }); 
