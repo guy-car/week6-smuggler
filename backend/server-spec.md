@@ -128,14 +128,14 @@ interface AIGuess {
 - [x] Add error handling middleware
 
 ### Phase 2: Room Management System
-- [ ] Implement room creation and joining logic
-- [ ] Add player tracking within rooms
-- [ ] Create room cleanup for empty rooms
-- [ ] Implement room state validation
-- [ ] Add room capacity limits (max 2 players)
-- [ ] Create room listing functionality
-- [ ] Add player disconnection handling
-- [ ] Implement room availability checking
+- [x] Implement room creation and joining logic
+- [x] Add player tracking within rooms
+- [x] Create room cleanup for empty rooms
+- [x] Implement room state validation
+- [x] Add room capacity limits (max 2 players)
+- [x] Create room listing functionality
+- [x] Add player disconnection handling
+- [x] Implement room availability checking
 
 ### Phase 3: Game State Management
 - [ ] Create GameState interface and logic
