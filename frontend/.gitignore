@@ -38,4 +38,4 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
-app-example 
+app-example node_modules/

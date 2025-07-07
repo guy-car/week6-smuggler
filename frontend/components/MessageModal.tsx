@@ -1,0 +1,83 @@
+import React from 'react';
+import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import Modal from 'react-native-modal';
+
+interface MessageModalProps {
+  visible: boolean;
+  onClose: () => void;
+  message: string;
+}
+
+export default function MessageModal({ visible, onClose, message }: MessageModalProps) {
+  return (
+    <Modal
+      isVisible={visible}
+      onBackdropPress={onClose}
+      onBackButtonPress={onClose}
+      useNativeDriver
+      hideModalContentWhileAnimating
+      style={styles.modal}
+    >
+      <View style={styles.modalContainer}>
+        <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+          <Text style={styles.closeButtonText}>×</Text>
+        </TouchableOpacity>
+        <Text style={styles.modalTitle}>Your Code to Smuggle</Text>
+        <Text style={styles.modalMessage}>{message}</Text>
+      </View>
+    </Modal>
+  );
+}
+
+const styles = StyleSheet.create({
+  modal: {
+    margin: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 30,
+    margin: 20,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 10,
+    maxWidth: Dimensions.get('window').width * 0.8,
+    position: 'relative',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    zIndex: 1,
+    backgroundColor: 'transparent',
+    padding: 4,
+  },
+  closeButtonText: {
+    color: '#888',
+    fontSize: 28,
+    fontWeight: 'bold',
+    lineHeight: 28,
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    color: '#333',
+    marginTop: 10,
+  },
+  modalMessage: {
+    fontSize: 16,
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 10,
+    color: '#666',
+  },
+}); 
