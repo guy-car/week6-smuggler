@@ -18,3 +18,10 @@ Thumbs.db
 *.temp
 node_modules
 node_modules/
+
+# Build output
+dist/
+backend/dist/
+frontend/dist/
+*.js.map
+*.d.ts.map
