@@ -1,10 +1,15 @@
 import { useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, KeyboardAvoidingView, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import InputSubmit from '../components/InputSubmit';
 import MessageModal from '../components/MessageModal';
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
 
 export default function EncrypterScreen() {
   const [gameStarted, setGameStarted] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const [hasOpenedMessage, setHasOpenedMessage] = useState(false);
+  const [messages, setMessages] = useState<string[]>([]);
 
   const toggleGame = () => {
     setGameStarted(!gameStarted);
@@ -14,7 +19,8 @@ export default function EncrypterScreen() {
     console.log('Encrypter: openMessage called');
     try {
       setModalVisible(true);
-      console.log('Encrypter: modalVisible set to true');
+      setHasOpenedMessage(true);
+      console.log('Encrypter: modalVisible set to true, hasOpenedMessage set to true');
     } catch (error) {
       console.error('Encrypter: error setting modal visible:', error);
     }
@@ -25,36 +31,56 @@ export default function EncrypterScreen() {
     setModalVisible(false);
   };
 
-  console.log('Encrypter: rendering with modalVisible:', modalVisible);
+  const handleInputSubmit = (value: string) => {
+    setMessages(prev => [...prev, value]);
+    console.log('Encrypter: clue submitted:', value);
+  };
+
+  console.log('Encrypter: rendering with modalVisible:', modalVisible, 'hasOpenedMessage:', hasOpenedMessage);
   
   return (
-    <View style={styles.container}>
-      <TouchableOpacity 
-        style={[styles.button, gameStarted ? styles.stopButton : styles.startButton]} 
-        onPress={toggleGame}
-      >
-        <Text style={styles.buttonText}>
-          {gameStarted ? 'Stop' : 'Start'}
-        </Text>
-      </TouchableOpacity>
-      
-      <Text style={styles.title}>Encrypter</Text>
-      
-      {gameStarted && (
-        <TouchableOpacity 
-          style={styles.messageButton} 
-          onPress={openMessage}
-        >
-          <Text style={styles.messageButtonText}>Open Message</Text>
-        </TouchableOpacity>
-      )}
-
-      <MessageModal
-        visible={modalVisible}
-        onClose={closeModal}
-        message="This is a sample message. In the real game, this would contain the encrypted message that the AI will try to decode."
-      />
-    </View>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+    >
+      <View style={styles.container}>
+        <View style={styles.topLeftControls} pointerEvents="box-none">
+          <TouchableOpacity 
+            style={[styles.button, gameStarted ? styles.stopButton : styles.startButton]} 
+            onPress={toggleGame}
+          >
+            <Text style={styles.buttonText}>
+              {gameStarted ? 'Stop' : 'Start'}
+            </Text>
+          </TouchableOpacity>
+          {gameStarted && (
+            <TouchableOpacity 
+              style={styles.openMessageButton} 
+              onPress={openMessage}
+            >
+              <Text style={styles.openMessageButtonText}>Open Message</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+        <Text style={styles.title}>Encrypter</Text>
+        <MessageModal
+          visible={modalVisible}
+          onClose={closeModal}
+          message="Finally, another human I can trust. Your message is DOG. Handle it with care."
+          onClueSubmit={handleInputSubmit}
+        />
+        {!modalVisible && hasOpenedMessage && (
+          <View style={styles.inputSubmitWrapper}>
+            <InputSubmit
+              placeholder="Give a clue to your accomplice... Don't get intercepted."
+              onSubmit={handleInputSubmit}
+              messages={messages}
+            />
+          </View>
+        )}
+      </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -62,6 +88,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+  },
+  topLeftControls: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    alignItems: 'flex-start',
+    gap: 8,
+    zIndex: 100,
+    elevation: 100,
+    pointerEvents: 'box-none',
   },
   title: {
     fontSize: 48,
@@ -71,9 +107,6 @@ const styles = StyleSheet.create({
     marginTop: 100,
   },
   button: {
-    position: 'absolute',
-    top: 50,
-    left: 20,
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 8,
@@ -99,27 +132,37 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-  messageButton: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 15,
-    paddingHorizontal: 30,
-    borderRadius: 10,
+  openMessageButton: {
+    backgroundColor: '#eee',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 6,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-    alignSelf: 'center',
-    marginTop: 50,
-    minWidth: 200,
+    marginTop: 4,
+    minWidth: 0,
+    elevation: 2,
   },
-  messageButtonText: {
-    color: 'white',
-    fontSize: 18,
+  openMessageButtonText: {
+    color: '#007AFF',
+    fontSize: 13,
     fontWeight: '600',
+  },
+  inputSubmitWrapper: {
+    position: 'absolute',
+    bottom: 40,
+    left: (SCREEN_WIDTH * 0.2),
+    width: SCREEN_WIDTH * 0.6,
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  inputSubmitOverlay: {
+    position: 'absolute',
+    bottom: 40,
+    left: (SCREEN_WIDTH * 0.2),
+    width: SCREEN_WIDTH * 0.6,
+    alignItems: 'center',
+    zIndex: 1000,
+    elevation: 1000,
+    pointerEvents: 'box-none',
   },
 }); 

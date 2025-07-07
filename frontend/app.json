@@ -3,7 +3,7 @@
     "name": "week6-smuggler",
     "slug": "week6-smuggler",
     "version": "1.0.0",
-    "orientation": "landscape",
+    "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "week6smuggler",
     "userInterfaceStyle": "automatic",

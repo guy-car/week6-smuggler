@@ -19,11 +19,11 @@ export default function MessageModal({ visible, onClose, message }: MessageModal
       style={styles.modal}
     >
       <View style={styles.modalContainer}>
-        <Text style={styles.modalTitle}>Message</Text>
-        <Text style={styles.modalMessage}>{message}</Text>
         <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-          <Text style={styles.closeButtonText}>Close</Text>
+          <Text style={styles.closeButtonText}>×</Text>
         </TouchableOpacity>
+        <Text style={styles.modalTitle}>Your Code to Smuggle</Text>
+        <Text style={styles.modalMessage}>{message}</Text>
       </View>
     </Modal>
   );
@@ -50,31 +50,34 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 10,
     maxWidth: Dimensions.get('window').width * 0.8,
+    position: 'relative',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    zIndex: 1,
+    backgroundColor: 'transparent',
+    padding: 4,
+  },
+  closeButtonText: {
+    color: '#888',
+    fontSize: 28,
+    fontWeight: 'bold',
+    lineHeight: 28,
   },
   modalTitle: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
     color: '#333',
+    marginTop: 10,
   },
   modalMessage: {
     fontSize: 16,
     textAlign: 'center',
     lineHeight: 24,
-    marginBottom: 30,
+    marginBottom: 10,
     color: '#666',
-  },
-  closeButton: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 12,
-    paddingHorizontal: 30,
-    borderRadius: 8,
-    minWidth: 100,
-    alignItems: 'center',
-  },
-  closeButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
   },
 }); 
