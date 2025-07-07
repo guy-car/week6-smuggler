@@ -1,0 +1,99 @@
+import cors from 'cors';
+import dotenv from 'dotenv';
+import express from 'express';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
+
+// Load environment variables
+dotenv.config();
+
+const app = express();
+const server = createServer(app);
+const PORT = process.env['PORT'] || 3000;
+
+// CORS configuration for Expo client
+const corsOptions = {
+    origin: 'http://localhost:8081',
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+// Middleware
+app.use(cors(corsOptions));
+app.use(express.json());
+
+// Error handling middleware
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    console.error('Error:', err.message);
+    res.status(500).json({
+        error: 'Internal Server Error',
+        message: process.env['NODE_ENV'] === 'development' ? err.message : 'Something went wrong'
+    });
+});
+
+// Basic route
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+app.get('/', (req: express.Request, res: express.Response) => {
+    res.json({ message: 'Smuggler Backend API is running!' });
+});
+
+// Health check route
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+app.get('/api/health', (req: express.Request, res: express.Response) => {
+    res.json({
+        status: 'OK',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        environment: process.env['NODE_ENV'] || 'development'
+    });
+});
+
+// Socket.IO setup
+const io = new Server(server, {
+    cors: {
+        origin: "http://localhost:8081",
+        methods: ["GET", "POST"],
+        credentials: true
+    }
+});
+
+// Socket.IO connection handling
+io.on('connection', (socket) => {
+    console.log(`Client connected: ${socket.id}`);
+
+    socket.on('disconnect', () => {
+        console.log(`Client disconnected: ${socket.id}`);
+    });
+
+    // Basic ping/pong for connection testing
+    socket.on('ping', () => {
+        socket.emit('pong', { timestamp: new Date().toISOString() });
+    });
+});
+
+// Start server
+server.listen(PORT, () => {
+    console.log(`🚀 Backend server running on http://localhost:${PORT}`);
+    console.log(`📱 Connect your React Native app to: http://localhost:${PORT}`);
+    console.log(`🔌 Socket.IO server ready for WebSocket connections`);
+    console.log(`🌍 Environment: ${process.env['NODE_ENV'] || 'development'}`);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+    console.log('SIGTERM received, shutting down gracefully');
+    server.close(() => {
+        console.log('Process terminated');
+    });
+});
+
+process.on('SIGINT', () => {
+    console.log('SIGINT received, shutting down gracefully');
+    server.close(() => {
+        console.log('Process terminated');
+    });
+});
+
+export { app, io, server };

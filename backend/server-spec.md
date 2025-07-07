@@ -119,14 +119,13 @@ interface AIGuess {
 ## 5. Phases & Tasks
 
 ### Phase 1: Basic Server Setup
-- [ ] Initialize Socket.IO server with Express
-- [ ] Configure CORS for Expo client (localhost:8081)
-- [ ] Set up nodemon for development
-- [ ] Create basic health check endpoint
-- [ ] Add TypeScript configuration
-- [ ] Set up logging middleware
-- [ ] Create server startup script
-- [ ] Add error handling middleware
+- [x] Initialize Socket.IO server with Express
+- [x] Configure CORS for Expo client (localhost:8081)
+- [x] Set up nodemon for development
+- [x] Create basic health check endpoint
+- [x] Add TypeScript configuration
+- [x] Create server startup script
+- [x] Add error handling middleware
 
 ### Phase 2: Room Management System
 - [ ] Implement room creation and joining logic
