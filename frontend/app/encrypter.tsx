@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { Dimensions, KeyboardAvoidingView, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import InputSubmit from '../components/InputSubmit';
@@ -36,6 +37,10 @@ export default function EncrypterScreen() {
     console.log('Encrypter: clue submitted:', value);
   };
 
+  const goHome = () => {
+    router.replace('/');
+  };
+
   console.log('Encrypter: rendering with modalVisible:', modalVisible, 'hasOpenedMessage:', hasOpenedMessage);
   
   return (
@@ -63,12 +68,14 @@ export default function EncrypterScreen() {
             </TouchableOpacity>
           )}
         </View>
+        <TouchableOpacity style={styles.homeButton} onPress={goHome}>
+          <Text style={styles.homeButtonText}>Home</Text>
+        </TouchableOpacity>
         <Text style={styles.title}>Encrypter</Text>
         <MessageModal
           visible={modalVisible}
           onClose={closeModal}
           message="Finally, another human I can trust. Your message is DOG. Handle it with care."
-          onClueSubmit={handleInputSubmit}
         />
         {!modalVisible && hasOpenedMessage && (
           <View style={styles.inputSubmitWrapper}>
@@ -98,6 +105,24 @@ const styles = StyleSheet.create({
     zIndex: 100,
     elevation: 100,
     pointerEvents: 'box-none',
+  },
+  homeButton: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    backgroundColor: '#eee',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    alignItems: 'center',
+    minWidth: 0,
+    elevation: 2,
+    zIndex: 101,
+  },
+  homeButtonText: {
+    color: '#007AFF',
+    fontSize: 13,
+    fontWeight: '600',
   },
   title: {
     fontSize: 48,
