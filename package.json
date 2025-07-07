@@ -1,24 +1,31 @@
 {
-    "name": "week6-smuggler",
-    "version": "1.0.0",
-    "description": "Smuggler app with React Native frontend and Express backend",
-    "scripts": {
-        "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
-        "dev:backend": "cd backend && npm run dev",
-        "dev:frontend": "cd frontend && npm start",
-        "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
-        "start:backend": "cd backend && npm start",
-        "start:frontend": "cd frontend && npm start"
-    },
-    "keywords": [
-        "react-native",
-        "expo",
-        "express",
-        "fullstack"
-    ],
-    "author": "",
-    "license": "ISC",
-    "devDependencies": {
-        "concurrently": "^8.2.2"
-    }
+  "name": "week6-smuggler",
+  "version": "1.0.0",
+  "description": "Smuggler app with React Native frontend and Express backend",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm start",
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "start:backend": "cd backend && npm start",
+    "start:frontend": "cd frontend && npm start"
+  },
+  "keywords": [
+    "react-native",
+    "expo",
+    "express",
+    "fullstack"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/react": "~19.0.10",
+    "concurrently": "^8.2.2",
+    "typescript": "~5.8.3"
+  },
+  "dependencies": {
+    "expo": "^53.0.18",
+    "socket.io-client": "^4.8.1",
+    "zustand": "^5.0.6"
+  }
 }
