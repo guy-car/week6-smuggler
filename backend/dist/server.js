@@ -1,58 +1,46 @@
-import cors from 'cors';
-import dotenv from 'dotenv';
-import express from 'express';
-import { createServer } from 'http';
-import { Server } from 'socket.io';
-import { RoomManager } from './rooms/manager';
-import aiRoutes from './routes/ai';
-import { GameHandlers } from './socket/handlers/gameHandlers';
-import { RoomHandlers } from './socket/handlers/roomHandlers';
-
-// Load environment variables
-dotenv.config();
-
-const app = express();
-const server = createServer(app);
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.server = exports.io = exports.app = void 0;
+const cors_1 = __importDefault(require("cors"));
+const dotenv_1 = __importDefault(require("dotenv"));
+const express_1 = __importDefault(require("express"));
+const http_1 = require("http");
+const socket_io_1 = require("socket.io");
+const manager_1 = require("./rooms/manager");
+const ai_1 = __importDefault(require("./routes/ai"));
+const gameHandlers_1 = require("./socket/handlers/gameHandlers");
+const roomHandlers_1 = require("./socket/handlers/roomHandlers");
+dotenv_1.default.config();
+const app = (0, express_1.default)();
+exports.app = app;
+const server = (0, http_1.createServer)(app);
+exports.server = server;
 const PORT = process.env['PORT'] || 3000;
-
-// Initialize room management
-const roomManager = new RoomManager();
-const roomHandlers = new RoomHandlers(roomManager);
-
-// CORS configuration for Expo client
+const roomManager = new manager_1.RoomManager();
+const roomHandlers = new roomHandlers_1.RoomHandlers(roomManager);
 const corsOptions = {
     origin: 'http://localhost:8081',
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
 };
-
-// Middleware
-app.use(cors(corsOptions));
-app.use(express.json());
-
-// Mount AI routes
-app.use('/api/ai', aiRoutes);
-
-// Error handling middleware
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+app.use((0, cors_1.default)(corsOptions));
+app.use(express_1.default.json());
+app.use('/api/ai', ai_1.default);
+app.use((err, req, res, next) => {
     console.error('Error:', err.message);
     res.status(500).json({
         error: 'Internal Server Error',
         message: process.env['NODE_ENV'] === 'development' ? err.message : 'Something went wrong'
     });
 });
-
-// Basic route
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-app.get('/', (req: express.Request, res: express.Response) => {
+app.get('/', (req, res) => {
     res.json({ message: 'Smuggler Backend API is running!' });
 });
-
-// Health check route
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-app.get('/api/health', (req: express.Request, res: express.Response) => {
+app.get('/api/health', (req, res) => {
     res.json({
         status: 'OK',
         timestamp: new Date().toISOString(),
@@ -60,66 +48,48 @@ app.get('/api/health', (req: express.Request, res: express.Response) => {
         environment: process.env['NODE_ENV'] || 'development'
     });
 });
-
-// Socket.IO setup
-const io = new Server(server, {
+const io = new socket_io_1.Server(server, {
     cors: {
         origin: "http://localhost:8081",
         methods: ["GET", "POST"],
         credentials: true
     }
 });
-
-// Initialize game handlers with Socket.IO instance
-const gameHandlers = new GameHandlers(roomManager, io);
-
-// Socket.IO connection handling
+exports.io = io;
+const gameHandlers = new gameHandlers_1.GameHandlers(roomManager, io);
 io.on('connection', (socket) => {
     console.log(`Client connected: ${socket.id}`);
-
-    // Room management events
     socket.on('join_room', (data) => roomHandlers.handleJoinRoom(socket, data));
     socket.on('player_ready', (data) => roomHandlers.handlePlayerReady(socket, data));
     socket.on('list_rooms', () => roomHandlers.handleListRooms(socket));
     socket.on('check_room_availability', (data) => roomHandlers.handleCheckRoomAvailability(socket, data));
-
-    // Game events
     socket.on('start_game', (data) => gameHandlers.handleStartGame(socket, data));
     socket.on('send_message', (data) => gameHandlers.handleSendMessage(socket, data));
     socket.on('player_guess', (data) => gameHandlers.handlePlayerGuess(socket, data));
-
     socket.on('disconnect', () => {
         console.log(`Client disconnected: ${socket.id}`);
         roomHandlers.handleDisconnect(socket);
     });
-
-    // Basic ping/pong for connection testing
     socket.on('ping', () => {
         socket.emit('pong', { timestamp: new Date().toISOString() });
     });
 });
-
-// Start server
 server.listen(PORT, () => {
     console.log(`🚀 Backend server running on http://localhost:${PORT}`);
     console.log(`📱 Connect your React Native app to: http://localhost:${PORT}`);
     console.log(`🔌 Socket.IO server ready for WebSocket connections`);
     console.log(`🌍 Environment: ${process.env['NODE_ENV'] || 'development'}`);
 });
-
-// Graceful shutdown
 process.on('SIGTERM', () => {
     console.log('SIGTERM received, shutting down gracefully');
     server.close(() => {
         console.log('Process terminated');
     });
 });
-
 process.on('SIGINT', () => {
     console.log('SIGINT received, shutting down gracefully');
     server.close(() => {
         console.log('Process terminated');
     });
 });
-
-export { app, io, server };
+//# sourceMappingURL=server.js.map
