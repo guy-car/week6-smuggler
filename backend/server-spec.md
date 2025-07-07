@@ -148,24 +148,24 @@ interface AIGuess {
 - [x] Implement secret word selection from JSON
 
 ### Phase 4: Socket Event Handlers
-- [ ] Implement `join_room` event handler
-- [ ] Add `player_ready` event handler
-- [ ] Create `start_game` event handler
-- [ ] Implement `send_message` event handler
-- [ ] Add `player_guess` event handler
-- [ ] Create `guess_result` validation logic
-- [ ] Implement `round_end` and `game_end` handlers
-- [ ] Add event broadcasting to room players
+- [x] Implement `join_room` event handler
+- [x] Add `player_ready` event handler
+- [x] Create `start_game` event handler
+- [x] Implement `send_message` event handler
+- [x] Add `player_guess` event handler
+- [x] Create `guess_result` validation logic
+- [x] Implement `round_end` and `game_end` handlers
+- [x] Add event broadcasting to room players
 
 ### Phase 5: Mock AI Integration
-- [ ] Create mock AI service
-- [ ] Implement structured response generation
-- [ ] Add thinking process simulation
-- [ ] Create confidence scoring logic
-- [ ] Implement guess generation from conversation
-- [ ] Add AI response formatting
-- [ ] Create error handling for AI service
-- [ ] Add AI response timing simulation
+- [x] Create mock AI service
+- [x] Implement structured response generation
+- [x] Add thinking process simulation
+- [x] Create confidence scoring logic
+- [x] Implement guess generation from conversation
+- [x] Add AI response formatting
+- [x] Create error handling for AI service
+- [x] Add AI response timing simulation
 
 ### Phase 6: Word Management
 - [ ] Create words.json file structure
