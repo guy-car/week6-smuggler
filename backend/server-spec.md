@@ -138,14 +138,14 @@ interface AIGuess {
 - [x] Implement room availability checking
 
 ### Phase 3: Game State Management
-- [ ] Create GameState interface and logic
-- [ ] Implement score tracking (0-10 range)
-- [ ] Add role assignment system (encryptor/decryptor)
-- [ ] Create conversation history tracking
-- [ ] Implement turn management system
-- [ ] Add round progression logic
-- [ ] Create game end conditions
-- [ ] Implement secret word selection from JSON
+- [x] Create GameState interface and logic
+- [x] Implement score tracking (0-10 range)
+- [x] Add role assignment system (encryptor/decryptor)
+- [x] Create conversation history tracking
+- [x] Implement turn management system
+- [x] Add round progression logic
+- [x] Create game end conditions
+- [x] Implement secret word selection from JSON
 
 ### Phase 4: Socket Event Handlers
 - [ ] Implement `join_room` event handler
