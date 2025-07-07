@@ -3,6 +3,8 @@ import dotenv from 'dotenv';
 import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+import { RoomManager } from './rooms/manager';
+import { RoomHandlers } from './socket/handlers/roomHandlers';
 
 // Load environment variables
 dotenv.config();
@@ -10,6 +12,10 @@ dotenv.config();
 const app = express();
 const server = createServer(app);
 const PORT = process.env['PORT'] || 3000;
+
+// Initialize room management
+const roomManager = new RoomManager();
+const roomHandlers = new RoomHandlers(roomManager);
 
 // CORS configuration for Expo client
 const corsOptions = {
@@ -63,8 +69,15 @@ const io = new Server(server, {
 io.on('connection', (socket) => {
     console.log(`Client connected: ${socket.id}`);
 
+    // Room management events
+    socket.on('join_room', (data) => roomHandlers.handleJoinRoom(socket, data));
+    socket.on('player_ready', (data) => roomHandlers.handlePlayerReady(socket, data));
+    socket.on('list_rooms', () => roomHandlers.handleListRooms(socket));
+    socket.on('check_room_availability', (data) => roomHandlers.handleCheckRoomAvailability(socket, data));
+
     socket.on('disconnect', () => {
         console.log(`Client disconnected: ${socket.id}`);
+        roomHandlers.handleDisconnect(socket);
     });
 
     // Basic ping/pong for connection testing

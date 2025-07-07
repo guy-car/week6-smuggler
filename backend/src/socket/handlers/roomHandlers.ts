@@ -1,0 +1,208 @@
+import { Socket } from 'socket.io';
+import { RoomManager } from '../../rooms/manager';
+import { Player } from '../../types';
+
+export class RoomHandlers {
+    private roomManager: RoomManager;
+
+    constructor(roomManager: RoomManager) {
+        this.roomManager = roomManager;
+    }
+
+    /**
+     * Handle join_room event
+     */
+    public handleJoinRoom = (socket: Socket, data: { roomId: string; playerName: string }) => {
+        try {
+            const { roomId, playerName } = data;
+
+            if (!roomId || !playerName) {
+                socket.emit('error', { message: 'Room ID and player name are required' });
+                return;
+            }
+
+            // Create player object
+            const player: Player = {
+                id: socket.id,
+                name: playerName,
+                ready: false,
+                role: null,
+                socketId: socket.id
+            };
+
+            // Join room
+            const result = this.roomManager.joinRoom(roomId, player);
+
+            if (!result.success) {
+                socket.emit('join_room_error', {
+                    roomId,
+                    error: result.error || 'Failed to join room'
+                });
+                return;
+            }
+
+            // Join socket room
+            socket.join(roomId);
+
+            // Emit success to joining player
+            socket.emit('join_room_success', {
+                roomId,
+                players: result.players,
+                playerId: player.id
+            });
+
+            // Notify other players in the room
+            socket.to(roomId).emit('player_joined', {
+                roomId,
+                player,
+                players: result.players
+            });
+
+            console.log(`Player ${playerName} (${socket.id}) joined room ${roomId}`);
+        } catch (error) {
+            console.error('Error in handleJoinRoom:', error);
+            socket.emit('error', { message: 'Internal server error' });
+        }
+    };
+
+    /**
+     * Handle player_ready event
+     */
+    public handlePlayerReady = (socket: Socket, data: { roomId: string }) => {
+        try {
+            const { roomId } = data;
+
+            if (!roomId) {
+                socket.emit('error', { message: 'Room ID is required' });
+                return;
+            }
+
+            // Set player as ready
+            const success = this.roomManager.setPlayerReady(roomId, socket.id);
+
+            if (!success) {
+                socket.emit('player_ready_error', {
+                    roomId,
+                    error: 'Failed to set player ready'
+                });
+                return;
+            }
+
+            // Get updated room state
+            const room = this.roomManager.getRoom(roomId);
+            if (!room) {
+                socket.emit('error', { message: 'Room not found' });
+                return;
+            }
+
+            // Emit success to the player
+            socket.emit('player_ready_success', {
+                roomId,
+                players: room.players
+            });
+
+            // Notify other players in the room
+            socket.to(roomId).emit('player_ready', {
+                roomId,
+                playerId: socket.id,
+                players: room.players
+            });
+
+            // Check if room is ready to start
+            if (this.roomManager.isRoomReady(roomId)) {
+                // Emit to all players in the room
+                socket.to(roomId).emit('room_ready', {
+                    roomId,
+                    players: room.players
+                });
+                socket.emit('room_ready', {
+                    roomId,
+                    players: room.players
+                });
+            }
+
+            console.log(`Player ${socket.id} is ready in room ${roomId}`);
+        } catch (error) {
+            console.error('Error in handlePlayerReady:', error);
+            socket.emit('error', { message: 'Internal server error' });
+        }
+    };
+
+    /**
+     * Handle player disconnection
+     */
+    public handleDisconnect = (socket: Socket) => {
+        try {
+            // Find all rooms the player is in
+            const allRooms = this.roomManager.getAllRooms();
+
+            for (const room of allRooms) {
+                const player = room.players.find(p => p.socketId === socket.id);
+                if (player) {
+                    // Remove player from room
+                    this.roomManager.removePlayer(room.id, player.id);
+
+                    // Notify other players
+                    socket.to(room.id).emit('player_disconnected', {
+                        roomId: room.id,
+                        playerId: player.id,
+                        players: room.players.filter(p => p.id !== player.id)
+                    });
+
+                    console.log(`Player ${player.name} (${socket.id}) disconnected from room ${room.id}`);
+                    break; // Player can only be in one room at a time
+                }
+            }
+        } catch (error) {
+            console.error('Error in handleDisconnect:', error);
+        }
+    };
+
+    /**
+     * Handle room listing request
+     */
+    public handleListRooms = (socket: Socket) => {
+        try {
+            const availableRooms = this.roomManager.getAvailableRooms();
+
+            socket.emit('room_list', {
+                rooms: availableRooms.map(room => ({
+                    id: room.id,
+                    playerCount: room.players.length,
+                    maxPlayers: 2,
+                    createdAt: room.createdAt
+                }))
+            });
+        } catch (error) {
+            console.error('Error in handleListRooms:', error);
+            socket.emit('error', { message: 'Internal server error' });
+        }
+    };
+
+    /**
+     * Handle room availability check
+     */
+    public handleCheckRoomAvailability = (socket: Socket, data: { roomId: string }) => {
+        try {
+            const { roomId } = data;
+
+            if (!roomId) {
+                socket.emit('error', { message: 'Room ID is required' });
+                return;
+            }
+
+            const isAvailable = this.roomManager.isRoomAvailable(roomId);
+            const playerCount = this.roomManager.getPlayerCount(roomId);
+
+            socket.emit('room_availability', {
+                roomId,
+                available: isAvailable,
+                playerCount,
+                maxPlayers: 2
+            });
+        } catch (error) {
+            console.error('Error in handleCheckRoomAvailability:', error);
+            socket.emit('error', { message: 'Internal server error' });
+        }
+    };
+} 
