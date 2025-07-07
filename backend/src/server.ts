@@ -99,27 +99,30 @@ io.on('connection', (socket) => {
     });
 });
 
-// Start server
-server.listen(PORT, () => {
-    console.log(`🚀 Backend server running on http://localhost:${PORT}`);
-    console.log(`📱 Connect your React Native app to: http://localhost:${PORT}`);
-    console.log(`🔌 Socket.IO server ready for WebSocket connections`);
-    console.log(`🌍 Environment: ${process.env['NODE_ENV'] || 'development'}`);
-});
-
-// Graceful shutdown
-process.on('SIGTERM', () => {
-    console.log('SIGTERM received, shutting down gracefully');
-    server.close(() => {
-        console.log('Process terminated');
+// Only start server if this is the main module (not when imported for testing)
+if (require.main === module) {
+    // Start server
+    server.listen(PORT, () => {
+        console.log(`🚀 Backend server running on http://localhost:${PORT}`);
+        console.log(`📱 Connect your React Native app to: http://localhost:${PORT}`);
+        console.log(`🔌 Socket.IO server ready for WebSocket connections`);
+        console.log(`🌍 Environment: ${process.env['NODE_ENV'] || 'development'}`);
     });
-});
 
-process.on('SIGINT', () => {
-    console.log('SIGINT received, shutting down gracefully');
-    server.close(() => {
-        console.log('Process terminated');
+    // Graceful shutdown
+    process.on('SIGTERM', () => {
+        console.log('SIGTERM received, shutting down gracefully');
+        server.close(() => {
+            console.log('Process terminated');
+        });
     });
-});
+
+    process.on('SIGINT', () => {
+        console.log('SIGINT received, shutting down gracefully');
+        server.close(() => {
+            console.log('Process terminated');
+        });
+    });
+}
 
 export { app, io, server };

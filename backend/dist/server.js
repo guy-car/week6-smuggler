@@ -74,22 +74,24 @@ io.on('connection', (socket) => {
         socket.emit('pong', { timestamp: new Date().toISOString() });
     });
 });
-server.listen(PORT, () => {
-    console.log(`🚀 Backend server running on http://localhost:${PORT}`);
-    console.log(`📱 Connect your React Native app to: http://localhost:${PORT}`);
-    console.log(`🔌 Socket.IO server ready for WebSocket connections`);
-    console.log(`🌍 Environment: ${process.env['NODE_ENV'] || 'development'}`);
-});
-process.on('SIGTERM', () => {
-    console.log('SIGTERM received, shutting down gracefully');
-    server.close(() => {
-        console.log('Process terminated');
+if (require.main === module) {
+    server.listen(PORT, () => {
+        console.log(`🚀 Backend server running on http://localhost:${PORT}`);
+        console.log(`📱 Connect your React Native app to: http://localhost:${PORT}`);
+        console.log(`🔌 Socket.IO server ready for WebSocket connections`);
+        console.log(`🌍 Environment: ${process.env['NODE_ENV'] || 'development'}`);
     });
-});
-process.on('SIGINT', () => {
-    console.log('SIGINT received, shutting down gracefully');
-    server.close(() => {
-        console.log('Process terminated');
+    process.on('SIGTERM', () => {
+        console.log('SIGTERM received, shutting down gracefully');
+        server.close(() => {
+            console.log('Process terminated');
+        });
     });
-});
+    process.on('SIGINT', () => {
+        console.log('SIGINT received, shutting down gracefully');
+        server.close(() => {
+            console.log('Process terminated');
+        });
+    });
+}
 //# sourceMappingURL=server.js.map
