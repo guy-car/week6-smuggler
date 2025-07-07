@@ -1,15 +1,21 @@
+import MessageModal from '@/components/MessageModal';
 import { useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function EncrypterScreen() {
   const [gameStarted, setGameStarted] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
 
   const toggleGame = () => {
     setGameStarted(!gameStarted);
   };
 
-  const openEnvelope = () => {
-    console.log('Open envelope pressed');
+  const openMessage = () => {
+    setModalVisible(true);
+  };
+
+  const closeModal = () => {
+    setModalVisible(false);
   };
 
   return (
@@ -27,12 +33,18 @@ export default function EncrypterScreen() {
       
       {gameStarted && (
         <TouchableOpacity 
-          style={styles.envelopeButton} 
-          onPress={openEnvelope}
+          style={styles.messageButton} 
+          onPress={openMessage}
         >
-          <Text style={styles.envelopeButtonText}>Open Envelope</Text>
+          <Text style={styles.messageButtonText}>Open Message</Text>
         </TouchableOpacity>
       )}
+
+      <MessageModal
+        visible={modalVisible}
+        onClose={closeModal}
+        message="This is a sample message. In the real game, this would contain the encrypted message that the AI will try to decode."
+      />
     </View>
   );
 }
@@ -78,7 +90,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-  envelopeButton: {
+  messageButton: {
     backgroundColor: '#007AFF',
     paddingVertical: 15,
     paddingHorizontal: 30,
@@ -96,7 +108,7 @@ const styles = StyleSheet.create({
     marginTop: 50,
     minWidth: 200,
   },
-  envelopeButtonText: {
+  messageButtonText: {
     color: 'white',
     fontSize: 18,
     fontWeight: '600',
