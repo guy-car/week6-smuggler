@@ -40,6 +40,10 @@ game:
   scoreRange: [0, 10]
   winScore: 10
   loseScore: 0
+  guessValidation:
+    maxLevenshteinDistance: 2
+    caseInsensitive: true
+    trimWhitespace: true
 
 ai:
   mockEnabled: true
@@ -56,6 +60,7 @@ logging:
 | PORT | integer | 3000 | Server port |
 | NODE_ENV | string | development | Environment mode |
 | OPENAI_API_KEY | string | - | OpenAI API key (future use) |
+| MAX_LEVENSHTEIN_DISTANCE | integer | 2 | Maximum Levenshtein distance for guess validation |
 
 ## 4. API / Protocol
 
@@ -177,14 +182,14 @@ interface AIGuess {
 - [x] Add word list monitoring
 
 ### Phase 7: Game Logic Implementation
-- [ ] Implement guess validation (case-insensitive, fuzzy matching)
-- [ ] Add score update logic (+1 for players, -1 for AI)
-- [ ] Create round transition logic
-- [ ] Implement role switching between rounds
-- [ ] Add conversation flow validation
-- [ ] Create turn order enforcement
-- [ ] Implement game state persistence during disconnections
-- [ ] Add game state recovery for rejoining players
+- [x] Implement guess validation (case-insensitive, Levenshtein distance fuzzy matching)
+- [x] Add score update logic (+1 for players, -1 for AI)
+- [x] Create round transition logic
+- [x] Implement role switching between rounds
+- [x] Add conversation flow validation
+- [x] Create turn order enforcement
+- [x] Implement game state persistence during disconnections
+- [x] Add game state recovery for rejoining players
 
 ### Phase 8: Testing & Validation
 - [ ] Create Socket.IO event testing
@@ -203,8 +208,34 @@ interface AIGuess {
 - Game state transitions
 - Score calculation
 - Word selection and validation
+- Levenshtein distance calculation and fuzzy matching
 - AI response generation
 - Socket event validation
+
+### Levenshtein Distance Implementation
+The guess validation system uses Levenshtein distance for fuzzy matching:
+
+**Algorithm:**
+- Calculate minimum edit distance between guess and secret word
+- Edits include: insertions, deletions, substitutions
+- Case-insensitive comparison
+- Whitespace trimming applied
+
+**Configuration:**
+- Default threshold: 2 edits maximum
+- Configurable via environment variable `MAX_LEVENSHTEIN_DISTANCE`
+- Examples of acceptable matches (distance ≤ 2):
+  - "apple" matches "appel" (distance 1)
+  - "banana" matches "bananna" (distance 1) 
+  - "cherry" matches "chery" (distance 1)
+  - "dragon" matches "dragan" (distance 1)
+  - "elephant" matches "elepant" (distance 1)
+
+**Benefits:**
+- Handles common typos and misspellings
+- Improves user experience
+- Maintains game challenge while being forgiving
+- Configurable difficulty level
 
 ### Integration Tests
 - Complete game flow from join to end
@@ -285,6 +316,7 @@ backend/
 - [ ] Encryptor can send messages to Decryptor
 - [ ] AI generates mock responses with thinking process
 - [ ] Decryptor can attempt guesses
+- [ ] Guess validation uses Levenshtein distance with configurable threshold
 - [ ] Score updates correctly (+1/-1 per round)
 - [ ] Game ends at score 10 (players win) or 0 (AI wins)
 - [ ] Roles switch between rounds
@@ -296,7 +328,7 @@ backend/
 - [ ] New players can join ongoing games
 - [ ] Mock AI generates structured responses
 - [ ] Word selection works from JSON file
-- [ ] Guess validation handles case-insensitive matching
+- [ ] Guess validation handles case-insensitive matching with Levenshtein distance
 - [ ] Server handles concurrent games without conflicts
 - [ ] All unit tests pass
 - [ ] Integration tests validate complete game flow

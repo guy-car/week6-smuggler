@@ -1,4 +1,5 @@
 import { AIGuess, GameState, Message, Player, RoleAssignment } from '../types';
+import { fuzzyStringMatch, getMaxLevenshteinDistance } from '../utils/helpers';
 
 export class GameStateManager {
     private readonly INITIAL_SCORE = 5; // Start at neutral score
@@ -134,10 +135,11 @@ export class GameStateManager {
     }
 
     /**
-     * Validate guess against secret word
+     * Validate guess against secret word using Levenshtein distance
      */
     public validateGuess(guess: string, secretWord: string): boolean {
-        return guess.toLowerCase().trim() === secretWord.toLowerCase().trim();
+        const maxDistance = getMaxLevenshteinDistance();
+        return fuzzyStringMatch(guess, secretWord, maxDistance);
     }
 
     /**
@@ -207,5 +209,128 @@ export class GameStateManager {
      */
     private generateId(): string {
         return Date.now().toString(36) + Math.random().toString(36).substr(2);
+    }
+
+    /**
+     * Save game state for disconnected player
+     */
+    public saveGameStateForPlayer(
+        gameState: GameState,
+        playerId: string,
+        roles: RoleAssignment
+    ): { gameState: GameState; playerRole: 'encryptor' | 'decryptor' | null } {
+        // Create a copy of the game state for the player
+        const savedGameState = { ...gameState };
+
+        // Get player's role
+        const playerRole = this.getPlayerRole(playerId, roles);
+
+        return {
+            gameState: savedGameState,
+            playerRole
+        };
+    }
+
+    /**
+     * Restore game state for rejoining player
+     */
+    public restoreGameStateForPlayer(
+        savedGameState: GameState,
+        currentGameState: GameState,
+        playerId: string,
+        roles: RoleAssignment
+    ): { gameState: GameState; canRejoin: boolean; reason?: string } {
+        // Check if the game is still active
+        if (currentGameState.gameStatus !== 'active') {
+            return {
+                gameState: currentGameState,
+                canRejoin: false,
+                reason: 'Game has ended'
+            };
+        }
+
+        // Check if the player's role still exists
+        const playerRole = this.getPlayerRole(playerId, roles);
+        if (!playerRole) {
+            return {
+                gameState: currentGameState,
+                canRejoin: false,
+                reason: 'Player role not found'
+            };
+        }
+
+        // Check if the game state is compatible (same round, same secret word)
+        if (savedGameState.currentRound !== currentGameState.currentRound) {
+            return {
+                gameState: currentGameState,
+                canRejoin: false,
+                reason: 'Game has progressed to a different round'
+            };
+        }
+
+        if (savedGameState.secretWord !== currentGameState.secretWord) {
+            return {
+                gameState: currentGameState,
+                canRejoin: false,
+                reason: 'Game has changed secret word'
+            };
+        }
+
+        // Player can rejoin - return current game state
+        return {
+            gameState: currentGameState,
+            canRejoin: true
+        };
+    }
+
+    /**
+     * Check if a player can rejoin the game
+     */
+    public canPlayerRejoin(
+        gameState: GameState,
+        playerId: string,
+        roles: RoleAssignment
+    ): { canRejoin: boolean; reason?: string } {
+        // Check if game is active
+        if (gameState.gameStatus !== 'active') {
+            return {
+                canRejoin: false,
+                reason: 'Game is not active'
+            };
+        }
+
+        // Check if player has a role
+        const playerRole = this.getPlayerRole(playerId, roles);
+        if (!playerRole) {
+            return {
+                canRejoin: false,
+                reason: 'Player does not have a role in this game'
+            };
+        }
+
+        return {
+            canRejoin: true
+        };
+    }
+
+    /**
+     * Get game state summary for rejoining player
+     */
+    public getGameStateSummary(gameState: GameState): {
+        score: number;
+        round: number;
+        currentTurn: 'encryptor' | 'ai' | 'decryptor';
+        messageCount: number;
+        aiGuessCount: number;
+        gameStatus: 'waiting' | 'active' | 'ended';
+    } {
+        return {
+            score: gameState.score,
+            round: gameState.currentRound,
+            currentTurn: gameState.currentTurn,
+            messageCount: gameState.conversationHistory.length,
+            aiGuessCount: gameState.aiGuesses.length,
+            gameStatus: gameState.gameStatus
+        };
     }
 } 

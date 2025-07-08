@@ -1,5 +1,6 @@
 import { Socket } from 'socket.io';
 import { MockAIService } from '../../ai/mock';
+import { GameLogic } from '../../game/logic';
 import { GameStateManager } from '../../game/state';
 import { WordManager } from '../../game/wordManager';
 import { RoomManager } from '../../rooms/manager';
@@ -10,6 +11,7 @@ export class GameHandlers {
     private gameStateManager: GameStateManager;
     private wordManager: WordManager;
     private aiService: MockAIService;
+    private gameLogic: GameLogic;
     private io: any;
 
     constructor(roomManager: RoomManager, io: any) {
@@ -17,6 +19,7 @@ export class GameHandlers {
         this.gameStateManager = new GameStateManager();
         this.wordManager = new WordManager();
         this.aiService = new MockAIService();
+        this.gameLogic = new GameLogic();
         this.io = io;
     }
 
@@ -105,21 +108,44 @@ export class GameHandlers {
                 return;
             }
 
-            // Check if it's the encryptor's turn
-            if (room.gameState.currentTurn !== 'encryptor') {
+            // Get current roles
+            const roles = {
+                encryptor: room.players.find(p => p.role === 'encryptor')!.id,
+                decryptor: room.players.find(p => p.role === 'decryptor')!.id
+            };
+
+            // Validate turn order
+            const turnValidation = this.gameLogic.validateTurnOrder(
+                room.gameState,
+                socket.id,
+                'send_message',
+                roles
+            );
+
+            if (!turnValidation.valid) {
                 socket.emit('send_message_error', {
                     roomId,
-                    error: 'Not your turn to send a message'
+                    error: turnValidation.errors.join(', ')
                 });
                 return;
             }
 
-            // Find the encryptor player
-            const encryptor = room.players.find(p => p.role === 'encryptor');
-            if (!encryptor || encryptor.socketId !== socket.id) {
+            // Validate conversation flow
+            const flowValidation = this.gameLogic.validateConversationFlow(room.gameState);
+            if (!flowValidation.valid && room.gameState.conversationHistory.length > 0) {
                 socket.emit('send_message_error', {
                     roomId,
-                    error: 'Only the encryptor can send messages'
+                    error: flowValidation.errors.join(', ')
+                });
+                return;
+            }
+
+            // Validate game state consistency
+            const consistencyValidation = this.gameLogic.validateGameStateConsistency(room.gameState);
+            if (!consistencyValidation.valid) {
+                socket.emit('send_message_error', {
+                    roomId,
+                    error: 'Game state is inconsistent: ' + consistencyValidation.errors.join(', ')
                 });
                 return;
             }
@@ -181,26 +207,49 @@ export class GameHandlers {
                 return;
             }
 
-            // Check if it's the decryptor's turn
-            if (room.gameState.currentTurn !== 'decryptor') {
+            // Get current roles
+            const roles = {
+                encryptor: room.players.find(p => p.role === 'encryptor')!.id,
+                decryptor: room.players.find(p => p.role === 'decryptor')!.id
+            };
+
+            // Validate turn order
+            const turnValidation = this.gameLogic.validateTurnOrder(
+                room.gameState,
+                socket.id,
+                'guess',
+                roles
+            );
+
+            if (!turnValidation.valid) {
                 socket.emit('player_guess_error', {
                     roomId,
-                    error: 'Not your turn to guess'
+                    error: turnValidation.errors.join(', ')
                 });
                 return;
             }
 
-            // Find the decryptor player
-            const decryptor = room.players.find(p => p.role === 'decryptor');
-            if (!decryptor || decryptor.socketId !== socket.id) {
+            // Validate conversation flow
+            const flowValidation = this.gameLogic.validateConversationFlow(room.gameState);
+            if (!flowValidation.valid) {
                 socket.emit('player_guess_error', {
                     roomId,
-                    error: 'Only the decryptor can make guesses'
+                    error: flowValidation.errors.join(', ')
                 });
                 return;
             }
 
-            // Validate the guess
+            // Validate game state consistency
+            const consistencyValidation = this.gameLogic.validateGameStateConsistency(room.gameState);
+            if (!consistencyValidation.valid) {
+                socket.emit('player_guess_error', {
+                    roomId,
+                    error: 'Game state is inconsistent: ' + consistencyValidation.errors.join(', ')
+                });
+                return;
+            }
+
+            // Validate the guess using Levenshtein distance
             const isCorrect = this.gameStateManager.validateGuess(guess, room.gameState.secretWord);
 
             // Update score
@@ -278,6 +327,102 @@ export class GameHandlers {
             console.log(`Guess made in room ${roomId}: ${guess} (correct: ${isCorrect})`);
         } catch (error) {
             console.error('Error in handlePlayerGuess:', error);
+            socket.emit('error', { message: 'Internal server error' });
+        }
+    };
+
+    /**
+     * Handle player reconnection
+     */
+    public handlePlayerReconnect = (socket: Socket, data: { roomId: string; playerId: string }) => {
+        try {
+            const { roomId, playerId } = data;
+
+            if (!roomId || !playerId) {
+                socket.emit('error', { message: 'Room ID and player ID are required' });
+                return;
+            }
+
+            const room = this.roomManager.getRoom(roomId);
+            if (!room) {
+                socket.emit('reconnect_error', {
+                    roomId,
+                    error: 'Room not found'
+                });
+                return;
+            }
+
+            // Find the player
+            const player = room.players.find(p => p.id === playerId);
+            if (!player) {
+                socket.emit('reconnect_error', {
+                    roomId,
+                    error: 'Player not found in room'
+                });
+                return;
+            }
+
+            // Update player's socket ID
+            player.socketId = socket.id;
+
+            // If game is active, check if player can rejoin
+            if (room.gameState) {
+                const roles = {
+                    encryptor: room.players.find(p => p.role === 'encryptor')!.id,
+                    decryptor: room.players.find(p => p.role === 'decryptor')!.id
+                };
+
+                const canRejoin = this.gameStateManager.canPlayerRejoin(
+                    room.gameState,
+                    playerId,
+                    roles
+                );
+
+                if (!canRejoin.canRejoin) {
+                    socket.emit('reconnect_error', {
+                        roomId,
+                        error: canRejoin.reason || 'Cannot rejoin game'
+                    });
+                    return;
+                }
+
+                // Get game state summary for rejoining player
+                const gameSummary = this.gameStateManager.getGameStateSummary(room.gameState);
+
+                // Emit reconnection success with game state
+                const reconnectData = {
+                    roomId,
+                    playerId,
+                    gameState: gameSummary,
+                    role: player.role,
+                    players: room.players
+                };
+
+                socket.emit('player_reconnected', reconnectData);
+                socket.to(roomId).emit('player_rejoined', {
+                    roomId,
+                    playerId,
+                    playerName: player.name
+                });
+
+                console.log(`Player ${playerId} reconnected to room ${roomId}`);
+            } else {
+                // Game not started yet, just rejoin room
+                socket.emit('player_reconnected', {
+                    roomId,
+                    playerId,
+                    players: room.players
+                });
+                socket.to(roomId).emit('player_rejoined', {
+                    roomId,
+                    playerId,
+                    playerName: player.name
+                });
+
+                console.log(`Player ${playerId} reconnected to room ${roomId} (no active game)`);
+            }
+        } catch (error) {
+            console.error('Error in handlePlayerReconnect:', error);
             socket.emit('error', { message: 'Internal server error' });
         }
     };

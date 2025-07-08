@@ -233,4 +233,96 @@ export class GameLogic {
     public getSecretWord(gameState: GameState): string {
         return gameState.secretWord;
     }
+
+    /**
+     * Validate conversation flow
+     */
+    public validateConversationFlow(gameState: GameState): { valid: boolean; errors: string[] } {
+        const errors: string[] = [];
+
+        // Check if game is active
+        if (gameState.gameStatus !== 'active') {
+            errors.push('Game is not active');
+            return { valid: false, errors };
+        }
+
+        // Check if conversation has started
+        if (gameState.conversationHistory.length === 0) {
+            errors.push('Conversation has not started');
+            return { valid: false, errors };
+        }
+
+        // Check if it's time for a guess (AI has made at least one guess)
+        if (gameState.aiGuesses.length === 0) {
+            errors.push('AI has not made any guesses yet');
+            return { valid: false, errors };
+        }
+
+        // Check if there are enough messages for meaningful conversation
+        if (gameState.conversationHistory.length < 2) {
+            errors.push('Not enough messages for meaningful conversation');
+            return { valid: false, errors };
+        }
+
+        return { valid: errors.length === 0, errors };
+    }
+
+    /**
+     * Check if turn order is being followed correctly
+     */
+    public validateTurnOrder(
+        gameState: GameState,
+        playerId: string,
+        action: 'send_message' | 'guess',
+        roles: RoleAssignment
+    ): { valid: boolean; errors: string[] } {
+        const errors: string[] = [];
+
+        if (action === 'send_message') {
+            if (gameState.currentTurn !== 'encryptor') {
+                errors.push('Not encryptor\'s turn');
+            }
+            if (roles.encryptor !== playerId) {
+                errors.push('Only encryptor can send messages');
+            }
+        } else if (action === 'guess') {
+            if (gameState.currentTurn !== 'decryptor') {
+                errors.push('Not decryptor\'s turn');
+            }
+            if (roles.decryptor !== playerId) {
+                errors.push('Only decryptor can make guesses');
+            }
+        }
+
+        return { valid: errors.length === 0, errors };
+    }
+
+    /**
+     * Check if game state is consistent
+     */
+    public validateGameStateConsistency(gameState: GameState): { valid: boolean; errors: string[] } {
+        const errors: string[] = [];
+
+        // Check score bounds
+        if (gameState.score < 0 || gameState.score > 10) {
+            errors.push('Score is out of bounds (0-10)');
+        }
+
+        // Check round number
+        if (gameState.currentRound < 1) {
+            errors.push('Round number must be at least 1');
+        }
+
+        // Check if game ended but status is still active
+        if ((gameState.score >= 10 || gameState.score <= 0) && gameState.gameStatus === 'active') {
+            errors.push('Game should be ended but status is still active');
+        }
+
+        // Check if game is ended but score is in valid range
+        if (gameState.gameStatus === 'ended' && gameState.score > 0 && gameState.score < 10) {
+            errors.push('Game is ended but score is not at win/lose condition');
+        }
+
+        return { valid: errors.length === 0, errors };
+    }
 } 
