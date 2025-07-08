@@ -1,4 +1,4 @@
-import { GameState, Message, Player, RoleAssignment } from '../types';
+import { GameState, Player, RoleAssignment } from '../types';
 
 export class GameValidator {
     private readonly MAX_MESSAGE_LENGTH = 500;
@@ -100,7 +100,7 @@ export class GameValidator {
             return { valid: false, errors };
         }
 
-        const msg = message as Partial<Message>;
+        const msg = message as Partial<{ content: string; senderId: string }>;
 
         if (!msg.content || typeof msg.content !== 'string') {
             errors.push('Message content is required and must be a string');
