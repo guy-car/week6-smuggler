@@ -278,20 +278,7 @@ export class GameHandlers {
                 // Advance to next round
                 const nextRoundState = this.gameStateManager.advanceRound(updatedGameState);
 
-                // Switch roles
-                const newRoles = this.gameStateManager.switchRoles(room.players, {
-                    encryptor: room.players.find(p => p.role === 'encryptor')!.id,
-                    decryptor: room.players.find(p => p.role === 'decryptor')!.id
-                });
-
-                // Update player roles
-                room.players.forEach(player => {
-                    if (newRoles.encryptor === player.id) {
-                        player.role = 'encryptor';
-                    } else if (newRoles.decryptor === player.id) {
-                        player.role = 'decryptor';
-                    }
-                });
+                // Keep fixed roles - no role switching
 
                 // Select new secret word
                 const newSecretWord = this.wordManager.selectRandomWord();
@@ -305,7 +292,6 @@ export class GameHandlers {
                     correct: isCorrect,
                     score: nextRoundState.score,
                     gameEnded: false,
-                    newRoles,
                     newSecretWord
                 };
 

@@ -2,7 +2,7 @@
 
 ## 1. Overview
 
-Real-time WebSocket server for the Smuggler game, handling room management, game state, AI integration, and player communication. The server manages 2-player rooms where players take turns as Encryptor/Decryptor, with an AI eavesdropper attempting to decode secret messages.
+Real-time WebSocket server for the Smuggler game, handling room management, game state, AI integration, and player communication. The server manages 2-player rooms where players have fixed roles as Encryptor/Decryptor, with an AI eavesdropper attempting to decode secret messages.
 
 **Key Features:**
 - WebSocket-based real-time communication via Socket.IO
@@ -82,12 +82,12 @@ logging:
 | `round_end`               | Server → Client | `{ roomId: string, score: number, gameEnded: boolean, winner: string }`     | Round completion and score update    |
 | `game_end`                | Server → Client | `{ roomId: string, winner: string, finalScore: number }`                    | Game completion                      |
 | `list_rooms`              | Client → Server | -                                                                           | Request current room list (legacy)   |
-| `room_list`               | Server → Client | `{ rooms: Room[] }`                                                        | Broadcast room list to lobby clients |
+| `room_list`               | Server → Client | `{ rooms: Room[] }`                                                         | Broadcast room list to lobby clients |
 | `check_room_availability` | Client → Server | `{ roomId: string }`                                                        | Check if room exists and has space   |
 
 ### HTTP API Endpoints
 
-| Endpoint                | Method | Description                                 |
+| Endpoint                | Method | Description                                   |
 |-------------------------|--------|-----------------------------------------------|
 | `GET /`                 | GET    | API status and welcome message                |
 | `GET /api/health`       | GET    | Health check with uptime and environment info |
@@ -160,10 +160,11 @@ interface RoleAssignment {
 5. Repeat until someone guesses correctly
 
 ### Role Assignment
-- **First player to join** (room creator) → **Encryptor** for first round
-- **Second player to join** → **Decryptor** for first round
-- Roles switch between rounds (encryptor becomes decryptor, decryptor becomes encryptor)
-- Each player gets equal turns as encryptor/decryptor
+- **First player to join** (room creator) → **Encryptor** (fixed role)
+- **Second player to join** → **Decryptor** (fixed role)
+- **Roles are fixed and do not switch** between rounds
+- Each player maintains their assigned role throughout the entire game
+- Role assignment happens once at game start and remains constant
 
 ### Guess Validation
 - **Case Insensitive:** "Apple" matches "apple"
@@ -207,7 +208,7 @@ The `RoomManager` class handles:
 The `GameStateManager` class manages:
 - Game state creation and updates
 - Score tracking and validation
-- Role assignment and switching
+- Role assignment (fixed roles)
 - Turn progression and validation
 - Conversation history tracking
 - AI guess integration
@@ -351,7 +352,7 @@ backend/
 ## 13. Create Room Endpoint Implementation
 
 ### Overview
-New HTTP endpoint to create rooms and auto-join the creator, enabling direct room creation from frontend without WebSocket connection.
+HTTP endpoint to create rooms and auto-join the creator, enabling direct room creation from frontend without WebSocket connection.
 
 #### Backend Changes
 
