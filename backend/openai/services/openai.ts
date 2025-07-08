@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 import OpenAI from 'openai';
 import path from 'path';
-import { AIResponse, AIResponseSchema, Message } from '../types/game';
+import { AIResponse, AIResponseSchema, Turn } from '../types/game';
 
 // Load environment variables from root .env file
 dotenv.config({ path: path.join(__dirname, '../../../.env') });
@@ -10,16 +10,6 @@ dotenv.config({ path: path.join(__dirname, '../../../.env') });
 const openai = new OpenAI({
   apiKey: process.env['OPENAI_API_KEY']
 });
-
-// Role mapping for AI context (preserves immersion)
-const mapRoleForAI = (role: string): string => {
-  switch (role) {
-    case 'outsider': return 'Marcus_Chen_ID7429';
-    case 'insider': return 'Sarah_Chen_Personal_Contact';
-    case 'ai': return 'AI_SYSTEM_ANALYSIS';
-    default: return role;
-  }
-};
 
 // Modern structured output tool definition with strict validation
 const ANALYZE_CONVERSATION_TOOL = {
@@ -87,37 +77,29 @@ export class OpenAIService {
   /**
    * Analyzes conversation history and returns AI's assessment
    */
-  async analyzeConversation(conversationHistory: Message[]): Promise<AIResponse> {
+  async analyzeConversation(turns: Turn[]): Promise<AIResponse> {
     try {
-      // Format conversation history for OpenAI with role mapping and suspicion tracking
-      const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
-        { role: 'system', content: SYSTEM_PROMPT },
-        ...conversationHistory.map(msg => {
-          const mappedRole = mapRoleForAI(msg.role);
-          
-          // For AI messages, include the suspicion level in the content
-          if (msg.role === 'ai') {
-            // Try to extract suspicion level from AI thinking messages
-            const suspicionMatch = msg.content.match(/suspicion:\s*(\d+)%?/i);
-            const suspicionLevel = suspicionMatch ? suspicionMatch[1] : 'unknown';
-            
-            return {
-              role: 'assistant' as const,
-              content: `[${mappedRole}/${msg.type}] ${msg.content} [SUSPICION_LEVEL: ${suspicionLevel}%]`
-            };
-          }
-          
-          return {
-            role: 'user' as const,
-            content: `[${mappedRole}/${msg.type}] ${msg.content}`
-          };
-        })
-      ];
+      // Format conversation history as a single context block
+      const conversationHistory = turns.map(turn => {
+        const { context } = turn;
+        
+        switch (context.type) {
+          case 'outsider':
+            return `[WORKER] ${context.message}`;
+          case 'insider':
+            return `[SPOUSE] ${context.message}`;
+          case 'ai':
+            return `[ANALYSIS] Thinking: ${context.thinking.join(' ')} | Guess: ${context.guess} | Suspicion: ${context.suspicionLevel}%`;
+        }
+      }).join('\n');
 
       // Make OpenAI API call using modern structured outputs
       const completion = await openai.chat.completions.create({
-        model: 'gpt-4o',
-        messages,
+        model: 'gpt-4',
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user', content: conversationHistory }
+        ],
         tools: [ANALYZE_CONVERSATION_TOOL],
         tool_choice: { type: "function", function: { name: "analyze_conversation" } }
       });
