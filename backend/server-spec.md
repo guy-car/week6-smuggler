@@ -626,11 +626,11 @@ interface AIResponse {
 
 ### Phase 7: Update Tests
 7. **Update test files**
-   - [ ] Update `backend/tests/gameState.test.ts` to test new `Turn` structure
-   - [ ] Update `backend/tests/gameHandlers.test.ts` to test new turn types
-   - [ ] Update `backend/tests/gameLogic.test.ts` to test unified conversation history
-   - [ ] Add tests for turn validation and order checking
-   - [ ] Add tests for new AI analysis endpoint
+   - [x] Update `backend/tests/gameState.test.ts` to test new `Turn` structure
+   - [x] Update `backend/tests/gameHandlers.test.ts` to test new turn types
+   - [x] Update `backend/tests/gameLogicValidation.test.ts` to test unified conversation history
+   - [x] Add tests for turn validation and order checking
+   - [x] Add tests for new AI analysis endpoint
 
 ### Phase 8: Update Validation
 8. **Update `backend/src/game/validation.ts`**

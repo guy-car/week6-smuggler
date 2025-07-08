@@ -2,7 +2,7 @@ import { GameLogic } from '../src/game/logic';
 import { GameStateManager } from '../src/game/state';
 import { GameValidator } from '../src/game/validation';
 import { WordManager } from '../src/game/wordManager';
-import { Player, RoleAssignment } from '../src/types';
+import { AITurn, InsiderTurn, OutsiderTurn, Player, RoleAssignment } from '../src/types';
 
 describe('GameStateManager', () => {
     let gameStateManager: GameStateManager;
@@ -24,7 +24,6 @@ describe('GameStateManager', () => {
             expect(gameState.currentRound).toBe(1);
             expect(gameState.secretWord).toBe('testword');
             expect(gameState.conversationHistory).toEqual([]);
-            // aiGuesses array is removed, so we don't check for it
             expect(gameState.currentTurn).toBe('encryptor');
             expect(gameState.gameStatus).toBe('active');
         });
@@ -70,29 +69,146 @@ describe('GameStateManager', () => {
         });
     });
 
+    describe('addOutsiderTurn', () => {
+        it('should add outsider turn to conversation history', () => {
+            const gameState = gameStateManager.createGameState('TestWord', []);
+            const content = 'Test hint message';
+
+            const newGameState = gameStateManager.addOutsiderTurn(gameState, content);
+
+            expect(newGameState.conversationHistory).toHaveLength(1);
+            const turn = newGameState.conversationHistory[0] as OutsiderTurn;
+            expect(turn.type).toBe('outsider_hint');
+            expect(turn.content).toBe('Test hint message');
+            expect(turn.turnNumber).toBe(1);
+        });
+    });
+
+    describe('addAITurn', () => {
+        it('should add AI turn to conversation history', () => {
+            const gameState = gameStateManager.createGameState('TestWord', []);
+            const thinking = ['First thought', 'Second thought', 'Third thought', 'Fourth thought'];
+            const guess = 'testguess';
+
+            const newGameState = gameStateManager.addAITurn(gameState, thinking, guess);
+
+            expect(newGameState.conversationHistory).toHaveLength(1);
+            const turn = newGameState.conversationHistory[0] as AITurn;
+            expect(turn.type).toBe('ai_analysis');
+            expect(turn.thinking).toEqual(thinking);
+            expect(turn.guess).toBe('testguess');
+            expect(turn.turnNumber).toBe(1);
+        });
+    });
+
+    describe('addInsiderTurn', () => {
+        it('should add insider turn to conversation history', () => {
+            const gameState = gameStateManager.createGameState('TestWord', []);
+            const guess = 'testguess';
+
+            const newGameState = gameStateManager.addInsiderTurn(gameState, guess);
+
+            expect(newGameState.conversationHistory).toHaveLength(1);
+            const turn = newGameState.conversationHistory[0] as InsiderTurn;
+            expect(turn.type).toBe('insider_guess');
+            expect(turn.guess).toBe('testguess');
+            expect(turn.turnNumber).toBe(1);
+        });
+    });
+
     describe('addMessage', () => {
-        it('should add message to conversation history', () => {
+        it('should add outsider turn via legacy method', () => {
             const gameState = gameStateManager.createGameState('TestWord', []);
             const message = {
-                content: 'Test message',
-                senderId: 'player1',
-                role: 'encryptor' as const,
-                turnNumber: 1
+                type: 'outsider_hint',
+                content: 'Test message'
             };
 
             const newGameState = gameStateManager.addMessage(gameState, message);
 
             expect(newGameState.conversationHistory).toHaveLength(1);
-            expect(newGameState.conversationHistory[0]!.content).toBe('Test message');
-            expect(newGameState.conversationHistory[0]!.senderId).toBe('player1');
-            expect(newGameState.conversationHistory[0]!.role).toBe('encryptor');
-            expect(newGameState.conversationHistory[0]!.turnNumber).toBe(1);
-            expect(newGameState.conversationHistory[0]!.id).toBeDefined();
-            expect(newGameState.conversationHistory[0]!.timestamp).toBeInstanceOf(Date);
+            const turn = newGameState.conversationHistory[0] as OutsiderTurn;
+            expect(turn.type).toBe('outsider_hint');
+            expect(turn.content).toBe('Test message');
+            expect(turn.turnNumber).toBe(1);
+        });
+
+        it('should add AI turn via legacy method', () => {
+            const gameState = gameStateManager.createGameState('TestWord', []);
+            const message = {
+                type: 'ai_analysis',
+                thinking: ['Thought 1', 'Thought 2', 'Thought 3', 'Thought 4'],
+                guess: 'testguess'
+            };
+
+            const newGameState = gameStateManager.addMessage(gameState, message);
+
+            expect(newGameState.conversationHistory).toHaveLength(1);
+            const turn = newGameState.conversationHistory[0] as AITurn;
+            expect(turn.type).toBe('ai_analysis');
+            expect(turn.thinking).toEqual(['Thought 1', 'Thought 2', 'Thought 3', 'Thought 4']);
+            expect(turn.guess).toBe('testguess');
+            expect(turn.turnNumber).toBe(1);
+        });
+
+        it('should add insider turn via legacy method', () => {
+            const gameState = gameStateManager.createGameState('TestWord', []);
+            const message = {
+                type: 'insider_guess',
+                guess: 'testguess'
+            };
+
+            const newGameState = gameStateManager.addMessage(gameState, message);
+
+            expect(newGameState.conversationHistory).toHaveLength(1);
+            const turn = newGameState.conversationHistory[0] as InsiderTurn;
+            expect(turn.type).toBe('insider_guess');
+            expect(turn.guess).toBe('testguess');
+            expect(turn.turnNumber).toBe(1);
+        });
+
+        it('should throw error for invalid message type', () => {
+            const gameState = gameStateManager.createGameState('TestWord', []);
+            const message = {
+                type: 'invalid_type',
+                content: 'Test message'
+            };
+
+            expect(() => gameStateManager.addMessage(gameState, message)).toThrow('Invalid message type for addMessage');
         });
     });
 
-    // addAIGuess method is removed as AI responses are now part of conversation history
+    describe('getNextTurnNumber', () => {
+        it('should return 1 for empty conversation history', () => {
+            const gameState = gameStateManager.createGameState('TestWord', []);
+            expect(gameStateManager.getNextTurnNumber(gameState)).toBe(1);
+        });
+
+        it('should return next turn number for existing conversation', () => {
+            const gameState = gameStateManager.createGameState('TestWord', []);
+            let newGameState = gameStateManager.addOutsiderTurn(gameState, 'First hint');
+            newGameState = gameStateManager.addAITurn(newGameState, ['Thought 1', 'Thought 2', 'Thought 3', 'Thought 4'], 'guess1');
+
+            expect(gameStateManager.getNextTurnNumber(newGameState)).toBe(3);
+        });
+    });
+
+    describe('transformToAnalyzeRequest', () => {
+        it('should transform game state to analyze request format', () => {
+            const gameState = gameStateManager.createGameState('TestWord', []);
+            let newGameState = gameStateManager.addOutsiderTurn(gameState, 'First hint');
+            newGameState = gameStateManager.addAITurn(newGameState, ['Thought 1', 'Thought 2', 'Thought 3', 'Thought 4'], 'guess1');
+            newGameState = gameStateManager.addInsiderTurn(newGameState, 'wrongguess');
+
+            const analyzeRequest = gameStateManager.transformToAnalyzeRequest(newGameState, 'room123');
+
+            expect(analyzeRequest.gameId).toBe('room123');
+            expect(analyzeRequest.conversationHistory).toHaveLength(3);
+            expect(analyzeRequest.conversationHistory[0]?.type).toBe('outsider_hint');
+            expect(analyzeRequest.conversationHistory[1]?.type).toBe('ai_analysis');
+            expect(analyzeRequest.conversationHistory[2]?.type).toBe('insider_guess');
+        });
+    });
 
     describe('updateScore', () => {
         it('should increase score when players win', () => {
@@ -137,11 +253,8 @@ describe('GameStateManager', () => {
             const gameState = gameStateManager.createGameState('TestWord', []);
             gameState.currentRound = 1;
             gameState.conversationHistory = [{
-                id: '1',
+                type: 'outsider_hint',
                 content: 'test',
-                senderId: 'player1',
-                timestamp: new Date(),
-                role: 'encryptor',
                 turnNumber: 1
             }];
 
@@ -388,8 +501,7 @@ describe('GameLogic', () => {
                 decryptor: 'player2'
             };
 
-            const message = { content: 'Test message', senderId: 'player1' };
-            const result = gameLogic.handleEncryptorMessage(gameState, message, roles);
+            const result = gameLogic.handleEncryptorMessage(gameState, 'Test message', roles);
 
             expect(result.newGameState.currentTurn).toBe('ai');
             expect(result.newGameState.conversationHistory).toHaveLength(1);
@@ -409,9 +521,7 @@ describe('GameLogic', () => {
                 decryptor: 'player2'
             };
 
-            const message = { content: 'Test message', senderId: 'player1' };
-
-            expect(() => gameLogic.handleEncryptorMessage(gameState, message, roles))
+            expect(() => gameLogic.handleEncryptorMessage(gameState, 'Test message', roles))
                 .toThrow('Not encryptor\'s turn');
         });
     });
@@ -501,8 +611,8 @@ describe('GameLogic', () => {
             expect(result.isMessage).toBe(true);
             expect(result.newGameState.currentTurn).toBe('ai');
             expect(result.newGameState.conversationHistory).toHaveLength(1);
-            expect(result.newGameState.conversationHistory[0]!.content).toBe('WrongWord');
-            expect(result.newGameState.conversationHistory[0]!.senderId).toBe('player2');
+            const turn = result.newGameState.conversationHistory[0] as InsiderTurn;
+            expect(turn.guess).toBe('WrongWord');
             expect(result.shouldAdvanceTurn).toBe(true);
         });
     });

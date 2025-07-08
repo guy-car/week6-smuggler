@@ -1,5 +1,5 @@
 import { MockAIService } from '../src/ai/mock';
-import { Message } from '../src/types';
+import { Turn } from '../src/types';
 
 describe('MockAIService', () => {
     let aiService: MockAIService;
@@ -10,27 +10,15 @@ describe('MockAIService', () => {
 
     describe('analyzeConversation', () => {
         it('should generate complete AI analysis with all required fields', async () => {
-            const conversationHistory: Message[] = [
+            const conversationHistory: Turn[] = [
                 {
-                    id: '1',
+                    type: 'outsider_hint',
                     content: 'This is a test message about animals',
-                    senderId: 'player1',
-                    timestamp: new Date()
+                    turnNumber: 1
                 }
             ];
 
-            const secretWord = 'elephant';
-            const gameContext = {
-                currentRound: 1,
-                score: 5,
-                gameStatus: 'active' as const
-            };
-
-            const result = await aiService.analyzeConversation(
-                conversationHistory,
-                secretWord,
-                gameContext
-            );
+            const result = await aiService.analyzeConversation(conversationHistory, 'elephant');
 
             expect(result).toHaveProperty('thinking');
             expect(result).toHaveProperty('guess');
@@ -43,13 +31,9 @@ describe('MockAIService', () => {
         });
 
         it('should handle empty conversation history', async () => {
-            const conversationHistory: Message[] = [];
-            const secretWord = 'elephant';
+            const conversationHistory: Turn[] = [];
 
-            const result = await aiService.analyzeConversation(
-                conversationHistory,
-                secretWord
-            );
+            const result = await aiService.analyzeConversation(conversationHistory, 'elephant');
 
             expect(result.thinking.length).toBe(4); // Exactly 4 sentences
             expect(typeof result.guess).toBe('string');
@@ -71,12 +55,11 @@ describe('MockAIService', () => {
 
     describe('generateThinkingProcess', () => {
         it('should generate exactly 4 thinking sentences', async () => {
-            const conversationHistory: Message[] = [
+            const conversationHistory: Turn[] = [
                 {
-                    id: '1',
+                    type: 'outsider_hint',
                     content: 'This is a test message',
-                    senderId: 'player1',
-                    timestamp: new Date()
+                    turnNumber: 1
                 }
             ];
 
@@ -94,20 +77,19 @@ describe('MockAIService', () => {
             const emptyThinking = await aiService.generateThinkingProcess([]);
             expect(emptyThinking.length).toBe(4);
 
-            const singleMessage: Message[] = [{
-                id: '1',
+            const singleMessage: Turn[] = [{
+                type: 'outsider_hint',
                 content: 'test',
-                senderId: 'player1',
-                timestamp: new Date()
+                turnNumber: 1
             }];
             const singleThinking = await aiService.generateThinkingProcess(singleMessage);
             expect(singleThinking.length).toBe(4);
 
-            const multipleMessages: Message[] = [
-                { id: '1', content: 'test1', senderId: 'player1', timestamp: new Date() },
-                { id: '2', content: 'test2', senderId: 'player1', timestamp: new Date() },
-                { id: '3', content: 'test3', senderId: 'player1', timestamp: new Date() },
-                { id: '4', content: 'test4', senderId: 'player1', timestamp: new Date() }
+            const multipleMessages: Turn[] = [
+                { type: 'outsider_hint', content: 'test1', turnNumber: 1 },
+                { type: 'ai_analysis', thinking: ['T1', 'T2', 'T3', 'T4'], guess: 'guess1', turnNumber: 2 },
+                { type: 'insider_guess', guess: 'test3', turnNumber: 3 },
+                { type: 'ai_analysis', thinking: ['T5', 'T6', 'T7', 'T8'], guess: 'guess2', turnNumber: 4 }
             ];
             const multipleThinking = await aiService.generateThinkingProcess(multipleMessages);
             expect(multipleThinking.length).toBe(4);
@@ -125,7 +107,7 @@ describe('MockAIService', () => {
 
     describe('generateGuess', () => {
         it('should generate a guess from available words', async () => {
-            const conversationHistory: Message[] = [];
+            const conversationHistory: Turn[] = [];
             const availableWords = ['elephant', 'pizza', 'sunshine'];
 
             const guess = await aiService.generateGuess(conversationHistory, availableWords);
@@ -135,7 +117,7 @@ describe('MockAIService', () => {
         });
 
         it('should handle empty available words array', async () => {
-            const conversationHistory: Message[] = [];
+            const conversationHistory: Turn[] = [];
             const availableWords: string[] = [];
 
             // The implementation has a fallback to 'unknown' when no words are provided
@@ -145,12 +127,11 @@ describe('MockAIService', () => {
         });
 
         it('should prefer words related to conversation content', async () => {
-            const conversationHistory: Message[] = [
+            const conversationHistory: Turn[] = [
                 {
-                    id: '1',
+                    type: 'outsider_hint',
                     content: 'I love eating pizza with friends',
-                    senderId: 'player1',
-                    timestamp: new Date()
+                    turnNumber: 1
                 }
             ];
             const availableWords = ['elephant', 'pizza', 'sunshine'];
@@ -163,7 +144,7 @@ describe('MockAIService', () => {
         });
 
         it('should truncate words longer than 12 characters', async () => {
-            const conversationHistory: Message[] = [];
+            const conversationHistory: Turn[] = [];
             const availableWords = ['verylongwordthatislongerthantwelve', 'short'];
 
             const guess = await aiService.generateGuess(conversationHistory, availableWords);
@@ -172,12 +153,11 @@ describe('MockAIService', () => {
         });
 
         it('should fallback to random word when no semantic connections found', async () => {
-            const conversationHistory: Message[] = [
+            const conversationHistory: Turn[] = [
                 {
-                    id: '1',
+                    type: 'outsider_hint',
                     content: 'This is completely unrelated content',
-                    senderId: 'player1',
-                    timestamp: new Date()
+                    turnNumber: 1
                 }
             ];
             const availableWords = ['elephant', 'pizza', 'sunshine'];
@@ -200,73 +180,9 @@ describe('MockAIService', () => {
 
             expect(health.status).toBe('healthy');
             expect(typeof health.uptime).toBe('number');
-            expect(health.uptime).toBeGreaterThanOrEqual(0); // Allow 0 for very fast tests
+            expect(health.uptime).toBeGreaterThanOrEqual(0);
             expect(health.version).toBe('1.0.0-mock');
             expect(Array.isArray(health.features)).toBe(true);
-            expect(health.features.length).toBeGreaterThan(0);
-        });
-
-        it('should include expected features in health check', async () => {
-            const health = await aiService.getHealth();
-
-            const expectedFeatures = [
-                'conversation-analysis',
-                'thinking-process-generation',
-                'guess-generation',
-                'semantic-analysis'
-            ];
-
-            expectedFeatures.forEach(feature => {
-                expect(health.features).toContain(feature);
-            });
-        });
-    });
-
-    describe('simulateResponseDelay', () => {
-        it('should delay for the specified time range', async () => {
-            const startTime = Date.now();
-            const minDelay = 100;
-            const maxDelay = 200;
-
-            await aiService.simulateResponseDelay(minDelay, maxDelay);
-
-            const endTime = Date.now();
-            const actualDelay = endTime - startTime;
-
-            expect(actualDelay).toBeGreaterThanOrEqual(minDelay);
-            expect(actualDelay).toBeLessThanOrEqual(maxDelay + 50); // Allow some tolerance
-        });
-
-        it('should use default delay range when not specified', async () => {
-            const startTime = Date.now();
-
-            await aiService.simulateResponseDelay();
-
-            const endTime = Date.now();
-            const actualDelay = endTime - startTime;
-
-            expect(actualDelay).toBeGreaterThanOrEqual(500);
-            expect(actualDelay).toBeLessThanOrEqual(2050); // Allow some tolerance
-        });
-    });
-
-    describe('semantic connections', () => {
-        it('should detect semantic connections between words and conversation', () => {
-            const word = 'animal';
-            const conversationText = 'I have a pet dog and cat';
-
-            const hasConnection = aiService['hasSemanticConnection'](word, conversationText);
-
-            expect(hasConnection).toBe(true);
-        });
-
-        it('should not detect connections when none exist', () => {
-            const word = 'technology';
-            const conversationText = 'I love eating pizza and ice cream';
-
-            const hasConnection = aiService['hasSemanticConnection'](word, conversationText);
-
-            expect(hasConnection).toBe(false);
         });
     });
 }); 

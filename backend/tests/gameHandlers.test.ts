@@ -239,6 +239,49 @@ describe('GameHandlers', () => {
             expect(decryptorSocketForTest.emit).toHaveBeenCalled();
         });
 
+        it('should handle incorrect guess from decryptor', () => {
+            // Arrange
+            const encryptorSocket = createMockSocket('encryptor');
+            const decryptorSocket = createMockSocket('decryptor');
+            const roomId = 'test-room';
+
+            // Setup room with both players
+            roomHandlers.handleJoinRoom(encryptorSocket, { roomId, playerName: 'Encryptor' });
+            roomHandlers.handleJoinRoom(decryptorSocket, { roomId, playerName: 'Decryptor' });
+
+            // Mark both players as ready
+            roomHandlers.handlePlayerReady(encryptorSocket, { roomId });
+            roomHandlers.handlePlayerReady(decryptorSocket, { roomId });
+
+            // Start game
+            gameHandlers.handleStartGame(encryptorSocket, { roomId });
+
+            // Get the actual assigned roles
+            const room = roomManager.getRoom(roomId);
+            const decryptorPlayer = room?.players.find(p => p.role === 'decryptor');
+
+            // Send a message to start conversation
+            const encryptorPlayer = room?.players.find(p => p.role === 'encryptor');
+            const encryptorSocketForTest = encryptorPlayer?.id === 'encryptor' ? encryptorSocket : decryptorSocket;
+            gameHandlers.handleSendMessage(encryptorSocketForTest, { roomId, message: 'Hello world' });
+
+            // Manually set the game state to decryptor's turn to avoid async AI response
+            if (room && room.gameState) {
+                room.gameState.currentTurn = 'decryptor';
+            }
+
+            // Make incorrect guess
+            const decryptorSocketForTest = decryptorPlayer?.id === 'decryptor' ? decryptorSocket : encryptorSocket;
+            gameHandlers.handlePlayerGuess(decryptorSocketForTest, { roomId, guess: 'wrongguess' });
+
+            // Assert - verify the guess was added to conversation history
+            expect(decryptorSocketForTest.emit).toHaveBeenCalledWith('guess_result', expect.objectContaining({
+                roomId,
+                correct: false,
+                guess: 'wrongguess'
+            }));
+        });
+
         it('should emit error when not decryptor turn', () => {
             const encryptorSocket = createMockSocket('encryptor');
             const decryptorSocket = createMockSocket('decryptor');
