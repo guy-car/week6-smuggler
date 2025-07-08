@@ -70,7 +70,7 @@ logging:
 
 ### Socket.IO Events
 
-| Event | Direction | Payload | Description |
+| Event                     | Direction       | Payload                                                                     | Description                          |
 |---------------------------|-----------------|-----------------------------------------------------------------------------|--------------------------------------|
 | `join_room`               | Client → Server | `{ roomId: string }`                                                        | Join existing room or create new one |
 | `player_ready`            | Client → Server | `{ roomId: string }`                                                        | Player marks themselves as ready     |
@@ -92,6 +92,7 @@ logging:
 | `GET /api/health`       | GET    | Health check with uptime and environment info |
 | `GET /api/ai/health`    | GET    | AI service health status                      |
 | `POST /api/ai/response` | POST   | Generate AI response (mock implementation)    |
+| `POST /api/rooms`       | POST   | Create new room and auto-join creator         |
 
 ### Data Structures
 
@@ -197,6 +198,7 @@ The `RoomManager` class handles:
 - Room cleanup for empty rooms
 - Room availability checking
 - Room listing functionality
+- HTTP room creation with auto-join
 
 ### Game State Management
 The `GameStateManager` class manages:
@@ -277,7 +279,8 @@ backend/
 │   ├── rooms/
 │   │   └── manager.ts         # Room management
 │   ├── routes/
-│   │   └── ai.ts              # AI API routes
+│   │   ├── ai.ts              # AI API routes
+│   │   └── rooms.ts           # Room creation API routes
 │   ├── types/
 │   │   └── index.ts           # TypeScript types
 │   └── utils/
@@ -340,3 +343,160 @@ backend/
 - Concurrent player count
 - AI response times
 - Error rates and types
+
+## 13. Create Room Endpoint Implementation
+
+### Overview
+New HTTP endpoint to create rooms and auto-join the creator, enabling direct room creation from frontend without WebSocket connection.
+
+### Implementation Checklist
+
+#### Backend Changes
+- [ ] **Create `src/routes/rooms.ts`**
+  - [ ] Add `POST /api/rooms` endpoint
+  - [ ] Generate random UUID for room ID
+  - [ ] Create room with empty player list
+  - [ ] Generate player ID for creator
+  - [ ] Add creator as first player in room
+  - [ ] Return room ID and player info in response
+
+- [ ] **Update `src/server.ts`**
+  - [ ] Import and register rooms routes
+  - [ ] Add route middleware for `/api/rooms`
+
+- [ ] **Update `src/rooms/manager.ts`**
+  - [ ] Add `createRoomWithPlayer()` method
+  - [ ] Handle room creation + player addition in single operation
+  - [ ] Ensure room appears in `list_rooms` immediately
+
+- [ ] **Update `src/types/index.ts`**
+  - [ ] Add `CreateRoomResponse` interface
+  - [ ] Add `CreateRoomRequest` interface (empty for now)
+
+#### Frontend Integration Guide
+
+**For Frontend Developer:**
+
+1. **Create Room Button Implementation**
+   ```javascript
+   // Make HTTP POST request to create room
+   const createRoom = async () => {
+     try {
+       const response = await fetch('/api/rooms', {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' }
+       });
+       const data = await response.json();
+       
+       if (data.success) {
+         // Redirect to room page
+         router.push(`/room/${data.roomId}`);
+       } else {
+         // Handle error
+         console.error('Failed to create room:', data.error);
+       }
+     } catch (error) {
+       console.error('Error creating room:', error);
+     }
+   };
+   ```
+
+2. **Room Page Auto-Join Implementation**
+   ```javascript
+   // On room page load (e.g., useEffect or componentDidMount)
+   const joinRoom = (roomId) => {
+     // Connect to WebSocket if not already connected
+     if (!socket.connected) {
+       socket.connect();
+     }
+     
+     // Join room using existing WebSocket event
+     socket.emit('join_room', { roomId });
+     
+     // Handle join responses
+     socket.on('room_joined', (data) => {
+       // Room joined successfully
+     });
+     
+     socket.on('room_full', () => {
+       // Redirect to homepage if room is full
+       router.push('/');
+     });
+     
+     socket.on('room_not_found', () => {
+       // Redirect to homepage if room doesn't exist
+       router.push('/');
+     });
+   };
+   ```
+
+3. **Required Routes**
+   - `/room/{roomId}` - Room page that auto-joins on load
+   - `/` - Homepage with create room button
+
+4. **Error Handling**
+   - Handle network errors during room creation
+   - Handle room full/not found scenarios
+   - Provide user feedback for all error states
+
+#### Testing
+- [ ] **Unit Tests**
+  - [ ] Test room creation endpoint
+  - [ ] Test room creation with player auto-join
+  - [ ] Test error handling (server errors, validation)
+
+- [ ] **Integration Tests**
+  - [ ] Test complete flow: create room → redirect → auto-join
+  - [ ] Test room creation from multiple clients
+  - [ ] Test room cleanup still works properly
+
+- [ ] **Frontend Integration Tests**
+  - [ ] Test create room button functionality
+  - [ ] Test room page auto-join behavior
+  - [ ] Test error scenarios and redirects
+
+#### API Specification
+
+**Endpoint:** `POST /api/rooms`
+
+**Request Body:** Empty (no parameters required)
+
+**Response:**
+```typescript
+interface CreateRoomResponse {
+  success: boolean;
+  roomId: string;
+  playerId: string;
+  message?: string;
+}
+```
+
+**Example Response:**
+```json
+{
+  "success": true,
+  "roomId": "550e8400-e29b-41d4-a716-446655440000",
+  "playerId": "player-12345"
+}
+```
+
+**Error Response:**
+```json
+{
+  "success": false,
+  "error": "Failed to create room"
+}
+```
+
+#### Flow Diagram
+```
+Frontend → POST /api/rooms → Backend creates room + player → Return roomId → Frontend redirects to /room/{roomId} → Auto-join via WebSocket
+```
+
+#### Considerations
+- Room creation and player addition happen atomically
+- Room appears in `list_rooms` immediately after creation
+- Creator automatically joins room when they land on room page
+- Existing room cleanup logic remains unchanged
+- No authentication required for room creation
+- Graceful error handling for all failure scenarios
