@@ -81,7 +81,8 @@ logging:
 | `guess_result`            | Server → Client | `{ roomId: string, correct: boolean, winner: string, score: number }`       | Guess validation result              |
 | `round_end`               | Server → Client | `{ roomId: string, score: number, gameEnded: boolean, winner: string }`     | Round completion and score update    |
 | `game_end`                | Server → Client | `{ roomId: string, winner: string, finalScore: number }`                    | Game completion                      |
-| `list_rooms`              | Client → Server | -                                                                           | Get list of available rooms          |
+| `list_rooms`              | Client → Server | -                                                                           | Request current room list (legacy)   |
+| `room_list`               | Server → Client | `{ rooms: Room[] }`                                                        | Broadcast room list to lobby clients |
 | `check_room_availability` | Client → Server | `{ roomId: string }`                                                        | Check if room exists and has space   |
 
 ### HTTP API Endpoints
@@ -159,8 +160,9 @@ interface RoleAssignment {
 5. Repeat until someone guesses correctly
 
 ### Role Assignment
-- Random assignment at game start
-- Roles switch between rounds
+- **First player to join** (room creator) → **Encryptor** for first round
+- **Second player to join** → **Decryptor** for first round
+- Roles switch between rounds (encryptor becomes decryptor, decryptor becomes encryptor)
 - Each player gets equal turns as encryptor/decryptor
 
 ### Guess Validation
@@ -199,6 +201,7 @@ The `RoomManager` class handles:
 - Room availability checking
 - Room listing functionality
 - HTTP room creation with auto-join
+- Lobby client tracking and room list broadcasting
 
 ### Game State Management
 The `GameStateManager` class manages:
@@ -213,6 +216,7 @@ The `GameStateManager` class manages:
 ### Socket Event Handlers
 - **RoomHandlers:** Manages room-related events (`join_room`, `player_ready`, etc.)
 - **GameHandlers:** Manages game-related events (`start_game`, `send_message`, `player_guess`, etc.)
+- **LobbyHandlers:** Manages lobby state and room list broadcasting
 
 ### Mock AI Service
 The `MockAIService` class provides:
@@ -349,29 +353,7 @@ backend/
 ### Overview
 New HTTP endpoint to create rooms and auto-join the creator, enabling direct room creation from frontend without WebSocket connection.
 
-### Implementation Checklist
-
 #### Backend Changes
-- [x] **Create `src/routes/rooms.ts`**
-  - [x] Add `POST /api/rooms` endpoint
-  - [x] Generate random UUID for room ID
-  - [x] Create room with empty player list
-  - [x] Generate player ID for creator
-  - [x] Add creator as first player in room
-  - [x] Return room ID and player info in response
-
-- [x] **Update `src/server.ts`**
-  - [x] Import and register rooms routes
-  - [x] Add route middleware for `/api/rooms`
-
-- [x] **Update `src/rooms/manager.ts`**
-  - [x] Add `createRoomWithPlayer()` method
-  - [x] Handle room creation + player addition in single operation
-  - [x] Ensure room appears in `list_rooms` immediately
-
-- [x] **Update `src/types/index.ts`**
-  - [x] Add `CreateRoomResponse` interface
-  - [x] Add `CreateRoomRequest` interface (empty for now)
 
 #### Frontend Integration Guide
 
@@ -401,7 +383,26 @@ New HTTP endpoint to create rooms and auto-join the creator, enabling direct roo
    };
    ```
 
-2. **Room Page Auto-Join Implementation**
+2. **Lobby Implementation**
+   ```javascript
+   // On lobby page load (e.g., useEffect or componentDidMount)
+   const enterLobby = () => {
+     // Connect to WebSocket if not already connected
+     if (!socket.connected) {
+       socket.connect();
+     }
+     
+     // Enter lobby (server will track this client as in lobby)
+     socket.emit('enter_lobby');
+     
+     // Listen for room list updates
+     socket.on('room_list', (data) => {
+       setRooms(data.rooms); // Update React state with current rooms
+     });
+   };
+   ```
+
+3. **Room Page Auto-Join Implementation**
    ```javascript
    // On room page load (e.g., useEffect or componentDidMount)
    const joinRoom = (roomId) => {
@@ -409,6 +410,9 @@ New HTTP endpoint to create rooms and auto-join the creator, enabling direct roo
      if (!socket.connected) {
        socket.connect();
      }
+     
+     // Leave lobby when entering room
+     socket.emit('leave_lobby');
      
      // Join room using existing WebSocket event
      socket.emit('join_room', { roomId });
@@ -431,8 +435,8 @@ New HTTP endpoint to create rooms and auto-join the creator, enabling direct roo
    ```
 
 3. **Required Routes**
+   - `/` - Lobby page that shows room list and create room button
    - `/room/{roomId}` - Room page that auto-joins on load
-   - `/` - Homepage with create room button
 
 4. **Error Handling**
    - Handle network errors during room creation
@@ -495,8 +499,11 @@ Frontend → POST /api/rooms → Backend creates room + player → Return roomId
 
 #### Considerations
 - Room creation and player addition happen atomically
-- Room appears in `list_rooms` immediately after creation
-- Creator automatically joins room when they land on room page
+- Room appears in `list_rooms` immediately after creation and broadcasts to lobby
+- Creator automatically joins room when they land on room page (becomes first player/Encryptor)
+- Second player to join becomes Decryptor for first round
+- Lobby clients receive real-time room list updates via `room_list` broadcasts
+- Clients track lobby vs game state to manage broadcasts appropriately
 - Existing room cleanup logic remains unchanged
 - No authentication required for room creation
 - Graceful error handling for all failure scenarios

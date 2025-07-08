@@ -5,9 +5,26 @@ export class RoomManager {
     private readonly MAX_PLAYERS_PER_ROOM = 2;
     private readonly ROOM_CLEANUP_INTERVAL = 5 * 60 * 1000; // 5 minutes
     private readonly ROOM_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+    private onRoomChange?: () => void; // Callback for room changes
 
     constructor() {
         this.startCleanupInterval();
+    }
+
+    /**
+     * Set callback for room changes (used for lobby broadcasting)
+     */
+    public setRoomChangeCallback(callback: () => void): void {
+        this.onRoomChange = callback;
+    }
+
+    /**
+     * Trigger room change callback if set
+     */
+    private triggerRoomChange(): void {
+        if (this.onRoomChange) {
+            this.onRoomChange();
+        }
     }
 
     /**
@@ -45,6 +62,9 @@ export class RoomManager {
             // Update room activity
             room.lastActivity = new Date();
 
+            // Trigger room change callback for lobby broadcasting
+            this.triggerRoomChange();
+
             return {
                 success: true,
                 roomId,
@@ -73,6 +93,10 @@ export class RoomManager {
         if (player) {
             player.ready = true;
             room.lastActivity = new Date();
+
+            // Trigger room change callback for lobby broadcasting
+            this.triggerRoomChange();
+
             return true;
         }
 
@@ -97,6 +121,9 @@ export class RoomManager {
             if (room.players.length === 0) {
                 this.rooms.delete(roomId);
             }
+
+            // Trigger room change callback for lobby broadcasting
+            this.triggerRoomChange();
 
             return true;
         }
@@ -243,6 +270,11 @@ export class RoomManager {
             this.rooms.delete(roomId);
             console.log(`Cleaned up inactive room: ${roomId}`);
         });
+
+        // Trigger room change callback if any rooms were deleted
+        if (roomsToDelete.length > 0) {
+            this.triggerRoomChange();
+        }
     }
 
     /**
@@ -275,6 +307,9 @@ export class RoomManager {
 
             // Update room activity
             room.lastActivity = new Date();
+
+            // Trigger room change callback for lobby broadcasting
+            this.triggerRoomChange();
 
             return {
                 success: true,
