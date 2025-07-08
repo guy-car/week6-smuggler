@@ -94,6 +94,7 @@ export const AnalyzeRequestSchema = z.object({
 
   /** Chronological sequence of turns */
   conversationHistory: z.array(TurnSchema)
+
     .refine(
       (turns) => {
         // Verify turns alternate correctly: outsider -> ai -> insider -> ai -> outsider -> ...
@@ -114,7 +115,6 @@ export const AnalyzeRequestSchema = z.object({
       },
       { message: "Turns must follow the pattern: outsider -> ai -> insider -> ai -> outsider" }
     )
-});
 export type AnalyzeRequest = z.infer<typeof AnalyzeRequestSchema>;
 
 /**

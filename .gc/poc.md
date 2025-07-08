@@ -110,55 +110,45 @@ const AnalyzeRequestSchema = z.object({
 ## Implementation Status
 
 ### ✅ COMPLETE
-- Server setup and integration
-- OpenAI client configuration
-- TypeScript schemas with Zod validation
-- `/api/ai/analyze` route with error handling
-- Structured output schema enforcement
-- Simplified turn-based structure
+- ✅ Server setup and integration
+- ✅ OpenAI client configuration
+- ✅ TypeScript schemas with Zod validation
+- ✅ `/api/ai/analyze` route with error handling
+- ✅ Structured output schema enforcement
+- ✅ Simplified turn-based structure
+- ✅ OpenAI service updated to new turn types
+- ✅ Removed suspicion level completely
+- ✅ Made turn numbers optional (phasing out)
+- ✅ Updated test file with realistic game scenarios
+- ✅ Route handler handles new Turn[] format and gameId
+- ✅ Removed turn sequence validation (handled by game logic)
 
 ### 🔄 IN PROGRESS
-1. Update route handlers for new turn structure
-2. Implement turn validation
-3. Test with real game scenarios
+- Brooks: Integrating updated OpenAI service into game handlers
+- Will: Implementing frontend data collection using new Turn structure
+- Brooks: Updating main game types to use Turn[] format
 
 ### 📋 NEXT STEPS
-1. Frontend team to implement data collection structure:
+1. Frontend team to implement data collection structure (simplified):
    ```typescript
    {
      gameId: string,
-     conversationHistory: [
-       {
-         type: 'outsider_hint',
-         content: string,
-         turnNumber: number
-       },
-       {
-         type: 'ai_analysis',
-         thinking: string[4],
-         guess: string,
-         turnNumber: number
-       },
-       {
-         type: 'insider_guess',
-         guess: string,
-         turnNumber: number
-       }
-     ]
+     conversationHistory: Turn[]  // Array of turns, sequence managed by game logic
    }
    ```
 
 2. Frontend Responsibilities:
    - Word validation (3-12 chars, lowercase)
    - Track failed guesses in history
-   - Maintain turn sequence
+   - Follow game handler's turn sequence
    - Handle game end conditions
 
-3. Backend Tasks:
-   - Update route handlers
-   - Implement turn validation
-   - Add integration tests
-   - Test real game scenarios
+3. Backend Tasks (for Brooks):
+   - Update game handlers to use real OpenAI service
+   - Convert game state to use Turn[] format  
+   - Implement turn sequence logic in game handlers
+   - Update role mapping: encryptor→outsider, decryptor→insider
+   - Remove complex game state persistence
 
 ### Example Game Flow
 ```javascript
