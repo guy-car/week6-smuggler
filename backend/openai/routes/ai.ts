@@ -10,7 +10,7 @@ router.post('/analyze', async (req, res) => {
 
   try {
     // Validate request body
-    const { gameId, conversationHistory } = AnalyzeRequestSchema.parse(req.body);
+    const { conversationHistory } = AnalyzeRequestSchema.parse(req.body);
 
     // Get AI analysis
     const aiResponse = await openAIService.analyzeConversation(conversationHistory);
@@ -25,7 +25,7 @@ router.post('/analyze', async (req, res) => {
       }
     });
 
-    return res.json(validatedResponse);
+    return res.json(response);
 
   } catch (error: unknown) {
     // Handle Zod validation errors
