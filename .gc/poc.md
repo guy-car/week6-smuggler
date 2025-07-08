@@ -11,17 +11,19 @@
 
 ## Server Architecture
 
-### Separation Strategy
-- **Game Server** (Port 3001): WebSocket, rooms, game state, validation (Brooks working on src/server.ts)
-- **AI Server** (Port 3002): OpenAI integration, prompt engineering, structured responses (backend/openai/)
-- **Communication**: Game server makes HTTP calls to AI server
-- **Merge Conflict Avoidance**: Completely separate backend/openai/ folder for AI server
+### Integrated Modular Strategy
+- **Single Server** (Port 3001): WebSocket, rooms, game state, validation + AI integration
+- **AI Module** (backend/openai/): OpenAI integration, prompt engineering, structured responses 
+- **Communication**: Direct function calls (no HTTP overhead)
+- **Merge Conflict Avoidance**: AI module exports setupOpenAiRoute() function for main server integration
+- **Development Benefits**: Faster responses, simpler deployment, one process to manage
+- **Standalone Option**: AI module can still run independently via `npm run dev` for testing
 
 ---
 
 ## Core Requirements
 
-### 1. Single API Endpoint
+### 1. Single API Endpoint ✅
 ```
 POST /api/ai/analyze
 Content-Type: application/json
@@ -29,7 +31,7 @@ Body: { conversationHistory: Message[] }
 Response: { thinking: string[], guess: string }
 ```
 
-### 2. TypeScript Schemas
+### 2. TypeScript Schemas ✅
 ```typescript
 // Using Zod for runtime schema validation
 import { z } from 'zod';
@@ -85,19 +87,47 @@ const AIResponseSchema = z.object({
 
 ### Must Have (Tomorrow EOD)
 - [x] Express server setup with TypeScript ✅ COMPLETE
-- [ ] OpenAI client configuration with API key
-- [ ] TypeScript schemas (Message, AIResponse types)
-- [ ] `/api/ai/analyze` route with proper error handling
-- [ ] Structured output schema enforcement
-- [ ] System prompt that produces consistent results
+- [x] OpenAI client configuration with API key ✅ COMPLETE
+- [x] TypeScript schemas (Message, AIResponse types) ✅ COMPLETE
+  - Added Zod validation
+  - Implemented suspicion level tracking
+  - Updated role terminology (insider/outsider)
+- [x] `/api/ai/analyze` route with proper error handling ✅ COMPLETE
+- [x] Structured output schema enforcement ✅ COMPLETE
+- [x] System prompt that produces consistent results ✅ COMPLETE
+  - AI monitoring oil rig communications
+  - Tracking conversation authenticity
+  - Word domain defined
 - [ ] Postman-testable endpoint with mock data
+- [ ] Turn-based context structure implementation (planned but not yet executed)
 
 ### Nice to Have (Post-POC)
-- [ ] Request validation middleware
+- [x] Request validation middleware ✅ COMPLETE (via Zod schemas)
 - [ ] Rate limiting for OpenAI calls
 - [ ] Logging for debugging
-- [ ] Health check endpoint
-- [ ] CORS configuration for frontend integration
+- [x] Health check endpoint ✅ COMPLETE
+- [x] CORS configuration for frontend integration ✅ COMPLETE
+
+---
+
+## Current Status & Next Steps
+
+### ✅ COMPLETE - POC is 90% Ready
+- **Server Integration**: AI module successfully integrated into main server
+- **OpenAI Service**: Full implementation with GPT-4, function calling, error handling
+- **API Endpoint**: `/api/ai/analyze` accepts requests and returns structured responses
+- **Schema Validation**: Zod schemas enforce input/output compliance
+- **Immersive Prompt**: Detailed 2070 AI monitoring scenario with suspicion levels
+- **Dependencies**: Both backend environments properly configured
+
+### 🔄 REMAINING FOR MVP
+1. **Testing**: Validate endpoint with Postman using mock conversation data
+2. **Turn-based Context**: Implement `ContextAddition` schema for better conversation tracking (optional for POC)
+
+### 📋 Immediate Action Items
+- [ ] Test `/api/ai/analyze` endpoint with mock data
+- [ ] Validate response format matches expectations
+- [ ] Document any issues or prompt refinements needed
 
 ---
 
@@ -145,20 +175,18 @@ const mockConversation = [
 ## File Structure
 ```
 backend/
-├── openai/                # Separate server to avoid merge conflicts
-│   ├── index.ts           # Express server setup (Port 3002)
+├── openai/                # AI module integrated into main server
+│   ├── index.ts           # setupOpenAiRoute() export + standalone server option
 │   ├── routes/
 │   │   └── ai.ts          # /api/ai/analyze route
 │   ├── services/
 │   │   └── openai.ts      # OpenAI client and prompt logic
 │   ├── types/
 │   │   └── game.ts        # Message and AIResponse schemas
-│   ├── utils/
-│   │   └── validation.ts  # Request validation helpers
 │   ├── package.json
 │   └── tsconfig.json
 ├── src/
-│   └── server.ts          # Brooks's main game server (Port 3001)
+│   └── server.ts          # Main game server (Port 3001) + AI integration
 ```
 
 ---
@@ -175,24 +203,25 @@ backend/
 
 ## Integration Handoff
 
-### For Teammate's Game Server
+### For Teammate's Game Server Integration
 ```javascript
-// Simple integration - just one HTTP call needed
+// AI integration is now handled automatically via setupOpenAiRoute()
+// Game logic can make direct calls to AI endpoints:
 const getAIResponse = async (conversationHistory) => {
-  const response = await fetch('http://localhost:3002/api/ai/analyze', {
+  const response = await fetch('http://localhost:3001/api/ai/analyze', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ conversationHistory })
   });
-  return response.json(); // { thinking: string[], guess: string }
+  return response.json(); // { thinking: string[], guess: string, suspicionLevel: number }
 };
 ```
 
 ### Environment Setup
-- AI server runs on port 3002 (separate from Brooks's server on 3001)
+- Single integrated server runs on port 3001 
 - Requires OPENAI_API_KEY in root .env (already configured)
-- No other dependencies on game server
-- Completely isolated development to avoid merge conflicts
+- AI module integrated via setupOpenAiRoute() function
+- AI development remains isolated in backend/openai/ folder
 
 ---
 

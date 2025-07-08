@@ -3,8 +3,8 @@ import dotenv from 'dotenv';
 import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+import { setupOpenAiRoute } from '../openai';
 import { RoomManager } from './rooms/manager';
-import aiRoutes from './routes/ai';
 import { GameHandlers } from './socket/handlers/gameHandlers';
 import { RoomHandlers } from './socket/handlers/roomHandlers';
 
@@ -31,8 +31,8 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
-// Mount AI routes
-app.use('/api/ai', aiRoutes);
+// Setup OpenAI routes (integrated from openai module)
+setupOpenAiRoute(app);
 
 // Error handling middleware
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
