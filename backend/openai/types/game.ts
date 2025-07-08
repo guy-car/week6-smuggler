@@ -94,24 +94,6 @@ export const AnalyzeRequestSchema = z.object({
   
   /** Chronological sequence of turns */
   conversationHistory: z.array(TurnSchema)
-    .refine(
-      (turns) => {
-        // Verify turns alternate correctly: outsider -> ai -> insider -> ai -> outsider -> ...
-        return turns.every((turn, idx) => {
-          if (idx === 0) return turn.type === 'outsider_hint';
-          const prevType = turns[idx - 1].type;
-          switch (turn.type) {
-            case 'outsider_hint':
-              return prevType === 'ai_analysis';
-            case 'ai_analysis':
-              return prevType === 'outsider_hint' || prevType === 'insider_guess';
-            case 'insider_guess':
-              return prevType === 'ai_analysis';
-          }
-        });
-      },
-      { message: "Turns must follow the pattern: outsider -> ai -> insider -> ai -> outsider" }
-    )
 });
 export type AnalyzeRequest = z.infer<typeof AnalyzeRequestSchema>;
 
