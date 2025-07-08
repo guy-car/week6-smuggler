@@ -9,17 +9,17 @@ import { useGameStore } from '../store/gameStore';
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
 export default function DecrypterScreen() {
-  const { 
-    connected, 
-    roomId, 
-    players, 
-    gameStatus, 
-    role, 
-    round, 
+  const {
+    connected,
+    roomId,
+    players,
+    gameStatus,
+    role,
+    round,
     score,
     messages
   } = useGameStore();
-  
+
   const [modalVisible, setModalVisible] = useState(false);
   const [hasOpenedMessage, setHasOpenedMessage] = useState(false);
   const [localMessages, setLocalMessages] = useState<string[]>([]);
@@ -73,8 +73,8 @@ export default function DecrypterScreen() {
       'Are you sure you want to leave this room?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Leave', 
+        {
+          text: 'Leave',
           style: 'destructive',
           onPress: () => {
             leaveRoom();
@@ -120,8 +120,8 @@ export default function DecrypterScreen() {
         <View style={styles.topLeftControls} pointerEvents="box-none">
           {gameStatus === 'waiting' && (
             <>
-              <TouchableOpacity 
-                style={[styles.button, isCurrentPlayerReady() ? styles.stopButton : styles.startButton]} 
+              <TouchableOpacity
+                style={[styles.button, isCurrentPlayerReady() ? styles.stopButton : styles.startButton]}
                 onPress={isCurrentPlayerReady() ? handleNotReady : handleReady}
               >
                 <Text style={styles.buttonText}>
@@ -130,10 +130,10 @@ export default function DecrypterScreen() {
               </TouchableOpacity>
             </>
           )}
-          
+
           {gameStatus === 'active' && role === 'decryptor' && (
-            <TouchableOpacity 
-              style={styles.openMessageButton} 
+            <TouchableOpacity
+              style={styles.openMessageButton}
               onPress={openMessage}
             >
               <Text style={styles.openMessageButtonText}>Open Message</Text>
@@ -192,7 +192,7 @@ export default function DecrypterScreen() {
           onClose={closeModal}
           message="Decrypt the code! Enter your guess or clues below."
         />
-        
+
         {!modalVisible && hasOpenedMessage && gameStatus === 'active' && role === 'decryptor' && (
           <View style={styles.inputSubmitWrapper}>
             <InputSubmit

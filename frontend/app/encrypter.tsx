@@ -9,18 +9,18 @@ import { useGameStore } from '../store/gameStore';
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
 export default function EncrypterScreen() {
-  const { 
-    connected, 
-    roomId, 
-    players, 
-    gameStatus, 
-    role, 
-    round, 
+  const {
+    connected,
+    roomId,
+    players,
+    gameStatus,
+    role,
+    round,
     score,
     messages,
     setMessages
   } = useGameStore();
-  
+
   const [modalVisible, setModalVisible] = useState(false);
   const [hasOpenedMessage, setHasOpenedMessage] = useState(false);
   const [localMessages, setLocalMessages] = useState<string[]>([]);
@@ -83,8 +83,8 @@ export default function EncrypterScreen() {
       'Are you sure you want to leave this room?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Leave', 
+        {
+          text: 'Leave',
           style: 'destructive',
           onPress: () => {
             leaveRoom();
@@ -109,7 +109,7 @@ export default function EncrypterScreen() {
   };
 
   console.log('Encrypter: rendering with modalVisible:', modalVisible, 'hasOpenedMessage:', hasOpenedMessage);
-  
+
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
@@ -132,8 +132,8 @@ export default function EncrypterScreen() {
         <View style={styles.topLeftControls} pointerEvents="box-none">
           {gameStatus === 'waiting' && (
             <>
-              <TouchableOpacity 
-                style={[styles.button, isCurrentPlayerReady() ? styles.stopButton : styles.startButton]} 
+              <TouchableOpacity
+                style={[styles.button, isCurrentPlayerReady() ? styles.stopButton : styles.startButton]}
                 onPress={isCurrentPlayerReady() ? handleNotReady : handleReady}
               >
                 <Text style={styles.buttonText}>
@@ -142,10 +142,10 @@ export default function EncrypterScreen() {
               </TouchableOpacity>
             </>
           )}
-          
+
           {gameStatus === 'active' && role === 'encryptor' && (
-            <TouchableOpacity 
-              style={styles.openMessageButton} 
+            <TouchableOpacity
+              style={styles.openMessageButton}
               onPress={openMessage}
             >
               <Text style={styles.openMessageButtonText}>Open Message</Text>
@@ -204,7 +204,7 @@ export default function EncrypterScreen() {
           onClose={closeModal}
           message="Finally, another human I can trust. Your message is DOG. Handle it with care."
         />
-        
+
         {!modalVisible && hasOpenedMessage && gameStatus === 'active' && role === 'encryptor' && (
           <View style={styles.inputSubmitWrapper}>
             <InputSubmit

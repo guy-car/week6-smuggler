@@ -34,13 +34,13 @@ export function getSocket() {
       console.log('[WebSocket] Join room success:', data.roomId);
       useGameStore.getState().setRoomId(data.roomId);
       useGameStore.getState().setPlayers(data.players);
-      
+
       // Set temporary role based on player order for immediate navigation
       const currentPlayerId = data.playerId;
       const playerIndex = data.players.findIndex(p => p.id === currentPlayerId);
       const temporaryRole = playerIndex === 0 ? 'encryptor' : 'decryptor';
       useGameStore.getState().setRole(temporaryRole);
-      
+
       // Set player info
       useGameStore.getState().setPlayer({
         id: data.playerId,
@@ -73,7 +73,7 @@ export function getSocket() {
     socket.on('room:playerReady', (data: { playerId: string; ready: boolean }) => {
       console.log('[WebSocket] Player ready:', data.playerId, data.ready);
       const currentPlayers = useGameStore.getState().players;
-      const updatedPlayers = currentPlayers.map(p => 
+      const updatedPlayers = currentPlayers.map(p =>
         p.id === data.playerId ? { ...p, ready: data.ready } : p
       );
       useGameStore.getState().setPlayers(updatedPlayers);
@@ -89,7 +89,7 @@ export function getSocket() {
       console.log('[WebSocket] Game started:', data);
       useGameStore.getState().setGameStatus('active');
       useGameStore.getState().setPlayers(data.players);
-      
+
       // Set current player's actual role from backend
       const currentPlayer = useGameStore.getState().player;
       if (currentPlayer && data.roles[currentPlayer.id]) {
@@ -101,7 +101,7 @@ export function getSocket() {
       console.log('[WebSocket] Game started:', data);
       useGameStore.getState().setGameStatus('active');
       useGameStore.getState().setPlayers(data.players);
-      
+
       // Set current player's role
       const currentPlayer = useGameStore.getState().player;
       if (currentPlayer && data.roles[currentPlayer.id]) {
@@ -112,7 +112,7 @@ export function getSocket() {
     socket.on('game:ended', (data: { scores: any }) => {
       console.log('[WebSocket] Game ended:', data);
       useGameStore.getState().setGameStatus('ended');
-      
+
       // Update player scores
       const currentPlayer = useGameStore.getState().player;
       if (currentPlayer && data.scores[currentPlayer.id]) {
@@ -129,7 +129,7 @@ export function getSocket() {
     socket.on('game:roundEnd', (data: { round: number; scores: any }) => {
       console.log('[WebSocket] Round end:', data);
       useGameStore.getState().setRound(data.round);
-      
+
       // Update scores
       const currentPlayer = useGameStore.getState().player;
       if (currentPlayer && data.scores[currentPlayer.id]) {

@@ -5,21 +5,21 @@ import { createRoom, getAvailableRooms, getSocket, joinRoom } from '../services/
 import { useGameStore } from '../store/gameStore';
 
 export default function HomeScreen() {
-  const { 
-    connected, 
-    availableRooms, 
-    roomId, 
+  const {
+    connected,
+    availableRooms,
+    roomId,
     role,
-    setAvailableRooms 
+    setAvailableRooms
   } = useGameStore();
-  
+
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     // Initialize socket connection
     getSocket();
-    
+
     // Load available rooms
     loadRooms();
   }, []);
@@ -87,7 +87,7 @@ export default function HomeScreen() {
   };
 
   const renderRoom = ({ item }: { item: any }) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={styles.roomItem}
       onPress={() => handleJoinRoom(item.id)}
       disabled={loading}
@@ -102,7 +102,7 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Smuggler</Text>
-      
+
       <View style={styles.statusContainer}>
         <View style={[styles.statusDot, { backgroundColor: connected ? '#4CAF50' : '#F44336' }]} />
         <Text style={styles.statusText}>
@@ -111,8 +111,8 @@ export default function HomeScreen() {
       </View>
 
       <View style={styles.buttonContainer}>
-        <TouchableOpacity 
-          style={[styles.button, styles.createButton]} 
+        <TouchableOpacity
+          style={[styles.button, styles.createButton]}
           onPress={handleCreateRoom}
           disabled={loading || !connected}
         >
@@ -126,7 +126,7 @@ export default function HomeScreen() {
 
       <View style={styles.roomsContainer}>
         <Text style={styles.sectionTitle}>Available Rooms</Text>
-        
+
         {loading && availableRooms.length === 0 ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#007AFF" />
