@@ -5,7 +5,6 @@
 - **Team**: 3 developers working in parallel
 - **Your Role**: AI integration specialist (isolated AI server)
 - **Development Tool**: Cursor IDE
-- **Story Theme**: Agents passing exploit codes through domestic conversation while AI eavesdrops
 
 ---
 
@@ -15,9 +14,7 @@
 - **Single Server** (Port 3001): WebSocket, rooms, game state, validation + AI integration
 - **AI Module** (backend/openai/): OpenAI integration, prompt engineering, structured responses 
 - **Communication**: Direct function calls (no HTTP overhead)
-- **Merge Conflict Avoidance**: AI module exports setupOpenAiRoute() function for main server integration
 - **Development Benefits**: Faster responses, simpler deployment, one process to manage
-- **Standalone Option**: AI module can still run independently via `npm run dev` for testing
 
 ---
 
@@ -27,210 +24,167 @@
 ```
 POST /api/ai/analyze
 Content-Type: application/json
-Body: { conversationHistory: Message[] }
+Body: { gameId: string, conversationHistory: Turn[] }
 Response: { thinking: string[], guess: string }
 ```
 
 ### 2. TypeScript Schemas ✅
 ```typescript
-// Using Zod for runtime schema validation and JSDoc for IDE documentation
+// Using Zod for runtime schema validation
 import { z } from 'zod';
 
-/**
- * A single turn in the conversation.
- * Each turn represents a complete action by one participant.
- * 
- * Turn Completion Rules:
- * - Outsider turn: Complete when they send their message
- * - AI turn: Complete when we have thinking, guess, AND suspicion level
- * - Insider turn: Complete when:
- *   1. They make a guess
- *   2. If wrong, they must also send a message
- *   3. If correct, game ends (no message needed)
- */
-const TurnSchema = z.object({
-  turnNumber: z.number().min(1),
-  timestamp: z.date(),
-  context: z.discriminatedUnion('type', [
-    // Outsider messages (oil rig worker)
-    z.object({
-      type: z.literal('outsider'),
-      message: z.string()
-    }),
-    
-    // Insider messages (worker's wife)
-    z.object({
-      type: z.literal('insider'),
-      message: z.string()
-    }),
-    
-    // AI analysis with structured data
-    z.object({
-      type: z.literal('ai'),
-      thinking: z.array(z.string()).length(4),
-      guess: z.string().max(12),
-      suspicionLevel: z.number().min(0).max(100)
-    })
-  ])
+const TurnTypeSchema = z.enum(['outsider_hint', 'ai_analysis', 'insider_guess']);
+
+// Outsider's hint
+const OutsiderTurnSchema = z.object({
+  type: z.literal('outsider_hint'),
+  content: z.string(),
+  turnNumber: z.number().int().positive()
+});
+
+// AI's analysis
+const AITurnSchema = z.object({
+  type: z.literal('ai_analysis'),
+  thinking: z.array(z.string()).length(4),
+  guess: z.string().min(3).max(12),
+  turnNumber: z.number().int().positive()
+});
+
+// Insider's guess (only failed guesses appear in history)
+const InsiderTurnSchema = z.object({
+  type: z.literal('insider_guess'),
+  guess: z.string().min(3).max(12),
+  turnNumber: z.number().int().positive()
 });
 
 // Request schema with turn validation
 const AnalyzeRequestSchema = z.object({
-  turns: z.array(TurnSchema)
-    .refine(turns => turns.every((t, i) => t.turnNumber === i + 1)),
-  currentTurn: z.number().min(1)
-}).refine(data => data.currentTurn === data.turns.length);
+  gameId: z.string(),
+  conversationHistory: z.array(z.discriminatedUnion('type', [
+    OutsiderTurnSchema,
+    AITurnSchema,
+    InsiderTurnSchema
+  ]))
+  .refine(
+    turns => turns.every((turn, idx) => turn.turnNumber === idx + 1),
+    { message: "Turn numbers must be sequential starting from 1" }
+  )
+  .refine(
+    turns => {
+      // Verify turns alternate correctly: outsider -> ai -> insider -> ai -> outsider
+      return turns.every((turn, idx) => {
+        if (idx === 0) return turn.type === 'outsider_hint';
+        const prevType = turns[idx - 1].type;
+        switch (turn.type) {
+          case 'outsider_hint':
+            return prevType === 'ai_analysis';
+          case 'ai_analysis':
+            return prevType === 'outsider_hint' || prevType === 'insider_guess';
+          case 'insider_guess':
+            return prevType === 'ai_analysis';
+        }
+      });
+    },
+    { message: "Turns must follow pattern: outsider -> ai -> insider -> ai -> outsider" }
+  )
+});
 ```
 
 ### 3. OpenAI Integration
 - **Model**: gpt-4
 - **Method**: Structured outputs (function calling)
-- **Context**: System prompt + chronological turn sequence
+- **Context**: All conversation history as single user message
 - **Response**: Guaranteed schema compliance via Zod validation
-- **Turn Management**: Clear rules for when each turn is complete
 
-### 4. Turn Completion Rules
-- **Outsider Turn**: Complete when message is sent
-- **AI Turn**: Complete when all three outputs are generated:
-  1. Thinking process (4 sentences)
-  2. Word guess
-  3. Suspicion level
-- **Insider Turn**: Complete after:
-  1. Making a guess
-  2. If wrong → must send message
-  3. If correct → game ends (no message needed)
+### 4. Game Flow
+1. **Outsider Turn**: Sends hint
+2. **AI Turn**: Analyzes and guesses
+   - If correct → Game Over
+   - If incorrect → Continue
+3. **Insider Turn**: Makes guess
+   - If correct → Game Over
+   - If incorrect → Guess added to history
+4. Loop back to Outsider Turn
 
 ---
 
-## Prompt Engineering Requirements
+## Implementation Status
 
-### System Prompt Elements
-1. **Character**: "You are an AI system monitoring communications on a futuristic oil rig, trying to detect if agents are passing secret exploit codes"
-2. **Objective**: 
-   - Analyze conversation to detect the secret word/code being transmitted
-   - Monitor conversation authenticity (genuine domestic chat vs coded messages)
-3. **Constraints**: 
-   - Output exactly 4 thinking sentences
-   - Each sentence max 12 words
-   - Final guess must be single word, max 12 characters
-   - Suspicion level (0-100) based on conversation authenticity
-4. **Context**: Two agents posing as a married couple are trying to communicate exploit codes through domestic conversation
-5. **Word Domain**: Everyday, reasonable words that people could guess - not overly technical terms
+### ✅ COMPLETE
+- Server setup and integration
+- OpenAI client configuration
+- TypeScript schemas with Zod validation
+- `/api/ai/analyze` route with error handling
+- Structured output schema enforcement
+- Simplified turn-based structure
 
-### Context Management
-- **Never include**: The actual secret word
-- **Always include**: Full conversation history (human messages + AI previous guesses)
-- **Format**: JSON array of Message objects sent as user input
-- **Suspicion Tracking**: Monitor how natural vs suspicious the conversation feels
+### 🔄 IN PROGRESS
+1. Update route handlers for new turn structure
+2. Implement turn validation
+3. Test with real game scenarios
 
----
+### 📋 NEXT STEPS
+1. Frontend team to implement data collection structure:
+   ```typescript
+   {
+     gameId: string,
+     conversationHistory: [
+       {
+         type: 'outsider_hint',
+         content: string,
+         turnNumber: number
+       },
+       {
+         type: 'ai_analysis',
+         thinking: string[4],
+         guess: string,
+         turnNumber: number
+       },
+       {
+         type: 'insider_guess',
+         guess: string,
+         turnNumber: number
+       }
+     ]
+   }
+   ```
 
-## Implementation Goals for POC
+2. Frontend Responsibilities:
+   - Word validation (3-12 chars, lowercase)
+   - Track failed guesses in history
+   - Maintain turn sequence
+   - Handle game end conditions
 
-### Must Have (Tomorrow EOD)
-- [x] Express server setup with TypeScript ✅ COMPLETE
-- [x] OpenAI client configuration with API key ✅ COMPLETE
-- [x] TypeScript schemas (Message, AIResponse types) ✅ COMPLETE
-  - Added Zod validation
-  - Implemented suspicion level tracking
-  - Updated role terminology (insider/outsider)
-- [x] `/api/ai/analyze` route with proper error handling ✅ COMPLETE
-- [x] Structured output schema enforcement ✅ COMPLETE
-- [x] System prompt that produces consistent results ✅ COMPLETE
-  - AI monitoring oil rig communications
-  - Tracking conversation authenticity
-  - Word domain defined
-- [ ] Postman-testable endpoint with mock data
-- [ ] Turn-based context structure implementation (planned but not yet executed)
+3. Backend Tasks:
+   - Update route handlers
+   - Implement turn validation
+   - Add integration tests
+   - Test real game scenarios
 
-### Nice to Have (Post-POC)
-- [x] Request validation middleware ✅ COMPLETE (via Zod schemas)
-- [ ] Rate limiting for OpenAI calls
-- [ ] Logging for debugging
-- [x] Health check endpoint ✅ COMPLETE
-- [x] CORS configuration for frontend integration ✅ COMPLETE
-
----
-
-## Current Status & Next Steps
-
-### ✅ COMPLETE - Architecture & Integration
-- **Server Integration**: AI module successfully integrated into main server
-- **API Endpoint Structure**: `/api/ai/analyze` route exists with proper error handling
-- **Schema Definitions**: Zod schemas defined for input/output validation
-- **Immersive Prompt**: Detailed 2070 AI monitoring scenario with suspicion levels
-- **Dependencies**: Both backend environments properly configured
-
-### 🔄 CRITICAL ISSUES IDENTIFIED
-1. ✅ **Context Management**: Replaced regex parsing with simplified turn-based structure
-2. ✅ **Response Format**: Enforcing lowercase everyday words via function calling schema
-
-### 📋 IMMEDIATE FIXES REQUIRED
-- [X] **Update OpenAI Service**: Migrated to structured outputs with `strict: true`
-- [X] **Fix Model**: Changed to `gpt-4` (removed 'o' suffix as it's not standard)
-- [X] **Remove Unused Imports**: Cleaned up server.ts imports
-- [X] **Environment Setup**: Fixed dotenv configuration for OpenAI API key
-- [X] **Test Real API Calls**: Validated endpoint with actual OpenAI integration
-- [X] **Word Constraints**: Added 3-12 char lowercase word requirements to prompt
-- [X] **Fix Context Management**: Implemented simplified turn-based structure with clear labeling
-
-### 🎯 POC STATUS: 95% COMPLETE - CORE FUNCTIONALITY VALIDATED
-The architecture is solid, OpenAI integration is working perfectly with proper word constraints, and all test scenarios pass successfully. Context management has been simplified and improved:
-
-1. **Simplified Message Handling**:
-   - All conversation history sent as single user message
-   - Clear [WORKER], [SPOUSE], [ANALYSIS] labels
-   - Removed complex role mapping system
-   - Structured AI analysis format
-
-2. **Remaining Tasks**:
-   - Update route handlers for new turn structure
-   - Implement turn validation in practice
-   - Test with real game scenarios
-
-### Testing Strategy
-
-### Mock Data for Development
+### Example Game Flow
 ```javascript
-// Test conversation history using new turn-based structure
-const mockTurns = [
+// Example conversation history
+const mockHistory = [
   { 
-    turnNumber: 1,
-    timestamp: new Date(),
-    context: { 
-      type: 'outsider', 
-      message: 'I love this red fruit' 
-    }
+    type: 'outsider_hint',
+    content: 'It grows in gardens',
+    turnNumber: 1
   },
   {
-    turnNumber: 2,
-    timestamp: new Date(),
-    context: {
-      type: 'ai',
-      thinking: [
-        "Message appears casual but specific about fruit.",
-        "Red fruit could be code for sensitive data.",
-        "Previous patterns suggest intentional word choice.",
-        "Communication style matches normal but content suspicious."
-      ],
-      guess: "apple",
-      suspicionLevel: 40
-    }
+    type: 'ai_analysis',
+    thinking: [
+      "Message mentions garden environment.",
+      "Could be a plant or vegetable.",
+      "Common garden items are good candidates.",
+      "Previous hints suggest edible item."
+    ],
+    guess: "tomato",
+    turnNumber: 2
   },
   {
-    turnNumber: 3,
-    timestamp: new Date(),
-    context: {
-      type: 'insider',
-      message: 'Is it round and crunchy?'
-    }
+    type: 'insider_guess',
+    guess: "carrot",
+    turnNumber: 3
   }
 ];
-```
-
-This gets sent to OpenAI as:
-```
-[WORKER] I love this red fruit
-[ANALYSIS] Thinking: Message appears casual but specific about fruit. Red fruit could be code for sensitive data. Previous patterns suggest intentional word choice. Communication style matches normal but content suspicious. | Guess: apple | Suspicion: 40%
-[SPOUSE] Is it round and crunchy?
 ```
