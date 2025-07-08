@@ -16,8 +16,32 @@ export class RoomHandlers {
         try {
             const { roomId, playerName } = data;
 
+            // Validate data types
+            if (typeof roomId !== 'string' || typeof playerName !== 'string') {
+                socket.emit('error', { message: 'Room ID and player name must be strings' });
+                return;
+            }
+
             if (!roomId || !playerName) {
                 socket.emit('error', { message: 'Room ID and player name are required' });
+                return;
+            }
+
+            // Validate roomId format (should be alphanumeric and reasonable length)
+            if (!/^[a-zA-Z0-9_-]{1,50}$/.test(roomId)) {
+                socket.emit('join_room_error', {
+                    roomId,
+                    error: 'Invalid room ID format'
+                });
+                return;
+            }
+
+            // Validate player name length (allow reasonable length but not too long)
+            if (playerName.length > 100) {
+                socket.emit('join_room_error', {
+                    roomId,
+                    error: 'Player name too long (max 100 characters)'
+                });
                 return;
             }
 

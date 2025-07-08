@@ -35,8 +35,7 @@ app.use(express.json());
 app.use('/api/ai', aiRoutes);
 
 // Error handling middleware
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
     console.error('Error:', err.message);
     res.status(500).json({
         error: 'Internal Server Error',
@@ -45,14 +44,12 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
 });
 
 // Basic route
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-app.get('/', (req: express.Request, res: express.Response) => {
+app.get('/', (_req: express.Request, res: express.Response) => {
     res.json({ message: 'Smuggler Backend API is running!' });
 });
 
 // Health check route
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-app.get('/api/health', (req: express.Request, res: express.Response) => {
+app.get('/api/health', (_req: express.Request, res: express.Response) => {
     res.json({
         status: 'OK',
         timestamp: new Date().toISOString(),
