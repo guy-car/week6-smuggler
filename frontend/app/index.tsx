@@ -7,7 +7,7 @@ export default function HomeScreen() {
       <Text style={styles.title}>Smuggler</Text>
       
       <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.button} onPress={() => console.log('Join Game pressed')}>
+        <TouchableOpacity style={styles.button} onPress={() => router.push('/decrypter')}>
           <Text style={styles.buttonText}>Join Existing Game</Text>
         </TouchableOpacity>
         
