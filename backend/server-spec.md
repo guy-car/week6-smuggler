@@ -352,26 +352,26 @@ New HTTP endpoint to create rooms and auto-join the creator, enabling direct roo
 ### Implementation Checklist
 
 #### Backend Changes
-- [ ] **Create `src/routes/rooms.ts`**
-  - [ ] Add `POST /api/rooms` endpoint
-  - [ ] Generate random UUID for room ID
-  - [ ] Create room with empty player list
-  - [ ] Generate player ID for creator
-  - [ ] Add creator as first player in room
-  - [ ] Return room ID and player info in response
+- [x] **Create `src/routes/rooms.ts`**
+  - [x] Add `POST /api/rooms` endpoint
+  - [x] Generate random UUID for room ID
+  - [x] Create room with empty player list
+  - [x] Generate player ID for creator
+  - [x] Add creator as first player in room
+  - [x] Return room ID and player info in response
 
-- [ ] **Update `src/server.ts`**
-  - [ ] Import and register rooms routes
-  - [ ] Add route middleware for `/api/rooms`
+- [x] **Update `src/server.ts`**
+  - [x] Import and register rooms routes
+  - [x] Add route middleware for `/api/rooms`
 
-- [ ] **Update `src/rooms/manager.ts`**
-  - [ ] Add `createRoomWithPlayer()` method
-  - [ ] Handle room creation + player addition in single operation
-  - [ ] Ensure room appears in `list_rooms` immediately
+- [x] **Update `src/rooms/manager.ts`**
+  - [x] Add `createRoomWithPlayer()` method
+  - [x] Handle room creation + player addition in single operation
+  - [x] Ensure room appears in `list_rooms` immediately
 
-- [ ] **Update `src/types/index.ts`**
-  - [ ] Add `CreateRoomResponse` interface
-  - [ ] Add `CreateRoomRequest` interface (empty for now)
+- [x] **Update `src/types/index.ts`**
+  - [x] Add `CreateRoomResponse` interface
+  - [x] Add `CreateRoomRequest` interface (empty for now)
 
 #### Frontend Integration Guide
 
@@ -440,10 +440,10 @@ New HTTP endpoint to create rooms and auto-join the creator, enabling direct roo
    - Provide user feedback for all error states
 
 #### Testing
-- [ ] **Unit Tests**
-  - [ ] Test room creation endpoint
-  - [ ] Test room creation with player auto-join
-  - [ ] Test error handling (server errors, validation)
+- [x] **Unit Tests**
+  - [x] Test room creation endpoint
+  - [x] Test room creation with player auto-join
+  - [x] Test error handling (server errors, validation)
 
 - [ ] **Integration Tests**
   - [ ] Test complete flow: create room → redirect → auto-join

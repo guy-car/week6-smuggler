@@ -5,6 +5,7 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { RoomManager } from './rooms/manager';
 import aiRoutes from './routes/ai';
+import roomsRoutes from './routes/rooms';
 import { GameHandlers } from './socket/handlers/gameHandlers';
 import { RoomHandlers } from './socket/handlers/roomHandlers';
 
@@ -33,6 +34,9 @@ app.use(express.json());
 
 // Mount AI routes
 app.use('/api/ai', aiRoutes);
+
+// Mount rooms routes
+app.use('/api/rooms', roomsRoutes);
 
 // Error handling middleware
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
