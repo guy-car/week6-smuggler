@@ -118,43 +118,9 @@ interface GameState {
   score: number;
   currentRound: number;
   secretWord: string;
-  conversationHistory: Turn[];  // Unified array using Turn union types
+  conversationHistory: Turn[];  // Updated to use Turn[] instead of Message[]
   currentTurn: 'encryptor' | 'ai' | 'decryptor';
   gameStatus: 'waiting' | 'active' | 'ended';
-}
-
-// New Zod-based Turn types
-type TurnType = 'outsider_hint' | 'ai_analysis' | 'insider_guess';
-
-interface OutsiderTurn {
-  type: 'outsider_hint';
-  content: string;
-  turnNumber: number;
-}
-
-interface AITurn {
-  type: 'ai_analysis';
-  thinking: string[];  // Exactly 4 sentences
-  guess: string;       // Single word, 3-12 characters
-  turnNumber: number;
-}
-
-interface InsiderTurn {
-  type: 'insider_guess';
-  guess: string;       // Single word, 3-12 characters
-  turnNumber: number;
-}
-
-type Turn = OutsiderTurn | AITurn | InsiderTurn;
-
-interface AnalyzeRequest {
-  gameId: string;
-  conversationHistory: Turn[];
-}
-
-interface AIResponse {
-  thinking: string[];  // Exactly 4 sentences
-  guess: string;       // Single word, 3-12 characters
 }
 
 interface RoleAssignment {
@@ -162,6 +128,88 @@ interface RoleAssignment {
   decryptor: string;
 }
 ```
+
+### Zod Schemas (Source of Truth)
+
+The Turn types are defined using Zod schemas in `backend/openai/types/game.ts` as the single source of truth:
+
+```typescript
+// Turn Type Enum
+export const TurnTypeSchema = z.enum(['outsider_hint', 'ai_analysis', 'insider_guess']);
+export type TurnType = z.infer<typeof TurnTypeSchema>;
+
+// Outsider's hint in the conversation
+export const OutsiderTurnSchema = z.object({
+  type: z.literal('outsider_hint'),
+  content: z.string().describe('The hint message from the outsider'),
+  turnNumber: z.number().int().positive().describe('Sequential turn number').optional()
+});
+export type OutsiderTurn = z.infer<typeof OutsiderTurnSchema>;
+
+// AI's analysis of the conversation
+export const AITurnSchema = z.object({
+  type: z.literal('ai_analysis'),
+  thinking: z.array(z.string()).length(4).describe('AI\'s thought process as exactly 4 sentences'),
+  guess: z.string().min(3).max(12).describe('AI\'s guess at the secret word'),
+  turnNumber: z.number().int().positive().describe('Sequential turn number').optional()
+});
+export type AITurn = z.infer<typeof AITurnSchema>;
+
+// Insider's guess attempt (only failed guesses appear in history)
+export const InsiderTurnSchema = z.object({
+  type: z.literal('insider_guess'),
+  guess: z.string().min(3).max(12).describe('Insider\'s guess attempt'),
+  turnNumber: z.number().int().positive().describe('Sequential turn number').optional()
+});
+export type InsiderTurn = z.infer<typeof InsiderTurnSchema>;
+
+// Union type for all possible turns
+export const TurnSchema = z.discriminatedUnion('type', [
+  OutsiderTurnSchema,
+  AITurnSchema,
+  InsiderTurnSchema
+]);
+export type Turn = z.infer<typeof TurnSchema>;
+
+// Request body for /api/ai/analyze endpoint
+export const AnalyzeRequestSchema = z.object({
+  gameId: z.string(),
+  conversationHistory: z.array(TurnSchema)
+    .refine(
+      (turns) => {
+        // Verify turns alternate correctly: outsider -> ai -> insider -> ai -> outsider -> ...
+        return turns.every((turn, idx) => {
+          if (idx === 0) return turn.type === 'outsider_hint';
+          const prevType = turns[idx - 1].type;
+          switch (turn.type) {
+            case 'outsider_hint':
+              return prevType === 'ai_analysis';
+            case 'ai_analysis':
+              return prevType === 'outsider_hint' || prevType === 'insider_guess';
+            case 'insider_guess':
+              return prevType === 'ai_analysis';
+          }
+        });
+      },
+      { message: "Turns must follow the pattern: outsider -> ai -> insider -> ai -> outsider" }
+    )
+});
+export type AnalyzeRequest = z.infer<typeof AnalyzeRequestSchema>;
+
+// AI's response to analyzing the conversation
+export const AIResponseSchema = z.object({
+  thinking: z.array(z.string()).length(4),
+  guess: z.string().min(3).max(12)
+});
+export type AIResponse = z.infer<typeof AIResponseSchema>;
+```
+
+**Key Benefits of Zod Schemas:**
+- **Runtime Validation:** Schemas provide runtime type checking and validation
+- **Automatic TypeScript Types:** `z.infer<typeof Schema>` generates TypeScript types
+- **Built-in Constraints:** Length limits, string validation, and custom refinements
+- **Single Source of Truth:** All validation logic centralized in schemas
+- **API Documentation:** Schema descriptions serve as inline documentation
 
 ## 5. Game Rules & Implementation
 
@@ -634,10 +682,17 @@ interface AIResponse {
 
 ### Phase 8: Update Validation
 8. **Update `backend/src/game/validation.ts`**
-   - [ ] Add Zod validation for turn types
-   - [ ] Add turn order validation
-   - [ ] Add turn number validation
-   - [ ] Update all validation logic to work with new structure
+   - [x] Add manual validation for turn types
+   - [x] Add turn order validation
+   - [x] Add turn number validation
+   - [x] Update all validation logic to work with new structure
+
+### Phase 9: Integrate Zod Schemas
+9. **Integrate Zod schemas from `backend/openai/types/game.ts`**
+   - [x] Install Zod in main backend package
+   - [x] Update `backend/src/types/index.ts` to import Zod schemas
+   - [x] Replace manual validation with Zod schema validation
+   - [x] Update all code to use Zod-generated types
 
 ### Success Criteria
 - [ ] All conversation history uses `Turn[]` union types

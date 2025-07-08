@@ -15,8 +15,15 @@ router.post('/analyze', async (req, res) => {
     // Get AI analysis
     const aiResponse = await openAIService.analyzeConversation(conversationHistory);
 
-    // Validate response matches expected schema
-    const validatedResponse = AIResponseSchema.parse(aiResponse);
+    // Add metadata and validate response
+    const response = AIResponseSchema.parse({
+      ...aiResponse,
+      metadata: {
+        messageCount: conversationHistory.length,
+        timestamp: new Date().toISOString(),
+        processingTime: Date.now() - startTime
+      }
+    });
 
     return res.json(validatedResponse);
 
@@ -48,7 +55,7 @@ router.post('/analyze', async (req, res) => {
       // Handle unknown errors
       console.error('Error processing AI analysis:', error);
     }
-    
+
     return res.status(500).json({
       error: 'Internal server error',
       message: 'An unexpected error occurred'

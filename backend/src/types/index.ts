@@ -1,3 +1,21 @@
+// Import Zod schemas from openai types
+import {
+    AIResponseSchema,
+    AITurnSchema,
+    AnalyzeRequestSchema,
+    InsiderTurnSchema,
+    OutsiderTurnSchema,
+    TurnSchema,
+    TurnTypeSchema,
+    type AIResponse,
+    type AITurn,
+    type AnalyzeRequest,
+    type InsiderTurn,
+    type OutsiderTurn,
+    type Turn,
+    type TurnType
+} from '../../openai/types/game';
+
 export interface Player {
     id: string; // socket.id for now
     name: string;
@@ -23,39 +41,10 @@ export interface GameState {
     gameStatus: 'waiting' | 'active' | 'ended';
 }
 
-// New Zod-based Turn types
-type TurnType = 'outsider_hint' | 'ai_analysis' | 'insider_guess';
-
-export interface OutsiderTurn {
-    type: 'outsider_hint';
-    content: string;
-    turnNumber: number;
-}
-
-export interface AITurn {
-    type: 'ai_analysis';
-    thinking: string[];  // Exactly 4 sentences
-    guess: string;       // Single word, 3-12 characters
-    turnNumber: number;
-}
-
-export interface InsiderTurn {
-    type: 'insider_guess';
-    guess: string;       // Single word, 3-12 characters
-    turnNumber: number;
-}
-
-export type Turn = OutsiderTurn | AITurn | InsiderTurn;
-
-export interface AnalyzeRequest {
-    gameId: string;
-    conversationHistory: Turn[];
-}
-
-export interface AIResponse {
-    thinking: string[];  // Exactly 4 sentences
-    guess: string;       // Single word, 3-12 characters
-}
+// Re-export Zod schemas and types
+export {
+    AIResponseSchema, AITurnSchema, AnalyzeRequestSchema, InsiderTurnSchema, OutsiderTurnSchema, TurnSchema, TurnTypeSchema, type AIResponse, type AITurn, type AnalyzeRequest, type InsiderTurn, type OutsiderTurn, type Turn, type TurnType
+};
 
 export interface RoleAssignment {
     encryptor: string;

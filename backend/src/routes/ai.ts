@@ -1,5 +1,6 @@
 import { Request, Response, Router } from 'express';
 import { MockAIService } from '../ai/mock';
+import { AIResponseSchema, AnalyzeRequestSchema } from '../types';
 
 const router = Router();
 const aiService = new MockAIService();
@@ -10,46 +11,18 @@ const aiService = new MockAIService();
  */
 router.post('/analyze', async (req: Request, res: Response) => {
     try {
-        const { gameId, conversationHistory } = req.body;
+        // Validate request body using Zod schema
+        const validationResult = AnalyzeRequestSchema.safeParse(req.body);
 
-        if (!gameId || typeof gameId !== 'string') {
+        if (!validationResult.success) {
             return res.status(400).json({
                 success: false,
-                error: 'gameId is required and must be a string'
+                error: 'Invalid request body',
+                details: validationResult.error.errors
             });
         }
 
-        if (!conversationHistory || !Array.isArray(conversationHistory)) {
-            return res.status(400).json({
-                success: false,
-                error: 'conversationHistory is required and must be an array'
-            });
-        }
-
-        // Validate conversation history structure
-        for (let i = 0; i < conversationHistory.length; i++) {
-            const turn = conversationHistory[i];
-            if (!turn || typeof turn !== 'object' || !turn.type) {
-                return res.status(400).json({
-                    success: false,
-                    error: `Invalid turn at index ${i}: missing type field`
-                });
-            }
-
-            if (!['outsider_hint', 'ai_analysis', 'insider_guess'].includes(turn.type)) {
-                return res.status(400).json({
-                    success: false,
-                    error: `Invalid turn type at index ${i}: ${turn.type}`
-                });
-            }
-
-            if (turn.turnNumber !== i + 1) {
-                return res.status(400).json({
-                    success: false,
-                    error: `Invalid turn number at index ${i}: expected ${i + 1}, got ${turn.turnNumber}`
-                });
-            }
-        }
+        const { gameId, conversationHistory } = validationResult.data;
 
         const aiResponse = await aiService.analyzeConversation(
             conversationHistory,
@@ -57,9 +30,19 @@ router.post('/analyze', async (req: Request, res: Response) => {
             { currentRound: 1, score: 5, gameStatus: 'active' }
         );
 
+        // Validate AI response using Zod schema
+        const responseValidation = AIResponseSchema.safeParse(aiResponse);
+        if (!responseValidation.success) {
+            console.error('AI service returned invalid response:', responseValidation.error);
+            return res.status(500).json({
+                success: false,
+                error: 'AI service returned invalid response'
+            });
+        }
+
         return res.json({
             success: true,
-            data: aiResponse
+            data: responseValidation.data
         });
     } catch (error) {
         console.error('Error in AI analyze endpoint:', error);
@@ -78,29 +61,14 @@ router.post('/thinking', async (req: Request, res: Response) => {
     try {
         const { conversationHistory, gameContext } = req.body;
 
-        if (!conversationHistory || !Array.isArray(conversationHistory)) {
+        // Validate conversation history using TurnSchema array
+        const historyValidation = AnalyzeRequestSchema.shape.conversationHistory.safeParse(conversationHistory);
+        if (!historyValidation.success) {
             return res.status(400).json({
                 success: false,
-                error: 'conversationHistory is required and must be an array'
+                error: 'Invalid conversation history',
+                details: historyValidation.error.errors
             });
-        }
-
-        // Validate conversation history structure
-        for (let i = 0; i < conversationHistory.length; i++) {
-            const turn = conversationHistory[i];
-            if (!turn || typeof turn !== 'object' || !turn.type) {
-                return res.status(400).json({
-                    success: false,
-                    error: `Invalid turn at index ${i}: missing type field`
-                });
-            }
-
-            if (!['outsider_hint', 'ai_analysis', 'insider_guess'].includes(turn.type)) {
-                return res.status(400).json({
-                    success: false,
-                    error: `Invalid turn type at index ${i}: ${turn.type}`
-                });
-            }
         }
 
         const thinking = await aiService.generateThinkingProcess(
@@ -129,10 +97,13 @@ router.post('/guess', async (req: Request, res: Response) => {
     try {
         const { conversationHistory, availableWords, gameContext } = req.body;
 
-        if (!conversationHistory || !Array.isArray(conversationHistory)) {
+        // Validate conversation history using TurnSchema array
+        const historyValidation = AnalyzeRequestSchema.shape.conversationHistory.safeParse(conversationHistory);
+        if (!historyValidation.success) {
             return res.status(400).json({
                 success: false,
-                error: 'conversationHistory is required and must be an array'
+                error: 'Invalid conversation history',
+                details: historyValidation.error.errors
             });
         }
 
@@ -141,24 +112,6 @@ router.post('/guess', async (req: Request, res: Response) => {
                 success: false,
                 error: 'availableWords is required and must be an array'
             });
-        }
-
-        // Validate conversation history structure
-        for (let i = 0; i < conversationHistory.length; i++) {
-            const turn = conversationHistory[i];
-            if (!turn || typeof turn !== 'object' || !turn.type) {
-                return res.status(400).json({
-                    success: false,
-                    error: `Invalid turn at index ${i}: missing type field`
-                });
-            }
-
-            if (!['outsider_hint', 'ai_analysis', 'insider_guess'].includes(turn.type)) {
-                return res.status(400).json({
-                    success: false,
-                    error: `Invalid turn type at index ${i}: ${turn.type}`
-                });
-            }
         }
 
         const guess = await aiService.generateGuess(

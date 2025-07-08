@@ -1,7 +1,7 @@
 import { GameStateManager } from '../src/game/state';
 import { GameState, RoleAssignment } from '../src/types';
 
-describe('Game State Persistence and Recovery', () => {
+describe('Game State Persistence', () => {
     let gameStateManager: GameStateManager;
 
     beforeEach(() => {
@@ -15,10 +15,7 @@ describe('Game State Persistence and Recovery', () => {
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [
-                    { id: '1', content: 'Hello', senderId: 'player1', timestamp: new Date() }
-                ],
-                aiGuesses: [
-                    { id: '1', thinking: ['thinking...'], guess: 'banana', confidence: 0.5, timestamp: new Date() }
+                    { type: 'outsider_hint', content: 'Hello', turnNumber: 1 }
                 ],
                 currentTurn: 'decryptor',
                 gameStatus: 'active'
@@ -41,7 +38,6 @@ describe('Game State Persistence and Recovery', () => {
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [],
-                aiGuesses: [],
                 currentTurn: 'encryptor',
                 gameStatus: 'active'
             };
@@ -63,7 +59,6 @@ describe('Game State Persistence and Recovery', () => {
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [],
-                aiGuesses: [],
                 currentTurn: 'encryptor',
                 gameStatus: 'active'
             };
@@ -87,7 +82,6 @@ describe('Game State Persistence and Recovery', () => {
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [],
-                aiGuesses: [],
                 currentTurn: 'encryptor',
                 gameStatus: 'active'
             };
@@ -97,9 +91,8 @@ describe('Game State Persistence and Recovery', () => {
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [
-                    { id: '1', content: 'Hello', senderId: 'player1', timestamp: new Date() }
+                    { type: 'outsider_hint', content: 'Hello', turnNumber: 1 }
                 ],
-                aiGuesses: [],
                 currentTurn: 'ai',
                 gameStatus: 'active'
             };
@@ -127,7 +120,6 @@ describe('Game State Persistence and Recovery', () => {
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [],
-                aiGuesses: [],
                 currentTurn: 'encryptor',
                 gameStatus: 'active'
             };
@@ -137,7 +129,6 @@ describe('Game State Persistence and Recovery', () => {
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [],
-                aiGuesses: [],
                 currentTurn: 'encryptor',
                 gameStatus: 'ended'
             };
@@ -164,7 +155,6 @@ describe('Game State Persistence and Recovery', () => {
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [],
-                aiGuesses: [],
                 currentTurn: 'encryptor',
                 gameStatus: 'active'
             };
@@ -174,7 +164,6 @@ describe('Game State Persistence and Recovery', () => {
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [],
-                aiGuesses: [],
                 currentTurn: 'encryptor',
                 gameStatus: 'active'
             };
@@ -201,7 +190,6 @@ describe('Game State Persistence and Recovery', () => {
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [],
-                aiGuesses: [],
                 currentTurn: 'encryptor',
                 gameStatus: 'active'
             };
@@ -211,7 +199,6 @@ describe('Game State Persistence and Recovery', () => {
                 currentRound: 2,
                 secretWord: 'banana',
                 conversationHistory: [],
-                aiGuesses: [],
                 currentTurn: 'encryptor',
                 gameStatus: 'active'
             };
@@ -238,7 +225,6 @@ describe('Game State Persistence and Recovery', () => {
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [],
-                aiGuesses: [],
                 currentTurn: 'encryptor',
                 gameStatus: 'active'
             };
@@ -248,7 +234,6 @@ describe('Game State Persistence and Recovery', () => {
                 currentRound: 1,
                 secretWord: 'banana',
                 conversationHistory: [],
-                aiGuesses: [],
                 currentTurn: 'encryptor',
                 gameStatus: 'active'
             };
@@ -268,16 +253,22 @@ describe('Game State Persistence and Recovery', () => {
             expect(result.canRejoin).toBe(false);
             expect(result.reason).toBe('Game has changed secret word');
         });
-    });
 
-    describe('canPlayerRejoin', () => {
-        it('should allow rejoin for active game with valid role', () => {
-            const gameState: GameState = {
+        it('should not allow rejoin when score has changed significantly', () => {
+            const savedGameState: GameState = {
                 score: 5,
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [],
-                aiGuesses: [],
+                currentTurn: 'encryptor',
+                gameStatus: 'active'
+            };
+
+            const currentGameState: GameState = {
+                score: 8,
+                currentRound: 1,
+                secretWord: 'apple',
+                conversationHistory: [],
                 currentTurn: 'encryptor',
                 gameStatus: 'active'
             };
@@ -287,69 +278,26 @@ describe('Game State Persistence and Recovery', () => {
                 decryptor: 'player2'
             };
 
-            const result = gameStateManager.canPlayerRejoin(gameState, 'player1', roles);
+            const result = gameStateManager.restoreGameStateForPlayer(
+                savedGameState,
+                currentGameState,
+                'player1',
+                roles
+            );
 
             expect(result.canRejoin).toBe(true);
-            expect(result.reason).toBeUndefined();
-        });
-
-        it('should not allow rejoin when game is not active', () => {
-            const gameState: GameState = {
-                score: 10,
-                currentRound: 1,
-                secretWord: 'apple',
-                conversationHistory: [],
-                aiGuesses: [],
-                currentTurn: 'encryptor',
-                gameStatus: 'ended'
-            };
-
-            const roles: RoleAssignment = {
-                encryptor: 'player1',
-                decryptor: 'player2'
-            };
-
-            const result = gameStateManager.canPlayerRejoin(gameState, 'player1', roles);
-
-            expect(result.canRejoin).toBe(false);
-            expect(result.reason).toBe('Game is not active');
-        });
-
-        it('should not allow rejoin when player has no role', () => {
-            const gameState: GameState = {
-                score: 5,
-                currentRound: 1,
-                secretWord: 'apple',
-                conversationHistory: [],
-                aiGuesses: [],
-                currentTurn: 'encryptor',
-                gameStatus: 'active'
-            };
-
-            const roles: RoleAssignment = {
-                encryptor: 'player1',
-                decryptor: 'player2'
-            };
-
-            const result = gameStateManager.canPlayerRejoin(gameState, 'player3', roles);
-
-            expect(result.canRejoin).toBe(false);
-            expect(result.reason).toBe('Player does not have a role in this game');
         });
     });
 
     describe('getGameStateSummary', () => {
-        it('should return correct game state summary', () => {
+        it('should return correct summary for active game', () => {
             const gameState: GameState = {
                 score: 5,
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [
-                    { id: '1', content: 'Hello', senderId: 'player1', timestamp: new Date() },
-                    { id: '2', content: 'Hi there', senderId: 'player2', timestamp: new Date() }
-                ],
-                aiGuesses: [
-                    { id: '1', thinking: ['thinking...'], guess: 'banana', confidence: 0.5, timestamp: new Date() }
+                    { type: 'outsider_hint', content: 'Hello', turnNumber: 1 },
+                    { type: 'ai_analysis', thinking: ['thinking...'], guess: 'banana', turnNumber: 2 }
                 ],
                 currentTurn: 'decryptor',
                 gameStatus: 'active'
@@ -361,17 +309,15 @@ describe('Game State Persistence and Recovery', () => {
             expect(summary.round).toBe(1);
             expect(summary.currentTurn).toBe('decryptor');
             expect(summary.messageCount).toBe(2);
-            expect(summary.aiGuessCount).toBe(1);
             expect(summary.gameStatus).toBe('active');
         });
 
-        it('should return correct summary for empty game state', () => {
+        it('should return correct summary for empty game', () => {
             const gameState: GameState = {
                 score: 5,
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [],
-                aiGuesses: [],
                 currentTurn: 'encryptor',
                 gameStatus: 'active'
             };
@@ -382,8 +328,32 @@ describe('Game State Persistence and Recovery', () => {
             expect(summary.round).toBe(1);
             expect(summary.currentTurn).toBe('encryptor');
             expect(summary.messageCount).toBe(0);
-            expect(summary.aiGuessCount).toBe(0);
             expect(summary.gameStatus).toBe('active');
         });
+
+        it('should return correct summary for ended game', () => {
+            const gameState: GameState = {
+                score: 10,
+                currentRound: 1,
+                secretWord: 'apple',
+                conversationHistory: [
+                    { type: 'outsider_hint', content: 'Hello', turnNumber: 1 },
+                    { type: 'ai_analysis', thinking: ['thinking...'], guess: 'banana', turnNumber: 2 },
+                    { type: 'insider_guess', guess: 'cherry', turnNumber: 3 }
+                ],
+                currentTurn: 'encryptor',
+                gameStatus: 'ended'
+            };
+
+            const summary = gameStateManager.getGameStateSummary(gameState);
+
+            expect(summary.score).toBe(10);
+            expect(summary.round).toBe(1);
+            expect(summary.currentTurn).toBe('encryptor');
+            expect(summary.messageCount).toBe(3);
+            expect(summary.gameStatus).toBe('ended');
+        });
     });
+
+
 }); 

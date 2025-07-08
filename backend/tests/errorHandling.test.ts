@@ -142,7 +142,7 @@ describe('Error Handling Tests', () => {
             const gameState = gameStateManager.createGameState('test', [player]);
 
             // The implementation handles empty content gracefully
-            const updatedState = gameStateManager.addMessage(gameState, { content: '', senderId: 'player1' });
+            const updatedState = gameStateManager.addMessage(gameState, { type: 'outsider_hint', content: '', turnNumber: 1 });
             expect(updatedState.conversationHistory).toHaveLength(1);
         });
     });
