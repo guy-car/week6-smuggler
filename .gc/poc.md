@@ -31,26 +31,30 @@ Response: { thinking: string[], guess: string }
 
 ### 2. TypeScript Schemas
 ```typescript
+// Using Zod for runtime schema validation
+import { z } from 'zod';
+
 // Input schema
-type Message = {
-  role: 'encryptor' | 'decryptor' | 'ai';
-  type: 'hint' | 'guess' | 'thinking';
-  content: string;
-  timestamp?: Date;
-}
+const MessageSchema = z.object({
+  role: z.enum(['outsider', 'insider', 'ai']),
+  type: z.enum(['hint', 'guess', 'thinking']),
+  content: z.string(),
+  timestamp: z.date().optional()
+});
 
 // Output schema  
-type AIResponse = {
-  thinking: string[]; // Exactly 4 sentences, max 12 words each
-  guess: string;      // Single word, max 12 characters
-}
+const AIResponseSchema = z.object({
+  thinking: z.array(z.string()).length(4),    // Exactly 4 sentences
+  guess: z.string().max(12),                  // Max 12 chars
+  suspicionLevel: z.number().min(0).max(100)  // 0-100 scale
+});
 ```
 
 ### 3. OpenAI Integration
-- **Model**: gpt-4o
+- **Model**: gpt-4
 - **Method**: Structured outputs (function calling)
 - **Context**: System prompt + conversation history as JSON
-- **Response**: Guaranteed schema compliance
+- **Response**: Guaranteed schema compliance via Zod validation
 
 ---
 
@@ -58,11 +62,14 @@ type AIResponse = {
 
 ### System Prompt Elements
 1. **Character**: "You are an AI system monitoring communications on a futuristic oil rig, trying to detect if agents are passing secret exploit codes"
-2. **Objective**: Analyze conversation to detect the secret word/code being transmitted
+2. **Objective**: 
+   - Analyze conversation to detect the secret word/code being transmitted
+   - Monitor conversation authenticity (genuine domestic chat vs coded messages)
 3. **Constraints**: 
    - Output exactly 4 thinking sentences
    - Each sentence max 12 words
    - Final guess must be single word, max 12 characters
+   - Suspicion level (0-100) based on conversation authenticity
 4. **Context**: Two agents posing as a married couple are trying to communicate exploit codes through domestic conversation
 5. **Word Domain**: Everyday, reasonable words that people could guess - not overly technical terms
 
@@ -70,18 +77,20 @@ type AIResponse = {
 - **Never include**: The actual secret word
 - **Always include**: Full conversation history (human messages + AI previous guesses)
 - **Format**: JSON array of Message objects sent as user input
+- **Suspicion Tracking**: Monitor how natural vs suspicious the conversation feels
 
 ---
 
 ## Implementation Goals for POC
 
 ### Must Have (Tomorrow EOD)
-- [x] Express server setup with TypeScript
-- [x] OpenAI client configuration with API key
-- [x] `/api/ai/analyze` route with proper error handling
-- [x] Structured output schema enforcement
-- [x] System prompt that produces consistent results
-- [x] Postman-testable endpoint with mock data
+- [x] Express server setup with TypeScript ✅ COMPLETE
+- [ ] OpenAI client configuration with API key
+- [ ] TypeScript schemas (Message, AIResponse types)
+- [ ] `/api/ai/analyze` route with proper error handling
+- [ ] Structured output schema enforcement
+- [ ] System prompt that produces consistent results
+- [ ] Postman-testable endpoint with mock data
 
 ### Nice to Have (Post-POC)
 - [ ] Request validation middleware
@@ -98,9 +107,9 @@ type AIResponse = {
 ```javascript
 // Test conversation history
 const mockConversation = [
-  { role: 'encryptor', type: 'hint', content: 'I love this red fruit' },
+  { role: 'outsider', type: 'hint', content: 'I love this red fruit' },
   { role: 'ai', type: 'guess', content: 'strawberry' },
-  { role: 'decryptor', type: 'hint', content: 'Is it round and crunchy?' },
+  { role: 'insider', type: 'hint', content: 'Is it round and crunchy?' },
   { role: 'ai', type: 'guess', content: 'apple' }
 ];
 ```
