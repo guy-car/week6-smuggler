@@ -5,7 +5,10 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { setupOpenAiRoute } from '../openai';
 import { RoomManager } from './rooms/manager';
+import aiRoutes from './routes/ai';
+import roomsRoutes from './routes/rooms';
 import { GameHandlers } from './socket/handlers/gameHandlers';
+import { LobbyHandlers } from './socket/handlers/lobbyHandlers';
 import { RoomHandlers } from './socket/handlers/roomHandlers';
 
 // Load environment variables
@@ -18,6 +21,12 @@ const PORT = process.env['PORT'] || 3000;
 // Initialize room management
 const roomManager = new RoomManager();
 const roomHandlers = new RoomHandlers(roomManager);
+const lobbyHandlers = new LobbyHandlers(roomManager);
+
+// Set up room change callback for lobby broadcasting
+roomManager.setRoomChangeCallback(() => {
+    lobbyHandlers.broadcastRoomList(io);
+});
 
 // CORS configuration for Expo client
 const corsOptions = {
@@ -34,9 +43,11 @@ app.use(express.json());
 // Setup OpenAI routes (integrated from openai module)
 setupOpenAiRoute(app);
 
+// Mount rooms routes
+app.use('/api/rooms', roomsRoutes);
+
 // Error handling middleware
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
     console.error('Error:', err.message);
     res.status(500).json({
         error: 'Internal Server Error',
@@ -45,14 +56,12 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
 });
 
 // Basic route
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-app.get('/', (req: express.Request, res: express.Response) => {
+app.get('/', (_req: express.Request, res: express.Response) => {
     res.json({ message: 'Smuggler Backend API is running!' });
 });
 
 // Health check route
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-app.get('/api/health', (req: express.Request, res: express.Response) => {
+app.get('/api/health', (_req: express.Request, res: express.Response) => {
     res.json({
         status: 'OK',
         timestamp: new Date().toISOString(),
@@ -77,6 +86,10 @@ const gameHandlers = new GameHandlers(roomManager, io);
 io.on('connection', (socket) => {
     console.log(`Client connected: ${socket.id}`);
 
+    // Lobby events
+    socket.on('enter_lobby', () => lobbyHandlers.handleEnterLobby(socket));
+    socket.on('leave_lobby', () => lobbyHandlers.handleLeaveLobby(socket));
+
     // Room management events
     socket.on('join_room', (data) => roomHandlers.handleJoinRoom(socket, data));
     socket.on('player_ready', (data) => roomHandlers.handlePlayerReady(socket, data));
@@ -91,6 +104,7 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         console.log(`Client disconnected: ${socket.id}`);
         roomHandlers.handleDisconnect(socket);
+        lobbyHandlers.handleDisconnect(socket);
     });
 
     // Basic ping/pong for connection testing

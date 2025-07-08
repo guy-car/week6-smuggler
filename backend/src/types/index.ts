@@ -56,4 +56,22 @@ export interface GameStartData {
     players: Player[];
     roles: RoleAssignment;
     secretWord: string;
+}
+
+export interface CreateRoomRequest {
+    // Empty for now, no parameters required
+}
+
+export interface CreateRoomResponse {
+    success: boolean;
+    roomId: string;
+    playerId: string;
+    message?: string;
+}
+
+export interface CreateRoomWithPlayerResult {
+    success: boolean;
+    roomId: string;
+    player: Player;
+    error?: string;
 } 
