@@ -60,38 +60,38 @@ logging:
 ```
 
 **Environment Variables:**
-| Name | Type | Default | Description |
-|------|------|---------|-------------|
-| PORT | integer | 3000 | Server port |
-| NODE_ENV | string | development | Environment mode |
-| MAX_LEVENSHTEIN_DISTANCE | integer | 2 | Maximum Levenshtein distance for guess validation |
+| Name                     | Type    | Default     | Description                                       |
+|--------------------------|---------|-------------|---------------------------------------------------|
+| PORT                     | integer | 3000        | Server port                                       |
+| NODE_ENV                 | string  | development | Environment mode                                  |
+| MAX_LEVENSHTEIN_DISTANCE | integer | 2           | Maximum Levenshtein distance for guess validation |
 
 ## 4. API / Protocol
 
 ### Socket.IO Events
 
 | Event | Direction | Payload | Description |
-|-------|-----------|---------|-------------|
-| `join_room` | Client → Server | `{ roomId: string }` | Join existing room or create new one |
-| `player_ready` | Client → Server | `{ roomId: string }` | Player marks themselves as ready |
-| `start_game` | Server → Client | `{ roomId: string, players: Player[], roles: RoleAssignment }` | Game starts when both players ready |
-| `send_message` | Client → Server | `{ roomId: string, message: string, senderId: string }` | Encryptor sends message |
-| `ai_response` | Server → Client | `{ roomId: string, thinking: string[], guess: string, confidence: number }` | AI thinking process and final guess |
-| `player_guess` | Client → Server | `{ roomId: string, guess: string, playerId: string }` | Decryptor attempts to guess secret |
-| `guess_result` | Server → Client | `{ roomId: string, correct: boolean, winner: string, score: number }` | Guess validation result |
-| `round_end` | Server → Client | `{ roomId: string, score: number, gameEnded: boolean, winner: string }` | Round completion and score update |
-| `game_end` | Server → Client | `{ roomId: string, winner: string, finalScore: number }` | Game completion |
-| `list_rooms` | Client → Server | - | Get list of available rooms |
-| `check_room_availability` | Client → Server | `{ roomId: string }` | Check if room exists and has space |
+|---------------------------|-----------------|-----------------------------------------------------------------------------|--------------------------------------|
+| `join_room`               | Client → Server | `{ roomId: string }`                                                        | Join existing room or create new one |
+| `player_ready`            | Client → Server | `{ roomId: string }`                                                        | Player marks themselves as ready     |
+| `start_game`              | Server → Client | `{ roomId: string, players: Player[], roles: RoleAssignment }`              | Game starts when both players ready  |
+| `send_message`            | Client → Server | `{ roomId: string, message: string, senderId: string }`                     | Encryptor sends message              |
+| `ai_response`             | Server → Client | `{ roomId: string, thinking: string[], guess: string, confidence: number }` | AI thinking process and final guess  |
+| `player_guess`            | Client → Server | `{ roomId: string, guess: string, playerId: string }`                       | Decryptor attempts to guess secret   |
+| `guess_result`            | Server → Client | `{ roomId: string, correct: boolean, winner: string, score: number }`       | Guess validation result              |
+| `round_end`               | Server → Client | `{ roomId: string, score: number, gameEnded: boolean, winner: string }`     | Round completion and score update    |
+| `game_end`                | Server → Client | `{ roomId: string, winner: string, finalScore: number }`                    | Game completion                      |
+| `list_rooms`              | Client → Server | -                                                                           | Get list of available rooms          |
+| `check_room_availability` | Client → Server | `{ roomId: string }`                                                        | Check if room exists and has space   |
 
 ### HTTP API Endpoints
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `GET /` | GET | API status and welcome message |
-| `GET /api/health` | GET | Health check with uptime and environment info |
-| `GET /api/ai/health` | GET | AI service health status |
-| `POST /api/ai/response` | POST | Generate AI response (mock implementation) |
+| Endpoint                | Method | Description                                 |
+|-------------------------|--------|-----------------------------------------------|
+| `GET /`                 | GET    | API status and welcome message                |
+| `GET /api/health`       | GET    | Health check with uptime and environment info |
+| `GET /api/ai/health`    | GET    | AI service health status                      |
+| `POST /api/ai/response` | POST   | Generate AI response (mock implementation)    |
 
 ### Data Structures
 
