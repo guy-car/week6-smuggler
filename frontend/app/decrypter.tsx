@@ -1,19 +1,49 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
-import { Dimensions, KeyboardAvoidingView, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Alert, Dimensions, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import InputSubmit from '../components/InputSubmit';
 import MessageModal from '../components/MessageModal';
+import { leaveRoom, sendMessage, setPlayerReady, submitGuess } from '../services/websocket';
+import { useGameStore } from '../store/gameStore';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
 export default function DecrypterScreen() {
-  const [gameStarted, setGameStarted] = useState(false);
+  const { 
+    connected, 
+    roomId, 
+    players, 
+    gameStatus, 
+    role, 
+    round, 
+    score,
+    messages
+  } = useGameStore();
+  
   const [modalVisible, setModalVisible] = useState(false);
   const [hasOpenedMessage, setHasOpenedMessage] = useState(false);
-  const [messages, setMessages] = useState<string[]>([]);
+  const [localMessages, setLocalMessages] = useState<string[]>([]);
 
-  const toggleGame = () => {
-    setGameStarted(!gameStarted);
+  useEffect(() => {
+    // If not connected or no room, go back to home
+    if (!connected || !roomId) {
+      router.replace('/');
+    }
+  }, [connected, roomId]);
+
+  useEffect(() => {
+    // If game starts, show the message modal
+    if (gameStatus === 'active' && role === 'decryptor') {
+      setModalVisible(true);
+    }
+  }, [gameStatus, role]);
+
+  const handleReady = () => {
+    setPlayerReady(true);
+  };
+
+  const handleNotReady = () => {
+    setPlayerReady(false);
   };
 
   const openMessage = () => {
@@ -26,12 +56,46 @@ export default function DecrypterScreen() {
   };
 
   const handleInputSubmit = (value: string) => {
-    setMessages(prev => [...prev, value]);
-    console.log('Decrypter: clue submitted:', value);
+    if (gameStatus === 'active' && role === 'decryptor') {
+      // Submit guess to backend
+      submitGuess(value);
+    } else {
+      // Send chat message
+      sendMessage(value);
+    }
+    setLocalMessages(prev => [...prev, value]);
+    console.log('Decrypter: submitted:', value);
   };
 
-  const goHome = () => {
-    router.replace('/');
+  const handleLeaveRoom = () => {
+    Alert.alert(
+      'Leave Room',
+      'Are you sure you want to leave this room?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Leave', 
+          style: 'destructive',
+          onPress: () => {
+            leaveRoom();
+            router.replace('/');
+          }
+        }
+      ]
+    );
+  };
+
+  const getReadyPlayersCount = () => {
+    return players.filter(p => p.ready).length;
+  };
+
+  const getCurrentPlayer = () => {
+    return players.find(p => p.socketId === useGameStore.getState().player?.socketId);
+  };
+
+  const isCurrentPlayerReady = () => {
+    const currentPlayer = getCurrentPlayer();
+    return currentPlayer?.ready || false;
   };
 
   return (
@@ -41,16 +105,33 @@ export default function DecrypterScreen() {
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
     >
       <View style={styles.container}>
+        {/* Connection Status */}
+        <View style={styles.statusBar}>
+          <View style={[styles.statusDot, { backgroundColor: connected ? '#4CAF50' : '#F44336' }]} />
+          <Text style={styles.statusText}>
+            {connected ? 'Connected' : 'Disconnected'}
+          </Text>
+          {roomId && (
+            <Text style={styles.roomText}>Room: {roomId}</Text>
+          )}
+        </View>
+
+        {/* Game Controls */}
         <View style={styles.topLeftControls} pointerEvents="box-none">
-          <TouchableOpacity 
-            style={[styles.button, gameStarted ? styles.stopButton : styles.startButton]} 
-            onPress={toggleGame}
-          >
-            <Text style={styles.buttonText}>
-              {gameStarted ? 'Stop' : 'Start'}
-            </Text>
-          </TouchableOpacity>
-          {gameStarted && (
+          {gameStatus === 'waiting' && (
+            <>
+              <TouchableOpacity 
+                style={[styles.button, isCurrentPlayerReady() ? styles.stopButton : styles.startButton]} 
+                onPress={isCurrentPlayerReady() ? handleNotReady : handleReady}
+              >
+                <Text style={styles.buttonText}>
+                  {isCurrentPlayerReady() ? 'Not Ready' : 'Ready'}
+                </Text>
+              </TouchableOpacity>
+            </>
+          )}
+          
+          {gameStatus === 'active' && role === 'decryptor' && (
             <TouchableOpacity 
               style={styles.openMessageButton} 
               onPress={openMessage}
@@ -59,22 +140,81 @@ export default function DecrypterScreen() {
             </TouchableOpacity>
           )}
         </View>
-        <TouchableOpacity style={styles.homeButton} onPress={goHome}>
-          <Text style={styles.homeButtonText}>Home</Text>
+
+        <TouchableOpacity style={styles.homeButton} onPress={handleLeaveRoom}>
+          <Text style={styles.homeButtonText}>Leave Room</Text>
         </TouchableOpacity>
+
         <Text style={styles.title}>Decrypter</Text>
+
+        {/* Game Info */}
+        <View style={styles.gameInfo}>
+          <Text style={styles.gameStatus}>Status: {gameStatus}</Text>
+          {gameStatus === 'active' && (
+            <>
+              <Text style={styles.roundInfo}>Round: {round}</Text>
+              <Text style={styles.scoreInfo}>Score: {score}</Text>
+              <Text style={styles.roleInfo}>Role: {role}</Text>
+            </>
+          )}
+        </View>
+
+        {/* Players List */}
+        <View style={styles.playersContainer}>
+          <Text style={styles.playersTitle}>Players ({players.length})</Text>
+          <ScrollView style={styles.playersList}>
+            {players.map((player) => (
+              <View key={player.id} style={styles.playerItem}>
+                <Text style={styles.playerName}>{player.name}</Text>
+                <View style={[styles.readyIndicator, { backgroundColor: player.ready ? '#4CAF50' : '#ccc' }]} />
+                {player.role && (
+                  <Text style={styles.playerRole}>{player.role}</Text>
+                )}
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* Waiting for Players */}
+        {gameStatus === 'waiting' && (
+          <View style={styles.waitingContainer}>
+            <Text style={styles.waitingText}>
+              Waiting for players... ({getReadyPlayersCount()}/{players.length} ready)
+            </Text>
+            {players.length >= 2 && getReadyPlayersCount() === players.length && (
+              <Text style={styles.readyText}>All players ready! Game will start soon...</Text>
+            )}
+          </View>
+        )}
+
         <MessageModal
           visible={modalVisible}
           onClose={closeModal}
           message="Decrypt the code! Enter your guess or clues below."
         />
-        {!modalVisible && hasOpenedMessage && (
+        
+        {!modalVisible && hasOpenedMessage && gameStatus === 'active' && role === 'decryptor' && (
           <View style={styles.inputSubmitWrapper}>
             <InputSubmit
               placeholder="Type your guess or a message..."
               onSubmit={handleInputSubmit}
-              messages={messages}
+              messages={localMessages}
             />
+          </View>
+        )}
+
+        {/* Chat Messages */}
+        {gameStatus === 'active' && (
+          <View style={styles.chatContainer}>
+            <Text style={styles.chatTitle}>Messages</Text>
+            <ScrollView style={styles.chatList}>
+              {messages.map((msg, index) => (
+                <View key={index} style={styles.messageItem}>
+                  <Text style={styles.messageSender}>{msg.senderId}</Text>
+                  <Text style={styles.messageContent}>{msg.content}</Text>
+                </View>
+              ))}
+            </ScrollView>
           </View>
         )}
       </View>
@@ -87,9 +227,34 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f5f5',
   },
+  statusBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 50,
+    paddingBottom: 10,
+    backgroundColor: 'white',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  statusText: {
+    fontSize: 12,
+    color: '#666',
+  },
+  roomText: {
+    fontSize: 12,
+    color: '#007AFF',
+    fontWeight: '600',
+  },
   topLeftControls: {
     position: 'absolute',
-    top: 50,
+    top: 120,
     left: 20,
     alignItems: 'flex-start',
     gap: 8,
@@ -99,9 +264,9 @@ const styles = StyleSheet.create({
   },
   homeButton: {
     position: 'absolute',
-    top: 50,
+    top: 120,
     right: 20,
-    backgroundColor: '#eee',
+    backgroundColor: '#FF3B30',
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 6,
@@ -111,7 +276,7 @@ const styles = StyleSheet.create({
     zIndex: 101,
   },
   homeButtonText: {
-    color: '#007AFF',
+    color: 'white',
     fontSize: 13,
     fontWeight: '600',
   },
@@ -120,7 +285,77 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
     textAlign: 'center',
-    marginTop: 100,
+    marginTop: 180,
+  },
+  gameInfo: {
+    alignItems: 'center',
+    marginTop: 20,
+    gap: 5,
+  },
+  gameStatus: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+  },
+  roundInfo: {
+    fontSize: 14,
+    color: '#666',
+  },
+  scoreInfo: {
+    fontSize: 14,
+    color: '#666',
+  },
+  roleInfo: {
+    fontSize: 14,
+    color: '#666',
+  },
+  playersContainer: {
+    marginTop: 20,
+    paddingHorizontal: 20,
+  },
+  playersTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 10,
+    color: '#333',
+  },
+  playersList: {
+    maxHeight: 100,
+  },
+  playerItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 5,
+    gap: 10,
+  },
+  playerName: {
+    fontSize: 14,
+    color: '#333',
+    flex: 1,
+  },
+  readyIndicator: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
+  playerRole: {
+    fontSize: 12,
+    color: '#666',
+    fontStyle: 'italic',
+  },
+  waitingContainer: {
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  waitingText: {
+    fontSize: 16,
+    color: '#666',
+  },
+  readyText: {
+    fontSize: 14,
+    color: '#4CAF50',
+    fontWeight: '600',
+    marginTop: 5,
   },
   button: {
     paddingVertical: 10,
@@ -149,7 +384,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   openMessageButton: {
-    backgroundColor: '#eee',
+    backgroundColor: '#007AFF',
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 6,
@@ -159,7 +394,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   openMessageButtonText: {
-    color: '#007AFF',
+    color: 'white',
     fontSize: 13,
     fontWeight: '600',
   },
@@ -170,5 +405,44 @@ const styles = StyleSheet.create({
     width: SCREEN_WIDTH * 0.6,
     alignItems: 'center',
     zIndex: 10,
+  },
+  chatContainer: {
+    position: 'absolute',
+    bottom: 120,
+    left: 20,
+    right: 20,
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 10,
+    maxHeight: 150,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  chatTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 5,
+    color: '#333',
+  },
+  chatList: {
+    flex: 1,
+  },
+  messageItem: {
+    marginBottom: 5,
+  },
+  messageSender: {
+    fontSize: 12,
+    color: '#007AFF',
+    fontWeight: '600',
+  },
+  messageContent: {
+    fontSize: 12,
+    color: '#333',
   },
 }); 

@@ -18,10 +18,10 @@ export default function MessageModal({ visible, onClose, message }: MessageModal
       hideModalContentWhileAnimating
       style={styles.modal}
     >
-      <View style={styles.modalContainer}>
-        <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+        <View style={styles.modalContainer}>
+          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
           <Text style={styles.closeButtonText}>×</Text>
-        </TouchableOpacity>
+          </TouchableOpacity>
         <Text style={styles.modalTitle}>Your Code to Smuggle</Text>
         <Text style={styles.modalMessage}>{message}</Text>
       </View>
