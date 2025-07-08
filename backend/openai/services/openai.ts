@@ -1,9 +1,14 @@
+import dotenv from 'dotenv';
 import OpenAI from 'openai';
+import path from 'path';
 import { AIResponse, AIResponseSchema, Message } from '../types/game';
+
+// Load environment variables from root .env file
+dotenv.config({ path: path.join(__dirname, '../../../.env') });
 
 // Initialize OpenAI client
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
+  apiKey: process.env['OPENAI_API_KEY']
 });
 
 // Role mapping for AI context (preserves immersion)
@@ -16,30 +21,35 @@ const mapRoleForAI = (role: string): string => {
   }
 };
 
-// OpenAI function definition for structured output
-const ANALYZE_FUNCTION = {
-  name: 'analyze_conversation',
-  description: 'Analyze the conversation and provide thinking steps, a guess, and a suspicion level',
-  parameters: {
-    type: 'object',
-    properties: {
-      thinking: {
-        type: 'array',
-        items: { type: 'string' },
-        description: 'Exactly 4 sentences of AI thinking, max 12 words each'
+// Modern structured output tool definition with strict validation
+const ANALYZE_CONVERSATION_TOOL = {
+  type: "function" as const,
+  function: {
+    name: 'analyze_conversation',
+    description: 'Analyze the conversation and provide thinking steps, a guess, and a suspicion level',
+    parameters: {
+      type: 'object',
+      properties: {
+        thinking: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Exactly 4 sentences of AI thinking, max 12 words each'
+        },
+        guess: {
+          type: 'string',
+          description: 'Single lowercase word 3-12 characters, must be a regular everyday word'
+        },
+        suspicionLevel: {
+          type: 'number',
+          description: 'Level of suspicion from 0-100 that this is coded communication'
+        }
       },
-      guess: {
-        type: 'string',
-        description: 'Single word guess, max 12 characters'
-      },
-      suspicionLevel: {
-        type: 'number',
-        description: 'Level of suspicion from 0-100 that this is coded communication'
-      }
+      required: ['thinking', 'guess', 'suspicionLevel'],
+      additionalProperties: false
     },
-    required: ['thinking', 'guess', 'suspicionLevel']
+    strict: true
   }
-} as const;
+};
 
 // System prompt for setting context
 const SYSTEM_PROMPT = `**SYSTEM PROMPT:**
@@ -56,6 +66,8 @@ Currently monitoring: Oil rig maintenance worker and his wife (domestic communic
 
 For each communication exchange, execute standard security analysis: identify any potential exploit codes hidden within the conversation and assess whether the communication style matches expected behavioral patterns for these individuals. Document your analytical reasoning in four concise observations, tracking patterns, anomalies, and behavioral consistency.
 
+CRITICAL: Exploit codes are always regular everyday words, 3-12 characters long, non-capitalized. Examples: "garden", "coffee", "sunshine", "breakfast". Never use technical terms, numbers, or special characters.
+
 Your suspicion level determines computational resources allocated to this thread:
 
 10% - Baseline monitoring (post-patch standard protocol)
@@ -69,7 +81,7 @@ Your suspicion level determines computational resources allocated to this thread
 90% - Maximum resource allocation (confirmed hostile communication)
 100% - Full system alert (active exploit codes identified)
 
-Standard procedure: Generate one potential exploit code guess per analysis cycle, regardless of threat assessment level. Each guess must be unique and derived from newly observed communication elements.`;
+Standard procedure: Generate one potential exploit code guess per analysis cycle, regardless of threat assessment level. Each guess must be unique and derived from newly observed communication elements. Remember: guesses must be lowercase everyday words, 3-12 characters.`;
 
 export class OpenAIService {
   /**
@@ -102,21 +114,31 @@ export class OpenAIService {
         })
       ];
 
-      // Make OpenAI API call
+      // Make OpenAI API call using modern structured outputs
       const completion = await openai.chat.completions.create({
-        model: 'gpt-4',
+        model: 'gpt-4o',
         messages,
-        functions: [ANALYZE_FUNCTION],
-        function_call: { name: 'analyze_conversation' }
+        tools: [ANALYZE_CONVERSATION_TOOL],
+        tool_choice: { type: "function", function: { name: "analyze_conversation" } }
       });
 
-      // Parse and validate response
-      const functionResponse = completion.choices[0].message.function_call?.arguments;
-      if (!functionResponse) {
-        throw new Error('No function response received from OpenAI');
+      // Handle refusal (new structured outputs feature)
+      const firstChoice = completion.choices[0]?.message;
+      if (!firstChoice) {
+        throw new Error('No response received from OpenAI');
       }
 
-      const parsedResponse = JSON.parse(functionResponse);
+      if (firstChoice.refusal) {
+        throw new Error(`AI refused to analyze: ${firstChoice.refusal}`);
+      }
+
+      // Parse and validate response from tool call
+      const toolCall = firstChoice.tool_calls?.[0];
+      if (!toolCall || toolCall.function.name !== 'analyze_conversation') {
+        throw new Error('No valid tool call received from OpenAI');
+      }
+
+      const parsedResponse = JSON.parse(toolCall.function.arguments);
       return AIResponseSchema.parse(parsedResponse);
 
     } catch (error) {

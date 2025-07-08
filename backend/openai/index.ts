@@ -8,7 +8,7 @@ import aiRoutes from './routes/ai';
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 // Validate OpenAI API key
-if (!process.env.OPENAI_API_KEY) {
+if (!process.env['OPENAI_API_KEY']) {
   console.error('❌ Error: OPENAI_API_KEY environment variable is required');
   process.exit(1);
 }
@@ -29,7 +29,7 @@ export function setupOpenAiRoute(app: express.Express): void {
     res.json({ 
       status: 'ok', 
       service: 'smuggler-ai-integration',
-      openaiKey: process.env.OPENAI_API_KEY ? '✅ Loaded' : '❌ Missing',
+      openaiKey: process.env['OPENAI_API_KEY'] ? '✅ Loaded' : '❌ Missing',
       timestamp: new Date().toISOString()
     });
   });

@@ -5,7 +5,6 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { setupOpenAiRoute } from '../openai';
 import { RoomManager } from './rooms/manager';
-import aiRoutes from './routes/ai';
 import roomsRoutes from './routes/rooms';
 import { GameHandlers } from './socket/handlers/gameHandlers';
 import { LobbyHandlers } from './socket/handlers/lobbyHandlers';
