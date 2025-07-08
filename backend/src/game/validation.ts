@@ -1,4 +1,4 @@
-import { GameState, Player, RoleAssignment } from '../types';
+import { AITurnSchema, GameState, InsiderTurnSchema, OutsiderTurnSchema, Player, RoleAssignment, TurnSchema } from '../types';
 
 export class GameValidator {
     private readonly MAX_MESSAGE_LENGTH = 500;
@@ -125,39 +125,104 @@ export class GameValidator {
     }
 
     /**
-     * Validate AI response
+     * Validate AI response using Zod schema
      */
     public validateAIResponse(aiResponse: unknown): { valid: boolean; errors: string[] } {
+        const validation = AITurnSchema.safeParse(aiResponse);
+
+        if (!validation.success) {
+            return {
+                valid: false,
+                errors: validation.error.errors.map(err => `${err.path.join('.')}: ${err.message}`)
+            };
+        }
+
+        return {
+            valid: true,
+            errors: []
+        };
+    }
+
+    /**
+     * Validate turn using Zod schema
+     */
+    public validateTurn(turn: unknown): { valid: boolean; errors: string[] } {
+        const validation = TurnSchema.safeParse(turn);
+
+        if (!validation.success) {
+            return {
+                valid: false,
+                errors: validation.error.errors.map(err => `${err.path.join('.')}: ${err.message}`)
+            };
+        }
+
+        return {
+            valid: true,
+            errors: []
+        };
+    }
+
+    /**
+     * Validate conversation history using Zod schema
+     */
+    public validateConversationHistory(history: unknown): { valid: boolean; errors: string[] } {
+        if (!Array.isArray(history)) {
+            return {
+                valid: false,
+                errors: ['Conversation history must be an array']
+            };
+        }
+
         const errors: string[] = [];
 
-        if (!aiResponse || typeof aiResponse !== 'object') {
-            errors.push('AI response must be an object');
-            return { valid: false, errors };
-        }
-
-        const response = aiResponse as { thinking?: unknown; guess?: unknown };
-
-        if (!Array.isArray(response.thinking)) {
-            errors.push('Thinking process must be an array');
-        } else {
-            response.thinking.forEach((thought: unknown, index: number) => {
-                if (typeof thought !== 'string') {
-                    errors.push(`Thinking process item ${index} must be a string`);
-                } else if (thought.length > 100) {
-                    errors.push(`Thinking process item ${index} must be no more than 100 characters`);
-                }
-            });
-        }
-
-        if (!response.guess || typeof response.guess !== 'string') {
-            errors.push('Guess is required and must be a string');
-        } else if (response.guess.length > this.MAX_GUESS_LENGTH) {
-            errors.push(`Guess must be no more than ${this.MAX_GUESS_LENGTH} characters`);
+        for (let i = 0; i < history.length; i++) {
+            const turnValidation = this.validateTurn(history[i]);
+            if (!turnValidation.valid) {
+                errors.push(`Turn ${i}: ${turnValidation.errors.join(', ')}`);
+            }
         }
 
         return {
             valid: errors.length === 0,
             errors
+        };
+    }
+
+    /**
+     * Validate outsider turn using Zod schema
+     */
+    public validateOutsiderTurn(turn: unknown): { valid: boolean; errors: string[] } {
+        const validation = OutsiderTurnSchema.safeParse(turn);
+
+        if (!validation.success) {
+            return {
+                valid: false,
+                errors: validation.error.errors.map(err => `${err.path.join('.')}: ${err.message}`)
+            };
+        }
+
+        return {
+            valid: true,
+            errors: []
+        };
+    }
+
+    /**
+     * Validate insider turn using Zod schema
+     */
+    public validateInsiderTurn(turn: unknown): { valid: boolean; errors: string[] } {
+        const validation = InsiderTurnSchema.safeParse(turn);
+
+        if (!validation.success) {
+            return {
+                valid: false,
+                errors: validation.error.errors.map(err => `${err.path.join('.')}: ${err.message}`)
+            };
+        }
+
+        return {
+            valid: true,
+            errors: []
         };
     }
 
@@ -224,7 +289,7 @@ export class GameValidator {
         const errors: string[] = [];
 
         if (!roomId || typeof roomId !== 'string') {
-            errors.push('Room ID must be a string');
+            errors.push('Room ID is required and must be a string');
             return { valid: false, errors };
         }
 
@@ -232,12 +297,10 @@ export class GameValidator {
             errors.push('Room ID cannot be empty');
         }
 
-        if (roomId.length > 50) {
-            errors.push('Room ID must be no more than 50 characters');
-        }
-
-        if (!/^[a-zA-Z0-9_-]+$/.test(roomId)) {
-            errors.push('Room ID must contain only alphanumeric characters, hyphens, and underscores');
+        // Basic UUID format validation
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(roomId)) {
+            errors.push('Room ID must be a valid UUID format');
         }
 
         return {
@@ -257,23 +320,30 @@ export class GameValidator {
     ): { valid: boolean; errors: string[] } {
         const errors: string[] = [];
 
+        if (!gameState) {
+            errors.push('Game state is required');
+            return { valid: false, errors };
+        }
+
         if (gameState.gameStatus !== 'active') {
-            errors.push('Game is not active');
+            errors.push('Game must be active to perform actions');
         }
 
         if (action === 'send_message') {
             if (gameState.currentTurn !== 'encryptor') {
-                errors.push('Not encryptor\'s turn');
+                errors.push('It is not the encryptor\'s turn to send a message');
             }
+
             if (roles.encryptor !== playerId) {
-                errors.push('Not the encryptor');
+                errors.push('Only the encryptor can send messages');
             }
         } else if (action === 'guess') {
             if (gameState.currentTurn !== 'decryptor') {
-                errors.push('Not decryptor\'s turn');
+                errors.push('It is not the decryptor\'s turn to guess');
             }
+
             if (roles.decryptor !== playerId) {
-                errors.push('Not the decryptor');
+                errors.push('Only the decryptor can make guesses');
             }
         }
 

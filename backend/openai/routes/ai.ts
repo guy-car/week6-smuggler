@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { ZodError } from 'zod';
 import { openAIService } from '../services/openai';
-import { AnalyzeRequestSchema, AnalyzeResponseSchema } from '../types/game';
+import { AIResponseSchema, AnalyzeRequestSchema } from '../types/game';
 
 const router = Router();
 
@@ -16,7 +16,7 @@ router.post('/analyze', async (req, res) => {
     const aiResponse = await openAIService.analyzeConversation(conversationHistory);
 
     // Add metadata and validate response
-    const response = AnalyzeResponseSchema.parse({
+    const response = AIResponseSchema.parse({
       ...aiResponse,
       metadata: {
         messageCount: conversationHistory.length,
@@ -55,7 +55,7 @@ router.post('/analyze', async (req, res) => {
       // Handle unknown errors
       console.error('Error processing AI analysis:', error);
     }
-    
+
     return res.status(500).json({
       error: 'Internal server error',
       message: 'An unexpected error occurred'

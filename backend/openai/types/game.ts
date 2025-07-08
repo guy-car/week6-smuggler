@@ -91,7 +91,7 @@ export type Turn = z.infer<typeof TurnSchema>;
 export const AnalyzeRequestSchema = z.object({
   /** Room/session identifier */
   gameId: z.string(),
-  
+
   /** Chronological sequence of turns */
   conversationHistory: z.array(TurnSchema)
     .refine(
@@ -99,7 +99,9 @@ export const AnalyzeRequestSchema = z.object({
         // Verify turns alternate correctly: outsider -> ai -> insider -> ai -> outsider -> ...
         return turns.every((turn, idx) => {
           if (idx === 0) return turn.type === 'outsider_hint';
-          const prevType = turns[idx - 1].type;
+          const prevTurn = turns[idx - 1];
+          if (!prevTurn) return false;
+          const prevType = prevTurn.type;
           switch (turn.type) {
             case 'outsider_hint':
               return prevType === 'ai_analysis';
@@ -121,7 +123,7 @@ export type AnalyzeRequest = z.infer<typeof AnalyzeRequestSchema>;
 export const AIResponseSchema = z.object({
   /** AI's thought process as exactly 4 sentences */
   thinking: z.array(z.string()).length(4),
-  
+
   /** AI's guess at the secret word */
   guess: z.string()
     .min(3).max(12)

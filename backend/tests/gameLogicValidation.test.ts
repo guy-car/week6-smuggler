@@ -89,7 +89,7 @@ describe('Game Logic Validation', () => {
 
             const result = gameLogic.validateConversationFlow(gameState);
             expect(result.valid).toBe(false);
-            expect(result.errors).toContain('Not enough turns for meaningful conversation');
+            expect(result.errors).toContain('AI has not made any guesses yet');
         });
     });
 
