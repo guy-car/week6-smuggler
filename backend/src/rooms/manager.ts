@@ -251,4 +251,43 @@ export class RoomManager {
     public forceCleanupRoom(roomId: string): boolean {
         return this.rooms.delete(roomId);
     }
+
+    /**
+     * Create a room with a player already added
+     */
+    public createRoomWithPlayer(roomId: string, player: Player): { success: boolean; roomId: string; player: Player; error?: string } {
+        try {
+            // Check if room already exists
+            if (this.rooms.has(roomId)) {
+                return {
+                    success: false,
+                    roomId,
+                    player,
+                    error: 'Room already exists'
+                };
+            }
+
+            // Create the room
+            const room = this.createRoom(roomId);
+
+            // Add the player to the room
+            room.players.push(player);
+
+            // Update room activity
+            room.lastActivity = new Date();
+
+            return {
+                success: true,
+                roomId,
+                player
+            };
+        } catch (error) {
+            return {
+                success: false,
+                roomId,
+                player,
+                error: error instanceof Error ? error.message : 'Unknown error'
+            };
+        }
+    }
 } 
