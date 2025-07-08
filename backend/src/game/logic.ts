@@ -1,4 +1,4 @@
-import { GameState, Message, Player, RoleAssignment } from '../types';
+import { GameState, Player, RoleAssignment, Turn } from '../types';
 import { GameStateManager } from './state';
 import { WordManager } from './wordManager';
 
@@ -37,7 +37,7 @@ export class GameLogic {
      */
     public handleEncryptorMessage(
         gameState: GameState,
-        message: Omit<Message, 'id' | 'timestamp' | 'role' | 'turnNumber'>,
+        content: string,
         roles: RoleAssignment
     ): { newGameState: GameState; shouldAdvanceTurn: boolean } {
         // Validate it's encryptor's turn
@@ -45,13 +45,8 @@ export class GameLogic {
             throw new Error('Not encryptor\'s turn');
         }
 
-        // Add message to conversation history with role and turn number
-        const newGameState = this.gameStateManager.addMessage(gameState, {
-            content: message.content,
-            senderId: message.senderId,
-            role: 'encryptor',
-            turnNumber: this.gameStateManager.getNextTurnNumber(gameState)
-        });
+        // Add outsider turn to conversation history
+        const newGameState = this.gameStateManager.addOutsiderTurn(gameState, content);
 
         // Advance turn to AI
         const updatedGameState = this.gameStateManager.advanceTurn(newGameState);
@@ -74,14 +69,8 @@ export class GameLogic {
             throw new Error('Not AI\'s turn');
         }
 
-        // Add AI response to conversation history
-        const newGameState = this.gameStateManager.addMessage(gameState, {
-            content: aiResponse.guess,
-            senderId: 'ai',
-            role: 'ai',
-            turnNumber: this.gameStateManager.getNextTurnNumber(gameState),
-            thinking: aiResponse.thinking
-        });
+        // Add AI turn to conversation history
+        const newGameState = this.gameStateManager.addAITurn(gameState, aiResponse.thinking, aiResponse.guess);
 
         // Check if AI guess is correct
         const isCorrect = this.gameStateManager.validateGuess(aiResponse.guess, gameState.secretWord);
@@ -162,13 +151,8 @@ export class GameLogic {
                 isMessage: false
             };
         } else {
-            // Decryptor incorrect - add to conversation history and advance turn to AI
-            const messageAdded = this.gameStateManager.addMessage(gameState, {
-                content: guess,
-                senderId: playerId,
-                role: 'decryptor',
-                turnNumber: this.gameStateManager.getNextTurnNumber(gameState)
-            });
+            // Decryptor incorrect - add to conversation history as insider turn and advance turn to AI
+            const messageAdded = this.gameStateManager.addInsiderTurn(gameState, guess);
 
             // For incorrect decryptor guess, we want to go back to AI, not to encryptor
             const updatedGameState = {
@@ -198,7 +182,7 @@ export class GameLogic {
         return {
             isGameEnded: this.gameStateManager.isGameEnded(gameState),
             winner: this.gameStateManager.getGameWinner(gameState),
-            currentTurn: this.gameStateManager.getCurrentTurn(gameState),
+            currentTurn: gameState.currentTurn,
             score: gameState.score,
             round: gameState.currentRound
         };
@@ -243,15 +227,15 @@ export class GameLogic {
     /**
      * Get conversation history
      */
-    public getConversationHistory(gameState: GameState): Message[] {
+    public getConversationHistory(gameState: GameState): Turn[] {
         return [...gameState.conversationHistory];
     }
 
     /**
-     * Get AI messages from conversation history
+     * Get AI turns from conversation history
      */
-    public getAIMessages(gameState: GameState): Message[] {
-        return gameState.conversationHistory.filter(message => message.role === 'ai');
+    public getAITurns(gameState: GameState): Turn[] {
+        return gameState.conversationHistory.filter(turn => turn.type === 'ai_analysis');
     }
 
     /**
@@ -280,15 +264,15 @@ export class GameLogic {
         }
 
         // Check if it's time for a guess (AI has made at least one guess)
-        const aiMessages = gameState.conversationHistory.filter(message => message.role === 'ai');
-        if (aiMessages.length === 0) {
+        const aiTurns = gameState.conversationHistory.filter(turn => turn.type === 'ai_analysis');
+        if (aiTurns.length === 0) {
             errors.push('AI has not made any guesses yet');
             return { valid: false, errors };
         }
 
-        // Check if there are enough messages for meaningful conversation
+        // Check if there are enough turns for meaningful conversation
         if (gameState.conversationHistory.length < 2) {
-            errors.push('Not enough messages for meaningful conversation');
+            errors.push('Not enough turns for meaningful conversation');
             return { valid: false, errors };
         }
 

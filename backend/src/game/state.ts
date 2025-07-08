@@ -1,5 +1,5 @@
-import { GameState, Message, Player, RoleAssignment } from '../types';
-import { fuzzyStringMatch, generateId, getMaxLevenshteinDistance } from '../utils/helpers';
+import { AITurn, AnalyzeRequest, GameState, InsiderTurn, OutsiderTurn, Player, RoleAssignment } from '../types';
+import { fuzzyStringMatch, getMaxLevenshteinDistance } from '../utils/helpers';
 
 export class GameStateManager {
     private readonly INITIAL_SCORE = 5; // Start at neutral score
@@ -16,7 +16,7 @@ export class GameStateManager {
             score: this.INITIAL_SCORE,
             currentRound: 1,
             secretWord: secretWord.toLowerCase(),
-            conversationHistory: [],
+            conversationHistory: [], // Now uses Turn[] instead of Message[]
             currentTurn: 'encryptor',
             gameStatus: 'active'
         };
@@ -39,23 +39,69 @@ export class GameStateManager {
     }
 
     /**
-     * Add a message to conversation history
+     * Add an outsider turn to conversation history
      */
-    public addMessage(gameState: GameState, message: Omit<Message, 'id' | 'timestamp'>): GameState {
-        const newMessage: Message = {
-            id: generateId(),
-            content: message.content,
-            senderId: message.senderId,
-            timestamp: new Date(),
-            role: message.role,
-            turnNumber: message.turnNumber,
-            ...(message.thinking && { thinking: message.thinking })
+    public addOutsiderTurn(gameState: GameState, content: string): GameState {
+        const outsiderTurn: OutsiderTurn = {
+            type: 'outsider_hint',
+            content,
+            turnNumber: this.getNextTurnNumber(gameState)
         };
 
         return {
             ...gameState,
-            conversationHistory: [...gameState.conversationHistory, newMessage]
+            conversationHistory: [...gameState.conversationHistory, outsiderTurn]
         };
+    }
+
+    /**
+     * Add an AI turn to conversation history
+     */
+    public addAITurn(gameState: GameState, thinking: string[], guess: string): GameState {
+        const aiTurn: AITurn = {
+            type: 'ai_analysis',
+            thinking,
+            guess,
+            turnNumber: this.getNextTurnNumber(gameState)
+        };
+
+        return {
+            ...gameState,
+            conversationHistory: [...gameState.conversationHistory, aiTurn]
+        };
+    }
+
+    /**
+     * Add an insider turn to conversation history
+     */
+    public addInsiderTurn(gameState: GameState, guess: string): GameState {
+        const insiderTurn: InsiderTurn = {
+            type: 'insider_guess',
+            guess,
+            turnNumber: this.getNextTurnNumber(gameState)
+        };
+
+        return {
+            ...gameState,
+            conversationHistory: [...gameState.conversationHistory, insiderTurn]
+        };
+    }
+
+    /**
+     * Legacy method for backward compatibility - now delegates to specific turn methods
+     */
+    public addMessage(gameState: GameState, message: any): GameState {
+        // This method is kept for backward compatibility but should be replaced
+        // with specific turn methods in new code
+        if (message.type === 'outsider_hint') {
+            return this.addOutsiderTurn(gameState, message.content);
+        } else if (message.type === 'ai_analysis') {
+            return this.addAITurn(gameState, message.thinking, message.guess);
+        } else if (message.type === 'insider_guess') {
+            return this.addInsiderTurn(gameState, message.guess);
+        }
+
+        throw new Error('Invalid message type for addMessage');
     }
 
     /**
@@ -188,9 +234,9 @@ export class GameStateManager {
     }
 
     /**
-     * Transform conversation history to OpenAI context format
+     * Transform conversation history to AnalyzeRequest format
      */
-    public transformToOpenAIContext(gameState: GameState, gameId: string): { gameId: string; conversationHistory: Message[] } {
+    public transformToAnalyzeRequest(gameState: GameState, gameId: string): AnalyzeRequest {
         return {
             gameId,
             conversationHistory: gameState.conversationHistory
@@ -319,7 +365,6 @@ export class GameStateManager {
         round: number;
         currentTurn: 'encryptor' | 'ai' | 'decryptor';
         messageCount: number;
-        aiGuessCount: number;
         gameStatus: 'waiting' | 'active' | 'ended';
     } {
         return {
@@ -327,7 +372,6 @@ export class GameStateManager {
             round: gameState.currentRound,
             currentTurn: gameState.currentTurn,
             messageCount: gameState.conversationHistory.length,
-            aiGuessCount: 0, // aiGuesses is removed, so this will always be 0
             gameStatus: gameState.gameStatus
         };
     }

@@ -18,26 +18,43 @@ export interface GameState {
     score: number;
     currentRound: number;
     secretWord: string;
-    conversationHistory: Message[];
+    conversationHistory: Turn[];  // Updated to use Turn[] instead of Message[]
     currentTurn: 'encryptor' | 'ai' | 'decryptor';
     gameStatus: 'waiting' | 'active' | 'ended';
 }
 
-export interface Message {
-    id: string;
-    content: string;
-    senderId: string;
-    timestamp: Date;
-    role: 'encryptor' | 'decryptor' | 'ai';
-    turnNumber: number;            // Sequential starting from 1
+// New Zod-based Turn types
+type TurnType = 'outsider_hint' | 'ai_analysis' | 'insider_guess';
 
-    // Optional fields for specific message types
-    thinking?: string[];           // For AI messages (always present for AI)
+export interface OutsiderTurn {
+    type: 'outsider_hint';
+    content: string;
+    turnNumber: number;
 }
 
-export interface OpenAIContext {
-    gameId: string;                // Room/session identifier
-    conversationHistory: Message[];
+export interface AITurn {
+    type: 'ai_analysis';
+    thinking: string[];  // Exactly 4 sentences
+    guess: string;       // Single word, 3-12 characters
+    turnNumber: number;
+}
+
+export interface InsiderTurn {
+    type: 'insider_guess';
+    guess: string;       // Single word, 3-12 characters
+    turnNumber: number;
+}
+
+export type Turn = OutsiderTurn | AITurn | InsiderTurn;
+
+export interface AnalyzeRequest {
+    gameId: string;
+    conversationHistory: Turn[];
+}
+
+export interface AIResponse {
+    thinking: string[];  // Exactly 4 sentences
+    guess: string;       // Single word, 3-12 characters
 }
 
 export interface RoleAssignment {

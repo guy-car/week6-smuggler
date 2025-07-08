@@ -1,15 +1,10 @@
-import { Message } from '../types';
+import { AIResponse, Turn } from '../types';
 
 export interface GameContext {
     currentRound: number;
     score: number;
     gameStatus: 'waiting' | 'active' | 'ended';
     previousGuesses?: string[];
-}
-
-export interface AIResponse {
-    thinking: string[]; // Exactly 4 sentences, max 12 words each
-    guess: string;      // Single word, max 12 characters
 }
 
 export interface AIHealth {
@@ -57,7 +52,7 @@ export class MockAIService {
      * Analyze conversation and generate AI response
      */
     public async analyzeConversation(
-        conversationHistory: Message[],
+        conversationHistory: Turn[],
         secretWord: string,
         gameContext?: GameContext
     ): Promise<AIResponse> {
@@ -83,7 +78,7 @@ export class MockAIService {
      * Generate thinking process for AI analysis (exactly 4 sentences)
      */
     public async generateThinkingProcess(
-        conversationHistory: Message[],
+        conversationHistory: Turn[],
         gameContext?: GameContext
     ): Promise<string[]> {
         try {
@@ -124,7 +119,7 @@ export class MockAIService {
      * Generate AI guess based on conversation (max 12 characters)
      */
     public async generateGuess(
-        conversationHistory: Message[],
+        conversationHistory: Turn[],
         availableWords: string[],
         gameContext?: GameContext
     ): Promise<string> {
@@ -142,7 +137,16 @@ export class MockAIService {
             } else {
                 // Analyze conversation content for clues
                 const conversationText = conversationHistory
-                    .map(msg => msg.content.toLowerCase())
+                    .map(turn => {
+                        if (turn.type === 'outsider_hint') {
+                            return turn.content.toLowerCase();
+                        } else if (turn.type === 'ai_analysis') {
+                            return turn.guess.toLowerCase();
+                        } else if (turn.type === 'insider_guess') {
+                            return turn.guess.toLowerCase();
+                        }
+                        return '';
+                    })
                     .join(' ');
 
                 // Look for words that might be related to the conversation

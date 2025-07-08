@@ -150,13 +150,8 @@ export class GameHandlers {
                 return;
             }
 
-            // Add message to conversation history with role and turn number
-            const updatedGameState = this.gameStateManager.addMessage(room.gameState, {
-                content: message,
-                senderId: socket.id,
-                role: 'encryptor',
-                turnNumber: this.gameStateManager.getNextTurnNumber(room.gameState)
-            });
+            // Add outsider turn to conversation history
+            const updatedGameState = this.gameStateManager.addOutsiderTurn(room.gameState, message);
 
             // Advance turn to AI
             const nextGameState = this.gameStateManager.advanceTurn(updatedGameState);
@@ -168,7 +163,6 @@ export class GameHandlers {
             const messageData = {
                 roomId,
                 message: {
-                    id: updatedGameState.conversationHistory[updatedGameState.conversationHistory.length - 1]!.id,
                     content: message,
                     senderId: socket.id,
                     timestamp: new Date()
@@ -333,7 +327,6 @@ export class GameHandlers {
                 const messageData = {
                     roomId,
                     message: {
-                        id: updatedGameState.conversationHistory[updatedGameState.conversationHistory.length - 1]!.id,
                         content: guess,
                         senderId: socket.id,
                         timestamp: new Date()
@@ -485,8 +478,8 @@ export class GameHandlers {
                 score: room.gameState.score,
                 gameStatus: room.gameState.gameStatus,
                 previousGuesses: room.gameState.conversationHistory
-                    .filter(message => message.role === 'ai')
-                    .map(message => message.content)
+                    .filter(turn => turn.type === 'ai_analysis')
+                    .map(turn => (turn as any).guess)
             };
 
             // Generate AI response using the comprehensive service
@@ -497,13 +490,7 @@ export class GameHandlers {
             );
 
             // Add AI response to conversation history
-            const updatedGameState = this.gameStateManager.addMessage(room.gameState, {
-                content: aiResponse.guess,
-                senderId: 'ai',
-                role: 'ai',
-                turnNumber: this.gameStateManager.getNextTurnNumber(room.gameState),
-                thinking: aiResponse.thinking
-            });
+            const updatedGameState = this.gameStateManager.addAITurn(room.gameState, aiResponse.thinking, aiResponse.guess);
 
             // Check if AI guess is correct
             const isCorrect = this.gameStateManager.validateGuess(aiResponse.guess, room.gameState.secretWord);
@@ -553,14 +540,11 @@ export class GameHandlers {
             // Broadcast AI response to all players
             const aiResponseData = {
                 roomId,
-                message: {
-                    id: updatedGameState.conversationHistory[updatedGameState.conversationHistory.length - 1]!.id,
-                    content: aiResponse.guess,
-                    senderId: 'ai',
-                    timestamp: new Date(),
-                    role: 'ai',
-                    turnNumber: this.gameStateManager.getNextTurnNumber(room.gameState),
-                    thinking: aiResponse.thinking
+                turn: {
+                    type: 'ai_analysis',
+                    thinking: aiResponse.thinking,
+                    guess: aiResponse.guess,
+                    turnNumber: this.gameStateManager.getNextTurnNumber(room.gameState)
                 },
                 currentTurn: room.gameState.currentTurn
             };
@@ -593,13 +577,7 @@ export class GameHandlers {
             const guess = availableWords[Math.floor(Math.random() * availableWords.length)]!;
 
             // Add AI response to conversation history
-            const updatedGameState = this.gameStateManager.addMessage(room.gameState, {
-                content: guess,
-                senderId: 'ai',
-                role: 'ai',
-                turnNumber: this.gameStateManager.getNextTurnNumber(room.gameState),
-                thinking: thinking
-            });
+            const updatedGameState = this.gameStateManager.addAITurn(room.gameState, thinking, guess);
 
             // Check if AI guess is correct
             const isCorrect = this.gameStateManager.validateGuess(guess, room.gameState.secretWord);
@@ -649,14 +627,11 @@ export class GameHandlers {
             // Broadcast fallback AI response
             const aiResponseData = {
                 roomId,
-                message: {
-                    id: updatedGameState.conversationHistory[updatedGameState.conversationHistory.length - 1]!.id,
-                    content: guess,
-                    senderId: 'ai',
-                    timestamp: new Date(),
-                    role: 'ai',
-                    turnNumber: this.gameStateManager.getNextTurnNumber(room.gameState),
-                    thinking: thinking
+                turn: {
+                    type: 'ai_analysis',
+                    thinking: thinking,
+                    guess: guess,
+                    turnNumber: this.gameStateManager.getNextTurnNumber(room.gameState)
                 },
                 currentTurn: room.gameState.currentTurn,
                 reasoning: "Fallback response due to AI service error"

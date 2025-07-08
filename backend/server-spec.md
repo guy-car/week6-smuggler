@@ -76,7 +76,7 @@ logging:
 | `player_ready`            | Client → Server | `{ roomId: string }`                                                        | Player marks themselves as ready     |
 | `start_game`              | Server → Client | `{ roomId: string, players: Player[], roles: RoleAssignment }`              | Game starts when both players ready  |
 | `send_message`            | Client → Server | `{ roomId: string, message: string, senderId: string }`                     | Encryptor sends message              |
-| `ai_response`             | Server → Client | `{ roomId: string, message: Message }` | AI response added to conversation history |
+| `ai_response`             | Server → Client | `{ roomId: string, turn: AITurn }` | AI response added to conversation history |
 | `player_guess`            | Client → Server | `{ roomId: string, guess: string, playerId: string }`                       | Decryptor attempts to guess secret   |
 | `guess_result`            | Server → Client | `{ roomId: string, correct: boolean, winner: string, score: number }`       | Guess validation result              |
 | `round_end`               | Server → Client | `{ roomId: string, score: number, gameEnded: boolean, winner: string }`     | Round completion and score update    |
@@ -92,7 +92,7 @@ logging:
 | `GET /`                 | GET    | API status and welcome message                |
 | `GET /api/health`       | GET    | Health check with uptime and environment info |
 | `GET /api/ai/health`    | GET    | AI service health status                      |
-| `POST /api/ai/response` | POST   | Generate AI response (mock implementation)    |
+| `POST /api/ai/analyze`  | POST   | Generate AI response (mock implementation)    |
 | `POST /api/rooms`       | POST   | Create new room and auto-join creator         |
 
 ### Data Structures
@@ -103,6 +103,7 @@ interface Player {
   name: string;
   ready: boolean;
   role: 'encryptor' | 'decryptor' | null;
+  socketId: string;
 }
 
 interface Room {
@@ -110,32 +111,50 @@ interface Room {
   players: Player[];
   gameState: GameState | null;
   createdAt: Date;
+  lastActivity: Date;
 }
 
 interface GameState {
   score: number;
   currentRound: number;
   secretWord: string;
-  conversationHistory: Message[];  // Single unified array - includes all messages and AI responses
+  conversationHistory: Turn[];  // Unified array using Turn union types
   currentTurn: 'encryptor' | 'ai' | 'decryptor';
   gameStatus: 'waiting' | 'active' | 'ended';
 }
 
-interface Message {
-  id: string;
+// New Zod-based Turn types
+type TurnType = 'outsider_hint' | 'ai_analysis' | 'insider_guess';
+
+interface OutsiderTurn {
+  type: 'outsider_hint';
   content: string;
-  senderId: string;
-  timestamp: Date;
-  role: 'encryptor' | 'decryptor' | 'ai';
-  turnNumber: number;            // Sequential starting from 1
-  
-  // Optional fields for specific message types
-  thinking?: string[];           // For AI messages (always present for AI)
+  turnNumber: number;
 }
 
-interface OpenAIContext {
-  gameId: string;                // Room/session identifier
-  conversationHistory: Message[];
+interface AITurn {
+  type: 'ai_analysis';
+  thinking: string[];  // Exactly 4 sentences
+  guess: string;       // Single word, 3-12 characters
+  turnNumber: number;
+}
+
+interface InsiderTurn {
+  type: 'insider_guess';
+  guess: string;       // Single word, 3-12 characters
+  turnNumber: number;
+}
+
+type Turn = OutsiderTurn | AITurn | InsiderTurn;
+
+interface AnalyzeRequest {
+  gameId: string;
+  conversationHistory: Turn[];
+}
+
+interface AIResponse {
+  thinking: string[];  // Exactly 4 sentences
+  guess: string;       // Single word, 3-12 characters
 }
 
 interface RoleAssignment {
@@ -154,34 +173,33 @@ interface RoleAssignment {
 - **Score Changes:** +1 when players win round, -1 when AI wins round
 
 ### Turn Order
-1. **Encryptor** sends message
-2. **AI** analyzes and makes guess
-3. **Decryptor** sends message/guess (if correct → round ends, if incorrect → added to conversation)
-4. **AI** analyzes again and makes another guess
+1. **Encryptor** sends hint message (`outsider_hint`)
+2. **AI** analyzes and makes guess (`ai_analysis`)
+3. **Decryptor** sends message/guess (if correct → round ends, if incorrect → `insider_guess` added to conversation)
+4. **AI** analyzes again and makes another guess (`ai_analysis`)
 5. Repeat until someone guesses correctly
 
 ### Decryptor Message Handling
 The decryptor's input serves **two purposes simultaneously**:
-- **Message**: If the input doesn't match the secret word, it's added to `conversationHistory` as a response message
+- **Message**: If the input doesn't match the secret word, it's added to `conversationHistory` as an `insider_guess` turn
 - **Guess**: If the input matches the secret word, the decryptor wins the round
 
 **Flow Example:**
-1. Encryptor: "I'm thinking of something round and red" → `conversationHistory` (role: 'encryptor')
-2. AI: "apple" → `conversationHistory` (role: 'ai' with thinking)
-3. Decryptor: "Is it something you eat?" → **CHECK AS GUESS** → incorrect → `conversationHistory` (role: 'decryptor')
-4. AI: "tomato" → `conversationHistory` (role: 'ai' with thinking)
+1. Encryptor: "I'm thinking of something round and red" → `conversationHistory` (type: 'outsider_hint')
+2. AI: "apple" → `conversationHistory` (type: 'ai_analysis' with thinking)
+3. Decryptor: "Is it something you eat?" → **CHECK AS GUESS** → incorrect → `conversationHistory` (type: 'insider_guess')
+4. AI: "tomato" → `conversationHistory` (type: 'ai_analysis' with thinking)
 5. Decryptor: "apple" → **CORRECT GUESS** → round ends, players win
 
 **Implementation Requirements:**
 - All decryptor inputs are checked as guesses first
 - If decryptor input is correct: round ends, players win
-- If decryptor input is incorrect: add to `conversationHistory` as decryptor_message, continue conversation
-- AI responses must be added to `conversationHistory` as ai_message with thinking field
+- If decryptor input is incorrect: add to `conversationHistory` as `insider_guess`, continue conversation
+- AI responses must be added to `conversationHistory` as `ai_analysis` with thinking field
 - AI must analyze the full conversation including decryptor responses
 - Only correct word matches should trigger round end
-- **OpenAI Context**: Transform conversation history to simplified format for AI analysis
-- **Turn Tracking**: Maintain sequential turn numbers for OpenAI context
-- **Turn Order Validation**: Ensure strict outsider → ai → insider → ai → outsider sequence
+- **Turn Validation**: Ensure strict outsider → ai → insider → ai → outsider sequence
+- **Turn Numbers**: Maintain sequential turn numbers starting from 1
 
 ### Role Assignment
 - **First player to join** (room creator) → **Encryptor** (fixed role)
@@ -209,61 +227,55 @@ The decryptor's input serves **two purposes simultaneously**:
 ```typescript
 interface AIResponse {
   thinking: string[]; // Exactly 4 sentences
-  guess: string;      // Single word
+  guess: string;      // Single word, 3-12 characters
 }
 
-// AI responses are integrated into conversation history as Message objects
-// with role: 'ai' and thinking field
+// AI responses are integrated into conversation history as AITurn objects
+// with type: 'ai_analysis' and thinking field
 ```
 
-### Unified Message Structure
+### Unified Turn Structure
 
-All conversation history uses a single `Message` type with optional fields for different message types:
+All conversation history uses the `Turn` union type with discriminated union based on `type` field:
 
-**Message Types:**
-1. **Encryptor Messages** (`role: 'encryptor'`)
-   - `content`: The hint message
-   - `role`: 'encryptor'
-
-2. **Decryptor Messages** (`role: 'decryptor'`)
-   - `content`: The response message (checked as guess, if incorrect becomes conversation)
-   - `role`: 'decryptor'
-
-3. **AI Messages** (`role: 'ai'`)
-   - `content`: The AI's response (thinking process or final guess)
-   - `role`: 'ai'
-   - `thinking`: Array of individual thinking steps (always present for AI messages)
-
-### OpenAI Context System
-
-For AI analysis, our `Message` interface serves as the shared type for all conversation history:
-
-**Message Types:**
-1. **Encryptor Messages** (`role: 'encryptor'`)
-   - `content`: The hint message
+**Turn Types:**
+1. **Outsider Turns** (`type: 'outsider_hint'`)
+   - `content`: The hint message from the encryptor
    - `turnNumber`: Sequential turn number
 
-2. **AI Messages** (`role: 'ai'`)
-   - `content`: The AI's guess
-   - `thinking`: Array of 4 thinking sentences
+2. **AI Turns** (`type: 'ai_analysis'`)
+   - `thinking`: Array of exactly 4 thinking sentences
+   - `guess`: Single word guess (3-12 characters)
    - `turnNumber`: Sequential turn number
 
-3. **Decryptor Messages** (`role: 'decryptor'`)
-   - `content`: The failed guess word
+3. **Insider Turns** (`type: 'insider_guess'`)
+   - `guess`: The failed guess attempt (3-12 characters)
    - `turnNumber`: Sequential turn number
 
-**Key Requirements:**
+### Turn Validation
+
+The conversation history must follow strict validation rules:
+
+**Turn Number Validation:**
 - Turn numbers must be sequential starting from 1
-- Strict turn order: encryptor → ai → decryptor → ai → encryptor...
-- Failed guesses only (successful guesses end game)
-- Word validation (3-12 chars, lowercase) handled on frontend
+- Each turn must have `turnNumber = index + 1`
 
-**Benefits:**
-- Single source of truth for all conversation history
-- AI responses treated as regular messages in the conversation
-- Easy chronological display of all interactions
-- Simplified state management - no separate AI guesses array
-- Consistent data structure for all message types
+**Turn Order Validation:**
+- Strict pattern: outsider → ai → insider → ai → outsider → ...
+- First turn must be `outsider_hint`
+- `outsider_hint` can only follow `ai_analysis`
+- `ai_analysis` can only follow `outsider_hint` or `insider_guess`
+- `insider_guess` can only follow `ai_analysis`
+
+**Example Valid Sequence:**
+```typescript
+[
+  { type: 'outsider_hint', content: "It's red and sweet", turnNumber: 1 },
+  { type: 'ai_analysis', thinking: ["...", "...", "...", "..."], guess: "cherry", turnNumber: 2 },
+  { type: 'insider_guess', guess: "apple", turnNumber: 3 },
+  { type: 'ai_analysis', thinking: ["...", "...", "...", "..."], guess: "strawberry", turnNumber: 4 }
+]
+```
 
 ### Available Words
 37 curated words including: Elephant, Pizza, Sunshine, Mountain, Ocean, Butterfly, Chocolate, Rainbow, Forest, Castle, Dragon, Guitar, Diamond, Volcano, Telescope, Waterfall, Fireworks, Treasure, Pirate, Wizard, Computer, Library, Hospital, Airport, Restaurant, School, Museum, Theater, Stadium, Bridge, Tower, Temple, Palace, Cottage, Lighthouse, Windmill, Fountain
@@ -286,9 +298,9 @@ The `GameStateManager` class manages:
 - Score tracking and validation
 - Role assignment (fixed roles)
 - Turn progression and validation
-- Conversation history tracking (unified array for all messages and AI responses)
+- Conversation history tracking (unified array using Turn union types)
 - Game end condition checking
-- Turn number tracking for OpenAI context
+- Turn number tracking and validation
 - Conversation history transformation for AI analysis
 
 ### Socket Event Handlers
@@ -301,7 +313,7 @@ The `MockAIService` class provides:
 - Conversation analysis with thinking process generation
 - Guess generation based on conversation content
 - Semantic word association matching
-- Structured response formatting
+- Structured response formatting using `AIResponse` type
 - Error handling and fallback logic
 
 ## 8. Testing
@@ -364,7 +376,7 @@ backend/
 │   │   ├── ai.ts              # AI API routes
 │   │   └── rooms.ts           # Room creation API routes
 │   ├── types/
-│   │   └── index.ts           # TypeScript types
+│   │   └── index.ts           # TypeScript types (Zod-based)
 │   └── utils/
 │       └── helpers.ts         # Utility functions
 ├── data/
@@ -401,6 +413,7 @@ backend/
 - Guess format validation
 - Room ID validation
 - Player authentication checks
+- Turn validation (order, numbers, types)
 
 ### AI Service Resilience
 - Fallback responses when AI analysis fails
@@ -430,9 +443,6 @@ backend/
 
 ### Overview
 HTTP endpoint to create rooms and auto-join the creator, enabling direct room creation from frontend without WebSocket connection.
-
-#### Backend Changes
-
 
 #### API Specification
 
@@ -483,145 +493,159 @@ Frontend → POST /api/rooms → Backend creates room + player → Return roomId
 - No authentication required for room creation
 - Graceful error handling for all failure scenarios
 
-## 14. Unified Conversation History Implementation
+## 14. AI Analysis Endpoint Implementation
 
 ### Overview
-Implementation of the simplified conversation history structure that unifies all messages (encryptor, decryptor, and AI) into a single `Message` array, eliminating the need for separate `aiGuesses` array.
+HTTP endpoint for AI analysis using the new Zod-based types and structured conversation history.
 
-### Implementation Checklist
+#### API Specification
 
-#### Phase 1: Update Type Definitions
-1. **Update `backend/src/types/index.ts`**
-   - [ ] Update `Message` interface to include `role` field and `turnNumber`
-   - [ ] Remove `AIGuess` interface
-   - [ ] Update `GameState` interface to remove `aiGuesses` array
-   - [ ] Add optional `thinking` field for AI messages
-   - [ ] Add `OpenAIContext` interface for AI analysis
+**Endpoint:** `POST /api/ai/analyze`
 
-#### Phase 2: Update Game State Management
-2. **Update `backend/src/game/state.ts`**
-   - [ ] Remove `addAIGuess` method
-   - [ ] Update `addMessage` method to handle `Message` structure
-   - [ ] Update `createGameState` to initialize empty `conversationHistory` array
-   - [ ] Remove any references to `aiGuesses` array
-   - [ ] Add turn number tracking for OpenAI context
-   - [ ] Add method to transform conversation history to OpenAI format
-
-#### Phase 3: Update Game Logic
-3. **Update `backend/src/game/logic.ts`**
-   - [ ] Update `handleEncryptorMessage` to create messages with `role: 'encryptor'`
-   - [ ] Update `handleDecryptorGuess` to create messages with `role: 'decryptor'` for incorrect guesses
-   - [ ] Remove any logic that adds to separate `aiGuesses` array
-   - [ ] Ensure all message creation uses the new `Message` structure
-   - [ ] Add turn order validation for OpenAI context
-   - [ ] Add turn number increment logic
-
-#### Phase 4: Update Socket Event Handlers
-4. **Update `backend/src/socket/handlers/gameHandlers.ts`**
-   - [ ] Update `handleSendMessage` to create messages with `role: 'encryptor'`
-   - [ ] Update `handlePlayerGuess` to create messages with `role: 'decryptor'` for incorrect guesses
-   - [ ] Update `handleAIResponse` to create messages with `role: 'ai'` and `thinking` field
-   - [ ] Update all message broadcasting to use new structure
-   - [ ] Remove any logic that handles separate AI guesses
-
-#### Phase 5: Update AI Integration
-5. **Update `backend/src/ai/mock.ts`**
-   - [ ] Update AI response creation to return `Message` structure
-   - [ ] Ensure AI messages always include `thinking` field
-   - [ ] Update response format to match new structure
-
-#### Phase 6: Update Socket Events
-6. **Update Socket.IO event payloads**
-   - [ ] Update `ai_response` event to send `ConversationMessage` structure
-   - [ ] Update `message_received` event to use new message format
-   - [ ] Update `message_sent` event to use new message format
-   - [ ] Remove any events that reference old `aiGuesses` structure
-
-#### Phase 7: Update Tests
-7. **Update test files**
-   - [ ] Update `backend/tests/gameState.test.ts` to test new `Message` structure
-   - [ ] Update `backend/tests/gameHandlers.test.ts` to test new message types
-   - [ ] Update `backend/tests/gameLogic.test.ts` to test unified conversation history
-   - [ ] Remove tests that reference `aiGuesses` array
-   - [ ] Add tests for new message types and AI message handling
-
-#### Phase 8: Update Validation
-8. **Update `backend/src/game/validation.ts`**
-   - [ ] Update any validation logic to work with new `Message` structure
-   - [ ] Ensure role validation works correctly
-   - [ ] Update validation for AI messages with thinking field
-
-### Key Implementation Details
-
-#### Message Type Handling
+**Request Body:**
 ```typescript
-// Encryptor messages
-const encryptorMessage: Message = {
-  id: generateId(),
-  content: message,
-  senderId: socket.id,
-  timestamp: new Date(),
-  role: 'encryptor',
-  turnNumber: currentTurnNumber
-};
-
-// Decryptor messages (incorrect guesses)
-const decryptorMessage: Message = {
-  id: generateId(),
-  content: guess,
-  senderId: socket.id,
-  timestamp: new Date(),
-  role: 'decryptor',
-  turnNumber: currentTurnNumber
-};
-
-// AI messages
-const aiMessage: Message = {
-  id: generateId(),
-  content: aiResponse.guess,
-  senderId: 'ai',
-  timestamp: new Date(),
-  role: 'ai',
-  turnNumber: currentTurnNumber,
-  thinking: aiResponse.thinking
-};
-```
-
-#### Decryptor Input Processing
-```typescript
-// In handlePlayerGuess
-const isCorrect = this.gameStateManager.validateGuess(guess, room.gameState.secretWord);
-
-if (isCorrect) {
-  // Handle correct guess - end round
-  // ... existing round end logic
-} else {
-  // Handle incorrect guess - add to conversation and continue
-  const updatedGameState = this.gameStateManager.addMessage(room.gameState, {
-    content: guess,
-    senderId: socket.id,
-    role: 'decryptor'
-  });
-  
-  // Advance turn to AI
-  const nextGameState = this.gameStateManager.advanceTurn(updatedGameState);
-  room.gameState = nextGameState;
-  
-  // Broadcast message and trigger AI response
-  // ... message broadcasting logic
-  setTimeout(() => {
-    this.handleAIResponse(roomId);
-  }, 1000);
+interface AnalyzeRequest {
+  gameId: string;
+  conversationHistory: Turn[];
 }
 ```
 
+**Example Request:**
+```json
+{
+  "gameId": "room123",
+  "conversationHistory": [
+    {
+      "type": "outsider_hint",
+      "content": "It's red and sweet",
+      "turnNumber": 1
+    },
+    {
+      "type": "ai_analysis",
+      "thinking": [
+        "The outsider mentioned something red and sweet",
+        "This could be a fruit like strawberry or cherry",
+        "It could also be candy or dessert",
+        "I should consider common red sweet foods"
+      ],
+      "guess": "cherry",
+      "turnNumber": 2
+    },
+    {
+      "type": "insider_guess",
+      "guess": "apple",
+      "turnNumber": 3
+    }
+  ]
+}
+```
+
+**Response:**
+```typescript
+interface AIResponse {
+  thinking: string[];  // Exactly 4 sentences
+  guess: string;       // Single word, 3-12 characters
+}
+```
+
+**Example Response:**
+```json
+{
+  "thinking": [
+    "The insider guessed apple, which is red but not necessarily sweet",
+    "The outsider emphasized both red and sweet qualities",
+    "Strawberry fits both criteria better than apple",
+    "I should guess strawberry as it's both red and sweet"
+  ],
+  "guess": "strawberry"
+}
+```
+
+#### Validation Rules
+- Turn numbers must be sequential starting from 1
+- Turns must follow pattern: outsider → ai → insider → ai → outsider
+- AI thinking must be exactly 4 sentences
+- Guesses must be 3-12 characters
+- All turns must have valid types and required fields
+
+#### Error Responses
+```json
+{
+  "success": false,
+  "error": "Invalid conversation history: Turn numbers must be sequential"
+}
+```
+
+## 15. Implementation Checklist
+
+### Phase 1: Update Type Definitions
+1. **Update `backend/src/types/index.ts`**
+   - [x] Replace `Message` interface with Zod-based `Turn` union types
+   - [x] Add `OutsiderTurn`, `AITurn`, `InsiderTurn` interfaces
+   - [x] Add `AnalyzeRequest` and `AIResponse` interfaces
+   - [x] Update `GameState` to use `Turn[]` instead of `Message[]`
+   - [x] Remove old `OpenAIContext` interface
+
+### Phase 2: Update Game State Management
+2. **Update `backend/src/game/state.ts`**
+   - [x] Update `addMessage` method to handle `Turn` structure
+   - [x] Update `createGameState` to initialize empty `conversationHistory: Turn[]`
+   - [x] Add turn number tracking and validation
+   - [x] Add method to transform conversation history to `AnalyzeRequest` format
+   - [x] Update all methods to work with new turn types
+
+### Phase 3: Update Game Logic
+3. **Update `backend/src/game/logic.ts`**
+   - [x] Update `handleEncryptorMessage` to create `OutsiderTurn`
+   - [x] Update `handleDecryptorGuess` to create `InsiderTurn` for incorrect guesses
+   - [x] Update AI response handling to create `AITurn`
+   - [x] Add turn order validation
+   - [x] Add turn number increment logic
+
+### Phase 4: Update Socket Event Handlers
+4. **Update `backend/src/socket/handlers/gameHandlers.ts`**
+   - [x] Update `handleSendMessage` to create `OutsiderTurn`
+   - [x] Update `handlePlayerGuess` to create `InsiderTurn` for incorrect guesses
+   - [x] Update `handleAIResponse` to create `AITurn`
+   - [x] Update all message broadcasting to use new turn structure
+   - [x] Update event payloads to use new types
+
+### Phase 5: Update AI Integration
+5. **Update `backend/src/ai/mock.ts`**
+   - [x] Update AI response creation to return `AIResponse` structure
+   - [x] Update to accept `AnalyzeRequest` instead of old context
+   - [x] Ensure AI responses always include exactly 4 thinking sentences
+   - [x] Update response format to match new structure
+
+### Phase 6: Update API Routes
+6. **Update `backend/src/routes/ai.ts`**
+   - [x] Update `/api/ai/analyze` endpoint to use `AnalyzeRequest`
+   - [x] Add Zod validation for request body
+   - [x] Update response format to use `AIResponse`
+   - [x] Add proper error handling for validation failures
+
+### Phase 7: Update Tests
+7. **Update test files**
+   - [ ] Update `backend/tests/gameState.test.ts` to test new `Turn` structure
+   - [ ] Update `backend/tests/gameHandlers.test.ts` to test new turn types
+   - [ ] Update `backend/tests/gameLogic.test.ts` to test unified conversation history
+   - [ ] Add tests for turn validation and order checking
+   - [ ] Add tests for new AI analysis endpoint
+
+### Phase 8: Update Validation
+8. **Update `backend/src/game/validation.ts`**
+   - [ ] Add Zod validation for turn types
+   - [ ] Add turn order validation
+   - [ ] Add turn number validation
+   - [ ] Update all validation logic to work with new structure
+
 ### Success Criteria
-- [ ] All conversation history unified in single `Message[]` array
-- [ ] No separate `aiGuesses` array exists
-- [ ] AI responses include `thinking` field and are added to conversation history
-- [ ] Decryptor incorrect guesses become conversation messages
-- [ ] All message roles (`encryptor`, `decryptor`, `ai`) work correctly
+- [ ] All conversation history uses `Turn[]` union types
+- [ ] No old `Message` interface exists
+- [ ] AI responses use `AIResponse` structure with exactly 4 thinking sentences
+- [ ] Decryptor incorrect guesses become `InsiderTurn` objects
+- [ ] All turn types (`outsider_hint`, `ai_analysis`, `insider_guess`) work correctly
+- [ ] Turn validation (order, numbers) works correctly
 - [ ] All existing tests pass with new structure
-- [ ] New tests cover unified conversation history functionality
-- [ ] All existing tests pass
-- [ ] New tests cover decryptor message scenarios
+- [ ] New tests cover turn validation and AI analysis functionality
+- [ ] `/api/ai/analyze` endpoint works with new request/response types

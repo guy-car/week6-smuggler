@@ -6,11 +6,18 @@ const aiService = new MockAIService();
 
 /**
  * POST /api/ai/analyze
- * Analyze conversation and generate AI response
+ * Analyze conversation and generate AI response using new Turn structure
  */
 router.post('/analyze', async (req: Request, res: Response) => {
     try {
-        const { conversationHistory, secretWord, gameContext } = req.body;
+        const { gameId, conversationHistory } = req.body;
+
+        if (!gameId || typeof gameId !== 'string') {
+            return res.status(400).json({
+                success: false,
+                error: 'gameId is required and must be a string'
+            });
+        }
 
         if (!conversationHistory || !Array.isArray(conversationHistory)) {
             return res.status(400).json({
@@ -19,10 +26,35 @@ router.post('/analyze', async (req: Request, res: Response) => {
             });
         }
 
+        // Validate conversation history structure
+        for (let i = 0; i < conversationHistory.length; i++) {
+            const turn = conversationHistory[i];
+            if (!turn || typeof turn !== 'object' || !turn.type) {
+                return res.status(400).json({
+                    success: false,
+                    error: `Invalid turn at index ${i}: missing type field`
+                });
+            }
+
+            if (!['outsider_hint', 'ai_analysis', 'insider_guess'].includes(turn.type)) {
+                return res.status(400).json({
+                    success: false,
+                    error: `Invalid turn type at index ${i}: ${turn.type}`
+                });
+            }
+
+            if (turn.turnNumber !== i + 1) {
+                return res.status(400).json({
+                    success: false,
+                    error: `Invalid turn number at index ${i}: expected ${i + 1}, got ${turn.turnNumber}`
+                });
+            }
+        }
+
         const aiResponse = await aiService.analyzeConversation(
             conversationHistory,
-            secretWord,
-            gameContext
+            'mock-secret-word', // Mock secret word for now
+            { currentRound: 1, score: 5, gameStatus: 'active' }
         );
 
         return res.json({
@@ -40,7 +72,7 @@ router.post('/analyze', async (req: Request, res: Response) => {
 
 /**
  * POST /api/ai/thinking
- * Generate thinking process for AI analysis
+ * Generate thinking process for AI analysis using new Turn structure
  */
 router.post('/thinking', async (req: Request, res: Response) => {
     try {
@@ -51,6 +83,24 @@ router.post('/thinking', async (req: Request, res: Response) => {
                 success: false,
                 error: 'conversationHistory is required and must be an array'
             });
+        }
+
+        // Validate conversation history structure
+        for (let i = 0; i < conversationHistory.length; i++) {
+            const turn = conversationHistory[i];
+            if (!turn || typeof turn !== 'object' || !turn.type) {
+                return res.status(400).json({
+                    success: false,
+                    error: `Invalid turn at index ${i}: missing type field`
+                });
+            }
+
+            if (!['outsider_hint', 'ai_analysis', 'insider_guess'].includes(turn.type)) {
+                return res.status(400).json({
+                    success: false,
+                    error: `Invalid turn type at index ${i}: ${turn.type}`
+                });
+            }
         }
 
         const thinking = await aiService.generateThinkingProcess(
@@ -73,7 +123,7 @@ router.post('/thinking', async (req: Request, res: Response) => {
 
 /**
  * POST /api/ai/guess
- * Generate AI guess based on conversation
+ * Generate AI guess based on conversation using new Turn structure
  */
 router.post('/guess', async (req: Request, res: Response) => {
     try {
@@ -91,6 +141,24 @@ router.post('/guess', async (req: Request, res: Response) => {
                 success: false,
                 error: 'availableWords is required and must be an array'
             });
+        }
+
+        // Validate conversation history structure
+        for (let i = 0; i < conversationHistory.length; i++) {
+            const turn = conversationHistory[i];
+            if (!turn || typeof turn !== 'object' || !turn.type) {
+                return res.status(400).json({
+                    success: false,
+                    error: `Invalid turn at index ${i}: missing type field`
+                });
+            }
+
+            if (!['outsider_hint', 'ai_analysis', 'insider_guess'].includes(turn.type)) {
+                return res.status(400).json({
+                    success: false,
+                    error: `Invalid turn type at index ${i}: ${turn.type}`
+                });
+            }
         }
 
         const guess = await aiService.generateGuess(
