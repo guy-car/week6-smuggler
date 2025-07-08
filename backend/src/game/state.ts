@@ -1,5 +1,5 @@
 import { AIGuess, GameState, Message, Player, RoleAssignment } from '../types';
-import { fuzzyStringMatch, getMaxLevenshteinDistance } from '../utils/helpers';
+import { fuzzyStringMatch, generateId, getMaxLevenshteinDistance } from '../utils/helpers';
 
 export class GameStateManager {
     private readonly INITIAL_SCORE = 5; // Start at neutral score
@@ -45,8 +45,9 @@ export class GameStateManager {
      */
     public addMessage(gameState: GameState, message: Omit<Message, 'id' | 'timestamp'>): GameState {
         const newMessage: Message = {
-            ...message,
-            id: this.generateId(),
+            id: generateId(),
+            content: message.content,
+            senderId: message.senderId,
             timestamp: new Date()
         };
 
@@ -59,16 +60,18 @@ export class GameStateManager {
     /**
      * Add AI guess to game state
      */
-    public addAIGuess(gameState: GameState, guess: Omit<AIGuess, 'id' | 'timestamp'>): GameState {
-        const newGuess: AIGuess = {
-            ...guess,
-            id: this.generateId(),
+    public addAIGuess(gameState: GameState, aiGuess: Omit<AIGuess, 'id' | 'timestamp'>): GameState {
+        const newAIGuess: AIGuess = {
+            id: generateId(),
+            thinking: aiGuess.thinking,
+            guess: aiGuess.guess,
+            confidence: aiGuess.confidence,
             timestamp: new Date()
         };
 
         return {
             ...gameState,
-            aiGuesses: [...gameState.aiGuesses, newGuess]
+            aiGuesses: [...gameState.aiGuesses, newAIGuess]
         };
     }
 
@@ -204,12 +207,7 @@ export class GameStateManager {
         };
     }
 
-    /**
-     * Generate unique ID
-     */
-    private generateId(): string {
-        return Date.now().toString(36) + Math.random().toString(36).substr(2);
-    }
+
 
     /**
      * Save game state for disconnected player

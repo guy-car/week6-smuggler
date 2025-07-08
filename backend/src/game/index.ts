@@ -1,4 +1,2 @@
-export { GameLogic } from './logic';
-export { GameStateManager } from './state';
-export { GameValidator } from './validation';
-export { WordManager } from './wordManager';
+// This file is no longer needed as classes are imported directly
+// from their respective files. Removing to reduce dead code.

@@ -1,4 +1,4 @@
-import { Socket } from 'socket.io';
+import { Socket, Server as SocketIOServer } from 'socket.io';
 import { MockAIService } from '../../ai/mock';
 import { GameLogic } from '../../game/logic';
 import { GameStateManager } from '../../game/state';
@@ -12,9 +12,9 @@ export class GameHandlers {
     private wordManager: WordManager;
     private aiService: MockAIService;
     private gameLogic: GameLogic;
-    private io: any;
+    private io: SocketIOServer;
 
-    constructor(roomManager: RoomManager, io: any) {
+    constructor(roomManager: RoomManager, io: SocketIOServer) {
         this.roomManager = roomManager;
         this.gameStateManager = new GameStateManager();
         this.wordManager = new WordManager();
