@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+import { setupOpenAiRoute } from '../openai';
 import { RoomManager } from './rooms/manager';
 import aiRoutes from './routes/ai';
 import roomsRoutes from './routes/rooms';
@@ -39,8 +40,8 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
-// Mount AI routes
-app.use('/api/ai', aiRoutes);
+// Setup OpenAI routes (integrated from openai module)
+setupOpenAiRoute(app);
 
 // Mount rooms routes
 app.use('/api/rooms', roomsRoutes);
