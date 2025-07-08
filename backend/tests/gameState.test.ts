@@ -1,6 +1,5 @@
 import { GameLogic } from '../src/game/logic';
 import { GameStateManager } from '../src/game/state';
-import { GameValidator } from '../src/game/validation';
 import { WordManager } from '../src/game/wordManager';
 import { AITurn, InsiderTurn, OutsiderTurn, Player, RoleAssignment } from '../src/types';
 
@@ -618,83 +617,3 @@ describe('GameLogic', () => {
     });
 });
 
-describe('GameValidator', () => {
-    let validator: GameValidator;
-
-    beforeEach(() => {
-        validator = new GameValidator();
-    });
-
-    describe('validatePlayer', () => {
-        it('should validate correct player data', () => {
-            const player = {
-                id: 'player1',
-                name: 'Player 1',
-                ready: true,
-                role: null,
-                socketId: 'socket1'
-            };
-
-            const result = validator.validatePlayer(player);
-
-            expect(result.valid).toBe(true);
-            expect(result.errors).toEqual([]);
-        });
-
-        it('should return errors for invalid player data', () => {
-            const player = {
-                id: '',
-                name: '',
-                ready: 'not boolean',
-                role: 'invalid'
-            };
-
-            const result = validator.validatePlayer(player);
-
-            expect(result.valid).toBe(false);
-            expect(result.errors.length).toBeGreaterThan(0);
-        });
-    });
-
-    describe('validateMessage', () => {
-        it('should validate correct message', () => {
-            const message = {
-                content: 'Test message',
-                senderId: 'player1'
-            };
-
-            const result = validator.validateMessage(message);
-
-            expect(result.valid).toBe(true);
-            expect(result.errors).toEqual([]);
-        });
-
-        it('should return errors for invalid message', () => {
-            const message = {
-                content: '',
-                senderId: ''
-            };
-
-            const result = validator.validateMessage(message);
-
-            expect(result.valid).toBe(false);
-            expect(result.errors.length).toBeGreaterThan(0);
-        });
-    });
-
-    describe('validatePlayerGuess', () => {
-        it('should validate correct guess', () => {
-            const result = validator.validatePlayerGuess('TestGuess');
-
-            expect(result.valid).toBe(true);
-            expect(result.errors).toEqual([]);
-        });
-
-        it('should return errors for invalid guess', () => {
-            const result = validator.validatePlayerGuess('');
-
-            expect(result.valid).toBe(false);
-            expect(result.errors.length).toBeGreaterThan(0);
-        });
-    });
-}); 

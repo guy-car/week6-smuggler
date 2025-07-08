@@ -1,706 +1,286 @@
-# Smuggler Game Backend Server Specification
+# Smuggler Backend Server Specification
 
-## 1. Overview
+## Overview
 
-Real-time WebSocket server for the Smuggler game, handling room management, game state, AI integration, and player communication. The server manages 2-player rooms where players have fixed roles as Encryptor/Decryptor, with an AI eavesdropper attempting to decode secret messages.
+The Smuggler backend is a Node.js/TypeScript server that provides real-time multiplayer game functionality for the Smuggler word-guessing game. It combines REST API endpoints with WebSocket connections using Socket.IO for real-time communication.
 
-**Key Features:**
-- WebSocket-based real-time communication via Socket.IO
-- Room management with automatic cleanup
-- Game state management (score, roles, conversation history)
-- Mock AI integration with structured responses
-- Word selection from static JSON file
-- Player ready system and role assignment
-- Comprehensive test suite with 231 passing tests
+## Architecture
 
-## 2. Architecture Diagram
+### Technology Stack
+- **Runtime**: Node.js with TypeScript
+- **Framework**: Express.js for REST API
+- **Real-time**: Socket.IO for WebSocket connections
+- **Validation**: Zod for schema validation
+- **Testing**: Jest with Supertest
+- **Development**: Nodemon for hot reloading
 
-```mermaid
-graph LR
-    ExpoClient[Expo Client :8081]
-    SocketServer[Socket.IO Server :3000]
-    WordList[words.json]
-    MockAI[Mock AI Service]
-    
-    ExpoClient -->|ws://localhost:3000| SocketServer
-    SocketServer -->|read| WordList
-    SocketServer -->|generate response| MockAI
-```
-
-## 3. Configuration
-
-```yaml
-server:
-  port: 3000
-  cors:
-    origin: http://localhost:8081
-    credentials: true
-
-game:
-  maxPlayersPerRoom: 2
-  scoreRange: [0, 10]
-  initialScore: 5
-  winScore: 10
-  loseScore: 0
-  guessValidation:
-    maxLevenshteinDistance: 2
-    caseInsensitive: true
-    trimWhitespace: true
-
-ai:
-  mockEnabled: true
-  responseDelay: 500-2000ms
-  thinkingSentences: 4
-  maxWordsPerSentence: 12
-  maxGuessLength: 12
-
-logging:
-  level: info
-  format: simple
-```
-
-**Environment Variables:**
-| Name                     | Type    | Default     | Description                                       |
-|--------------------------|---------|-------------|---------------------------------------------------|
-| PORT                     | integer | 3000        | Server port                                       |
-| NODE_ENV                 | string  | development | Environment mode                                  |
-| MAX_LEVENSHTEIN_DISTANCE | integer | 2           | Maximum Levenshtein distance for guess validation |
-
-## 4. API / Protocol
-
-### Socket.IO Events
-
-| Event                     | Direction       | Payload                                                                     | Description                          |
-|---------------------------|-----------------|-----------------------------------------------------------------------------|--------------------------------------|
-| `join_room`               | Client → Server | `{ roomId: string }`                                                        | Join existing room or create new one |
-| `player_ready`            | Client → Server | `{ roomId: string }`                                                        | Player marks themselves as ready     |
-| `start_game`              | Server → Client | `{ roomId: string, players: Player[], roles: RoleAssignment }`              | Game starts when both players ready  |
-| `send_message`            | Client → Server | `{ roomId: string, message: string, senderId: string }`                     | Encryptor sends message              |
-| `ai_response`             | Server → Client | `{ roomId: string, turn: AITurn }` | AI response added to conversation history |
-| `player_guess`            | Client → Server | `{ roomId: string, guess: string, playerId: string }`                       | Decryptor attempts to guess secret   |
-| `guess_result`            | Server → Client | `{ roomId: string, correct: boolean, winner: string, score: number }`       | Guess validation result              |
-| `round_end`               | Server → Client | `{ roomId: string, score: number, gameEnded: boolean, winner: string }`     | Round completion and score update    |
-| `game_end`                | Server → Client | `{ roomId: string, winner: string, finalScore: number }`                    | Game completion                      |
-| `list_rooms`              | Client → Server | -                                                                           | Request current room list (legacy)   |
-| `room_list`               | Server → Client | `{ rooms: Room[] }`                                                         | Broadcast room list to lobby clients |
-| `check_room_availability` | Client → Server | `{ roomId: string }`                                                        | Check if room exists and has space   |
-
-### HTTP API Endpoints
-
-| Endpoint                | Method | Description                                   |
-|-------------------------|--------|-----------------------------------------------|
-| `GET /`                 | GET    | API status and welcome message                |
-| `GET /api/health`       | GET    | Health check with uptime and environment info |
-| `GET /api/ai/health`    | GET    | AI service health status                      |
-| `POST /api/ai/analyze`  | POST   | Generate AI response (mock implementation)    |
-| `POST /api/rooms`       | POST   | Create new room and auto-join creator         |
-
-### Data Structures
-
-```typescript
-interface Player {
-  id: string;
-  name: string;
-  ready: boolean;
-  role: 'encryptor' | 'decryptor' | null;
-  socketId: string;
-}
-
-interface Room {
-  id: string;
-  players: Player[];
-  gameState: GameState | null;
-  createdAt: Date;
-  lastActivity: Date;
-}
-
-interface GameState {
-  score: number;
-  currentRound: number;
-  secretWord: string;
-  conversationHistory: Turn[];  // Updated to use Turn[] instead of Message[]
-  currentTurn: 'encryptor' | 'ai' | 'decryptor';
-  gameStatus: 'waiting' | 'active' | 'ended';
-}
-
-interface RoleAssignment {
-  encryptor: string;
-  decryptor: string;
-}
-```
-
-### Zod Schemas (Source of Truth)
-
-The Turn types are defined using Zod schemas in `backend/openai/types/game.ts` as the single source of truth:
-
-```typescript
-// Turn Type Enum
-export const TurnTypeSchema = z.enum(['outsider_hint', 'ai_analysis', 'insider_guess']);
-export type TurnType = z.infer<typeof TurnTypeSchema>;
-
-// Outsider's hint in the conversation
-export const OutsiderTurnSchema = z.object({
-  type: z.literal('outsider_hint'),
-  content: z.string().describe('The hint message from the outsider'),
-  turnNumber: z.number().int().positive().describe('Sequential turn number').optional()
-});
-export type OutsiderTurn = z.infer<typeof OutsiderTurnSchema>;
-
-// AI's analysis of the conversation
-export const AITurnSchema = z.object({
-  type: z.literal('ai_analysis'),
-  thinking: z.array(z.string()).length(4).describe('AI\'s thought process as exactly 4 sentences'),
-  guess: z.string().min(3).max(12).describe('AI\'s guess at the secret word'),
-  turnNumber: z.number().int().positive().describe('Sequential turn number').optional()
-});
-export type AITurn = z.infer<typeof AITurnSchema>;
-
-// Insider's guess attempt (only failed guesses appear in history)
-export const InsiderTurnSchema = z.object({
-  type: z.literal('insider_guess'),
-  guess: z.string().min(3).max(12).describe('Insider\'s guess attempt'),
-  turnNumber: z.number().int().positive().describe('Sequential turn number').optional()
-});
-export type InsiderTurn = z.infer<typeof InsiderTurnSchema>;
-
-// Union type for all possible turns
-export const TurnSchema = z.discriminatedUnion('type', [
-  OutsiderTurnSchema,
-  AITurnSchema,
-  InsiderTurnSchema
-]);
-export type Turn = z.infer<typeof TurnSchema>;
-
-// Request body for /api/ai/analyze endpoint
-export const AnalyzeRequestSchema = z.object({
-  gameId: z.string(),
-  conversationHistory: z.array(TurnSchema)
-    .refine(
-      (turns) => {
-        // Verify turns alternate correctly: outsider -> ai -> insider -> ai -> outsider -> ...
-        return turns.every((turn, idx) => {
-          if (idx === 0) return turn.type === 'outsider_hint';
-          const prevType = turns[idx - 1].type;
-          switch (turn.type) {
-            case 'outsider_hint':
-              return prevType === 'ai_analysis';
-            case 'ai_analysis':
-              return prevType === 'outsider_hint' || prevType === 'insider_guess';
-            case 'insider_guess':
-              return prevType === 'ai_analysis';
-          }
-        });
-      },
-      { message: "Turns must follow the pattern: outsider -> ai -> insider -> ai -> outsider" }
-    )
-});
-export type AnalyzeRequest = z.infer<typeof AnalyzeRequestSchema>;
-
-// AI's response to analyzing the conversation
-export const AIResponseSchema = z.object({
-  thinking: z.array(z.string()).length(4),
-  guess: z.string().min(3).max(12)
-});
-export type AIResponse = z.infer<typeof AIResponseSchema>;
-```
-
-**Key Benefits of Zod Schemas:**
-- **Runtime Validation:** Schemas provide runtime type checking and validation
-- **Automatic TypeScript Types:** `z.infer<typeof Schema>` generates TypeScript types
-- **Built-in Constraints:** Length limits, string validation, and custom refinements
-- **Single Source of Truth:** All validation logic centralized in schemas
-- **API Documentation:** Schema descriptions serve as inline documentation
-
-## 5. Game Rules & Implementation
-
-### Scoring System
-- **Initial Score:** 5 (neutral starting point)
-- **Score Range:** 0-10
-- **Win Condition:** Score reaches 10 (players win)
-- **Lose Condition:** Score reaches 0 (AI wins)
-- **Score Changes:** +1 when players win round, -1 when AI wins round
-
-### Turn Order
-1. **Encryptor** sends hint message (`outsider_hint`)
-2. **AI** analyzes and makes guess (`ai_analysis`)
-3. **Decryptor** sends message/guess (if correct → round ends, if incorrect → `insider_guess` added to conversation)
-4. **AI** analyzes again and makes another guess (`ai_analysis`)
-5. Repeat until someone guesses correctly
-
-### Decryptor Message Handling
-The decryptor's input serves **two purposes simultaneously**:
-- **Message**: If the input doesn't match the secret word, it's added to `conversationHistory` as an `insider_guess` turn
-- **Guess**: If the input matches the secret word, the decryptor wins the round
-
-**Flow Example:**
-1. Encryptor: "I'm thinking of something round and red" → `conversationHistory` (type: 'outsider_hint')
-2. AI: "apple" → `conversationHistory` (type: 'ai_analysis' with thinking)
-3. Decryptor: "Is it something you eat?" → **CHECK AS GUESS** → incorrect → `conversationHistory` (type: 'insider_guess')
-4. AI: "tomato" → `conversationHistory` (type: 'ai_analysis' with thinking)
-5. Decryptor: "apple" → **CORRECT GUESS** → round ends, players win
-
-**Implementation Requirements:**
-- All decryptor inputs are checked as guesses first
-- If decryptor input is correct: round ends, players win
-- If decryptor input is incorrect: add to `conversationHistory` as `insider_guess`, continue conversation
-- AI responses must be added to `conversationHistory` as `ai_analysis` with thinking field
-- AI must analyze the full conversation including decryptor responses
-- Only correct word matches should trigger round end
-- **Turn Validation**: Ensure strict outsider → ai → insider → ai → outsider sequence
-- **Turn Numbers**: Maintain sequential turn numbers starting from 1
-
-### Role Assignment
-- **First player to join** (room creator) → **Encryptor** (fixed role)
-- **Second player to join** → **Decryptor** (fixed role)
-- **Roles are fixed and do not switch** between rounds
-- Each player maintains their assigned role throughout the entire game
-- Role assignment happens once at game start and remains constant
-
-### Guess Validation
-- **Case Insensitive:** "Apple" matches "apple"
-- **Trim Whitespace:** " apple " matches "apple"
-- **Fuzzy Matching:** Levenshtein distance with configurable threshold (default: 2)
-- **Examples:** "appel" matches "apple" (distance 1), "bananna" matches "banana" (distance 1)
-
-## 6. AI Implementation
-
-### Mock AI Service
-- **Thinking Process:** 4 sentences, max 12 words each
-- **Guess Generation:** Single word, max 12 characters
-- **Response Delay:** 500-2000ms simulation
-- **Semantic Analysis:** Basic word association matching
-- **Fallback Logic:** Random word selection if analysis fails
-
-### AI Response Structure
-```typescript
-interface AIResponse {
-  thinking: string[]; // Exactly 4 sentences
-  guess: string;      // Single word, 3-12 characters
-}
-
-// AI responses are integrated into conversation history as AITurn objects
-// with type: 'ai_analysis' and thinking field
-```
-
-### Unified Turn Structure
-
-All conversation history uses the `Turn` union type with discriminated union based on `type` field:
-
-**Turn Types:**
-1. **Outsider Turns** (`type: 'outsider_hint'`)
-   - `content`: The hint message from the encryptor
-   - `turnNumber`: Sequential turn number
-
-2. **AI Turns** (`type: 'ai_analysis'`)
-   - `thinking`: Array of exactly 4 thinking sentences
-   - `guess`: Single word guess (3-12 characters)
-   - `turnNumber`: Sequential turn number
-
-3. **Insider Turns** (`type: 'insider_guess'`)
-   - `guess`: The failed guess attempt (3-12 characters)
-   - `turnNumber`: Sequential turn number
-
-### Turn Validation
-
-The conversation history must follow strict validation rules:
-
-**Turn Number Validation:**
-- Turn numbers must be sequential starting from 1
-- Each turn must have `turnNumber = index + 1`
-
-**Turn Order Validation:**
-- Strict pattern: outsider → ai → insider → ai → outsider → ...
-- First turn must be `outsider_hint`
-- `outsider_hint` can only follow `ai_analysis`
-- `ai_analysis` can only follow `outsider_hint` or `insider_guess`
-- `insider_guess` can only follow `ai_analysis`
-
-**Example Valid Sequence:**
-```typescript
-[
-  { type: 'outsider_hint', content: "It's red and sweet", turnNumber: 1 },
-  { type: 'ai_analysis', thinking: ["...", "...", "...", "..."], guess: "cherry", turnNumber: 2 },
-  { type: 'insider_guess', guess: "apple", turnNumber: 3 },
-  { type: 'ai_analysis', thinking: ["...", "...", "...", "..."], guess: "strawberry", turnNumber: 4 }
-]
-```
-
-### Available Words
-37 curated words including: Elephant, Pizza, Sunshine, Mountain, Ocean, Butterfly, Chocolate, Rainbow, Forest, Castle, Dragon, Guitar, Diamond, Volcano, Telescope, Waterfall, Fireworks, Treasure, Pirate, Wizard, Computer, Library, Hospital, Airport, Restaurant, School, Museum, Theater, Stadium, Bridge, Tower, Temple, Palace, Cottage, Lighthouse, Windmill, Fountain
-
-## 7. Core Components
-
-### Room Management
-The `RoomManager` class handles:
-- Room creation and joining
-- Player tracking and disconnection handling
-- Room cleanup for empty rooms
-- Room availability checking
-- Room listing functionality
-- HTTP room creation with auto-join
-- Lobby client tracking and room list broadcasting
-
-### Game State Management
-The `GameStateManager` class manages:
-- Game state creation and updates
-- Score tracking and validation
-- Role assignment (fixed roles)
-- Turn progression and validation
-- Conversation history tracking (unified array using Turn union types)
-- Game end condition checking
-- Turn number tracking and validation
-- Conversation history transformation for AI analysis
-
-### Socket Event Handlers
-- **RoomHandlers:** Manages room-related events (`join_room`, `player_ready`, etc.)
-- **GameHandlers:** Manages game-related events (`start_game`, `send_message`, `player_guess`, etc.)
-- **LobbyHandlers:** Manages lobby state and room list broadcasting
-
-### Mock AI Service
-The `MockAIService` class provides:
-- Conversation analysis with thinking process generation
-- Guess generation based on conversation content
-- Semantic word association matching
-- Structured response formatting using `AIResponse` type
-- Error handling and fallback logic
-
-## 8. Testing
-
-### Test Coverage
-- **Total Tests:** 231
-- **Passing:** 231 (100%)
-- **Failing:** 0 (0%)
-- **Coverage:** Comprehensive coverage of all core functionality
-
-### Test Categories
-- ✅ Socket.IO Events (room join/leave, game events, error handling)
-- ✅ Room Management (creation, cleanup, player tracking)
-- ✅ Game Logic (state management, role assignment, turn handling)
-- ✅ AI Integration (mock AI responses, thinking process)
-- ✅ Word Management (selection, validation, fallback)
-- ✅ Error Handling (validation, edge cases, graceful failures)
-- ✅ Integration (complete game flows, multi-room scenarios)
-- ✅ Performance (basic functionality validation)
-
-## 9. Deployment
-
-### Development Setup
-```bash
-# Install dependencies
-npm install
-
-# Start development server with nodemon
-npm run dev
-
-# Run tests
-npm test
-
-# Build for production
-npm run build
-
-# Start production server
-npm start
-```
-
-### File Structure
+### Project Structure
 ```
 backend/
-├── src/
-│   ├── server.ts              # Main server file
-│   ├── socket/
+├── src/                    # Main application source
+│   ├── server.ts          # Main server entry point
+│   ├── routes/            # REST API route handlers
+│   │   ├── ai.ts         # AI service endpoints
+│   │   └── rooms.ts      # Room management endpoints
+│   ├── socket/            # WebSocket handlers
 │   │   └── handlers/
-│   │       ├── gameHandlers.ts
-│   │       └── roomHandlers.ts
-│   ├── game/
-│   │   ├── state.ts           # Game state management
-│   │   ├── logic.ts           # Game logic
-│   │   ├── validation.ts      # Input validation
-│   │   └── wordManager.ts     # Word selection
-│   ├── ai/
-│   │   └── mock.ts            # Mock AI service
-│   ├── rooms/
-│   │   └── manager.ts         # Room management
-│   ├── routes/
-│   │   ├── ai.ts              # AI API routes
-│   │   └── rooms.ts           # Room creation API routes
-│   ├── types/
-│   │   └── index.ts           # TypeScript types (Zod-based)
-│   └── utils/
-│       └── helpers.ts         # Utility functions
-├── data/
-│   └── words.json             # Word list
-├── tests/                     # Test suite
-├── package.json
-└── tsconfig.json
+│   │       ├── gameHandlers.ts    # Game logic handlers
+│   │       ├── lobbyHandlers.ts   # Lobby management
+│   │       └── roomHandlers.ts    # Room operations
+│   ├── game/              # Core game logic
+│   │   ├── index.ts       # Game module exports
+│   │   ├── logic.ts       # Game flow logic
+│   │   ├── state.ts       # Game state management
+│   │   └── wordManager.ts # Word selection and management
+│   ├── rooms/             # Room management
+│   │   └── manager.ts     # Room lifecycle management
+│   ├── ai/                # AI service integration
+│   │   └── mock.ts        # Mock AI service (temporary)
+│   ├── types/             # TypeScript type definitions
+│   │   └── index.ts       # Shared types and interfaces
+│   └── utils/             # Utility functions
+│       └── helpers.ts     # Common helper functions
+├── openai/                # OpenAI integration module
+│   ├── index.ts           # OpenAI setup and integration
+│   ├── routes/            # OpenAI-specific routes
+│   ├── services/          # OpenAI service implementations
+│   └── types/             # OpenAI-specific types
+├── data/                  # Static data files
+│   └── words.json         # Word list for games
+├── tests/                 # Test suite
+└── dist/                  # Compiled JavaScript output
 ```
 
-## 10. Performance & Scalability
+## Server Configuration
 
-### Current Capabilities
-- **Concurrent Games:** Tested with multiple simultaneous rooms
-- **Memory Usage:** Efficient in-memory storage for MVP
-- **Response Times:** Sub-second AI responses
-- **Connection Handling:** Graceful disconnection and reconnection
+### Environment Variables
+- `PORT`: Server port (default: 3000)
+- `NODE_ENV`: Environment mode (development/production)
+- `OPENAI_API_KEY`: OpenAI API key for AI functionality
 
-### Future Considerations
-- **Database Integration:** For persistent game state
-- **Redis Caching:** For improved performance at scale
-- **Load Balancing:** For multiple server instances
-- **Real AI Integration:** Replace mock service with OpenAI API
+### CORS Configuration
+- **Origin**: `http://localhost:8081` (Expo development server)
+- **Credentials**: Enabled
+- **Methods**: GET, POST, PUT, DELETE, OPTIONS
+- **Headers**: Content-Type, Authorization
 
-## 11. Error Handling
+## REST API Endpoints
+
+### Base Routes
+- `GET /` - Server status
+- `GET /api/health` - Health check with uptime and environment info
+
+### Room Management (`/api/rooms`)
+- `POST /` - Create a new room and auto-join creator
+  - **Request**: Empty body
+  - **Response**: `{ success: boolean, roomId: string, playerId: string, message?: string }`
+
+### AI Service (`/api/ai`)
+- `POST /analyze` - Analyze conversation and generate AI response
+  - **Request**: `{ conversationHistory: Turn[], gameId: string }`
+  - **Response**: `{ success: boolean, data: AIResponse }`
+- `POST /thinking` - Generate thinking process
+  - **Request**: `{ conversationHistory: Turn[], gameContext: object }`
+  - **Response**: `{ success: boolean, data: { thinking: string[] } }`
+- `POST /guess` - Generate AI guess
+  - **Request**: `{ conversationHistory: Turn[], availableWords: string[], gameContext: object }`
+  - **Response**: `{ success: boolean, data: string }`
+- `GET /health` - AI service health check
+
+## WebSocket Events
 
 ### Connection Management
-- Graceful handling of player disconnections
-- Game state preservation during temporary disconnections
-- Automatic room cleanup for abandoned games
-- Reconnection support for players
+- `connection` - Client connects
+- `disconnect` - Client disconnects
+- `ping`/`pong` - Connection testing
 
-### Input Validation
-- Message content validation
-- Guess format validation
-- Room ID validation
-- Player authentication checks
-- Turn validation (order, numbers, types)
+### Lobby Events
+- `enter_lobby` - Join the global lobby
+- `leave_lobby` - Leave the global lobby
 
-### AI Service Resilience
-- Fallback responses when AI analysis fails
-- Timeout handling for AI responses
-- Error logging and monitoring
-- Graceful degradation to basic responses
+### Room Management
+- `join_room` - Join a specific room
+  - **Data**: `{ roomId: string, playerId: string }`
+- `player_ready` - Mark player as ready
+  - **Data**: `{ roomId: string, playerId: string, ready: boolean }`
+- `list_rooms` - Get available rooms list
+- `check_room_availability` - Check if room exists and has space
+  - **Data**: `{ roomId: string }`
 
-## 12. Monitoring & Health Checks
+### Game Events
+- `start_game` - Start a new game in a room
+  - **Data**: `{ roomId: string }`
+- `send_message` - Send a message in the game
+  - **Data**: `{ roomId: string, content: string, senderId: string }`
+- `player_guess` - Submit a word guess
+  - **Data**: `{ roomId: string, guess: string, playerId: string }`
 
-### Health Endpoints
-- `/api/health` - Server uptime and environment info
-- `/api/ai/health` - AI service status and version
+## Data Models
 
-### Logging
-- Connection and disconnection events
-- Game start and end events
-- AI response generation
-- Error occurrences and stack traces
-
-### Metrics
-- Active room count
-- Concurrent player count
-- AI response times
-- Error rates and types
-
-## 13. Create Room Endpoint Implementation
-
-### Overview
-HTTP endpoint to create rooms and auto-join the creator, enabling direct room creation from frontend without WebSocket connection.
-
-#### API Specification
-
-**Endpoint:** `POST /api/rooms`
-
-**Request Body:** Empty (no parameters required)
-
-**Response:**
+### Player
 ```typescript
-interface CreateRoomResponse {
-  success: boolean;
-  roomId: string;
-  playerId: string;
-  message?: string;
+interface Player {
+  id: string;           // Unique player identifier
+  name: string;         // Display name
+  ready: boolean;       // Ready status
+  role: 'encryptor' | 'decryptor' | null;  // Game role
+  socketId: string;     // Socket.IO connection ID
 }
 ```
 
-**Example Response:**
-```json
-{
-  "success": true,
-  "roomId": "550e8400-e29b-41d4-a716-446655440000",
-  "playerId": "player-12345"
-}
-```
-
-**Error Response:**
-```json
-{
-  "success": false,
-  "error": "Failed to create room"
-}
-```
-
-#### Flow Diagram
-```
-Frontend → POST /api/rooms → Backend creates room + player → Return roomId → Frontend redirects to /room/{roomId} → Auto-join via WebSocket
-```
-
-#### Considerations
-- Room creation and player addition happen atomically
-- Room appears in `list_rooms` immediately after creation and broadcasts to lobby
-- Creator automatically joins room when they land on room page (becomes first player/Encryptor)
-- Second player to join becomes Decryptor for first round
-- Lobby clients receive real-time room list updates via `room_list` broadcasts
-- Clients track lobby vs game state to manage broadcasts appropriately
-- Existing room cleanup logic remains unchanged
-- No authentication required for room creation
-- Graceful error handling for all failure scenarios
-
-## 14. AI Analysis Endpoint Implementation
-
-### Overview
-HTTP endpoint for AI analysis using the new Zod-based types and structured conversation history.
-
-#### API Specification
-
-**Endpoint:** `POST /api/ai/analyze`
-
-**Request Body:**
+### Room
 ```typescript
-interface AnalyzeRequest {
-  gameId: string;
-  conversationHistory: Turn[];
+interface Room {
+  id: string;           // Unique room identifier
+  players: Player[];    // Players in the room
+  gameState: GameState | null;  // Current game state
+  createdAt: Date;      // Room creation timestamp
+  lastActivity: Date;   // Last activity timestamp
 }
 ```
 
-**Example Request:**
-```json
-{
-  "gameId": "room123",
-  "conversationHistory": [
-    {
-      "type": "outsider_hint",
-      "content": "It's red and sweet",
-      "turnNumber": 1
-    },
-    {
-      "type": "ai_analysis",
-      "thinking": [
-        "The outsider mentioned something red and sweet",
-        "This could be a fruit like strawberry or cherry",
-        "It could also be candy or dessert",
-        "I should consider common red sweet foods"
-      ],
-      "guess": "cherry",
-      "turnNumber": 2
-    },
-    {
-      "type": "insider_guess",
-      "guess": "apple",
-      "turnNumber": 3
-    }
-  ]
-}
-```
-
-**Response:**
+### Game State
 ```typescript
-interface AIResponse {
+interface GameState {
+  score: number;        // Current game score
+  currentRound: number; // Current round number
+  secretWord: string;   // Word to be guessed
+  conversationHistory: Turn[];  // Game conversation
+  currentTurn: 'encryptor' | 'ai' | 'decryptor';  // Whose turn
+  gameStatus: 'waiting' | 'active' | 'ended';     // Game status
+}
+```
+
+### Turn Types (from OpenAI module)
+```typescript
+type Turn = OutsiderTurn | AITurn | InsiderTurn;
+
+interface OutsiderTurn {
+  type: 'outsider_hint';
+  content: string;
+  turnNumber?: number;
+}
+
+interface AITurn {
+  type: 'ai_analysis';
   thinking: string[];  // Exactly 4 sentences
-  guess: string;       // Single word, 3-12 characters
+  guess: string;       // 3-12 characters (enforced for AI responses)
+  turnNumber?: number;
+}
+
+interface InsiderTurn {
+  type: 'insider_guess';
+  guess: string;       // No length limit (players can guess any length)
+  turnNumber?: number;
 }
 ```
 
-**Example Response:**
-```json
-{
-  "thinking": [
-    "The insider guessed apple, which is red but not necessarily sweet",
-    "The outsider emphasized both red and sweet qualities",
-    "Strawberry fits both criteria better than apple",
-    "I should guess strawberry as it's both red and sweet"
-  ],
-  "guess": "strawberry"
-}
-```
+## Core Components
 
-#### Validation Rules
-- Turn numbers must be sequential starting from 1
-- Turns must follow pattern: outsider → ai → insider → ai → outsider
-- AI thinking must be exactly 4 sentences
-- Guesses must be 3-12 characters
-- All turns must have valid types and required fields
+### Room Manager (`src/rooms/manager.ts`)
+- **Purpose**: Manages room lifecycle and player management
+- **Key Methods**:
+  - `createRoomWithPlayer()` - Create room with initial player
+  - `joinRoom()` - Add player to existing room
+  - `removePlayer()` - Remove player from room
+  - `getRooms()` - Get list of available rooms
+  - `cleanupInactiveRooms()` - Remove inactive rooms
 
-#### Error Responses
-```json
-{
-  "success": false,
-  "error": "Invalid conversation history: Turn numbers must be sequential"
-}
-```
+### Game Logic (`src/game/`)
+- **logic.ts**: Core game flow and turn management
+- **state.ts**: Game state persistence and updates
+- **wordManager.ts**: Word selection and management
 
-## 15. Implementation Checklist
+### Socket Handlers
+- **gameHandlers.ts**: Game-specific WebSocket events
+- **lobbyHandlers.ts**: Lobby management and broadcasting
+- **roomHandlers.ts**: Room joining/leaving operations
 
-### Phase 1: Update Type Definitions
-1. **Update `backend/src/types/index.ts`**
-   - [x] Replace `Message` interface with Zod-based `Turn` union types
-   - [x] Add `OutsiderTurn`, `AITurn`, `InsiderTurn` interfaces
-   - [x] Add `AnalyzeRequest` and `AIResponse` interfaces
-   - [x] Update `GameState` to use `Turn[]` instead of `Message[]`
-   - [x] Remove old `OpenAIContext` interface
+### AI Integration
+- **Mock Service**: Temporary mock implementation in `src/ai/mock.ts`
+- **OpenAI Module**: Integration with OpenAI API (separate module)
+- **Turn-based Analysis**: Structured conversation analysis using Turn types
 
-### Phase 2: Update Game State Management
-2. **Update `backend/src/game/state.ts`**
-   - [x] Update `addMessage` method to handle `Turn` structure
-   - [x] Update `createGameState` to initialize empty `conversationHistory: Turn[]`
-   - [x] Add turn number tracking and validation
-   - [x] Add method to transform conversation history to `AnalyzeRequest` format
-   - [x] Update all methods to work with new turn types
+## Game Flow
 
-### Phase 3: Update Game Logic
-3. **Update `backend/src/game/logic.ts`**
-   - [x] Update `handleEncryptorMessage` to create `OutsiderTurn`
-   - [x] Update `handleDecryptorGuess` to create `InsiderTurn` for incorrect guesses
-   - [x] Update AI response handling to create `AITurn`
-   - [x] Add turn order validation
-   - [x] Add turn number increment logic
+1. **Room Creation**: Player creates room via REST API
+2. **Room Joining**: Players join via WebSocket
+3. **Player Ready**: Players mark themselves ready
+4. **Game Start**: When all players ready, game begins
+5. **Role Assignment**: Players assigned encryptor/decryptor roles
+6. **Word Selection**: Secret word chosen from word list
+7. **Turn-based Play**: Alternating turns between encryptor, AI, decryptor
+8. **Game End**: When decryptor guesses correctly or round limit reached
 
-### Phase 4: Update Socket Event Handlers
-4. **Update `backend/src/socket/handlers/gameHandlers.ts`**
-   - [x] Update `handleSendMessage` to create `OutsiderTurn`
-   - [x] Update `handlePlayerGuess` to create `InsiderTurn` for incorrect guesses
-   - [x] Update `handleAIResponse` to create `AITurn`
-   - [x] Update all message broadcasting to use new turn structure
-   - [x] Update event payloads to use new types
+## Error Handling
 
-### Phase 5: Update AI Integration
-5. **Update `backend/src/ai/mock.ts`**
-   - [x] Update AI response creation to return `AIResponse` structure
-   - [x] Update to accept `AnalyzeRequest` instead of old context
-   - [x] Ensure AI responses always include exactly 4 thinking sentences
-   - [x] Update response format to match new structure
+### HTTP Error Responses
+- **400**: Bad Request (validation errors)
+- **404**: Not Found (invalid endpoints)
+- **500**: Internal Server Error (server errors)
 
-### Phase 6: Update API Routes
-6. **Update `backend/src/routes/ai.ts`**
-   - [x] Update `/api/ai/analyze` endpoint to use `AnalyzeRequest`
-   - [x] Add Zod validation for request body
-   - [x] Update response format to use `AIResponse`
-   - [x] Add proper error handling for validation failures
+### WebSocket Error Handling
+- Validation errors sent to client
+- Graceful disconnection handling
+- Room cleanup on player disconnect
 
-### Phase 7: Update Tests
-7. **Update test files**
-   - [x] Update `backend/tests/gameState.test.ts` to test new `Turn` structure
-   - [x] Update `backend/tests/gameHandlers.test.ts` to test new turn types
-   - [x] Update `backend/tests/gameLogicValidation.test.ts` to test unified conversation history
-   - [x] Add tests for turn validation and order checking
-   - [x] Add tests for new AI analysis endpoint
+## Testing
 
-### Phase 8: Update Validation
-8. **Update `backend/src/game/validation.ts`**
-   - [x] Add manual validation for turn types
-   - [x] Add turn order validation
-   - [x] Add turn number validation
-   - [x] Update all validation logic to work with new structure
+### Test Structure
+- **Unit Tests**: Individual component testing
+- **Integration Tests**: API endpoint testing
+- **Socket Tests**: WebSocket event testing
+- **Game Logic Tests**: Game flow validation
 
-### Phase 9: Integrate Zod Schemas
-9. **Integrate Zod schemas from `backend/openai/types/game.ts`**
-   - [x] Install Zod in main backend package
-   - [x] Update `backend/src/types/index.ts` to import Zod schemas
-   - [x] Replace manual validation with Zod schema validation
-   - [x] Update all code to use Zod-generated types
+### Test Commands
+- `npm test` - Run all tests
+- `npm run test:watch` - Run tests in watch mode
 
-### Success Criteria
-- [ ] All conversation history uses `Turn[]` union types
-- [ ] No old `Message` interface exists
-- [ ] AI responses use `AIResponse` structure with exactly 4 thinking sentences
-- [ ] Decryptor incorrect guesses become `InsiderTurn` objects
-- [ ] All turn types (`outsider_hint`, `ai_analysis`, `insider_guess`) work correctly
-- [ ] Turn validation (order, numbers) works correctly
-- [ ] All existing tests pass with new structure
-- [ ] New tests cover turn validation and AI analysis functionality
-- [ ] `/api/ai/analyze` endpoint works with new request/response types
+## Development
+
+### Scripts
+- `npm run dev` - Start development server with hot reload
+- `npm run build` - Compile TypeScript to JavaScript
+- `npm start` - Start production server
+
+### Development Features
+- Hot reloading with Nodemon
+- TypeScript compilation
+- Source maps for debugging
+- Comprehensive logging
+
+## Production Considerations
+
+### Security
+- CORS configuration for specific origins
+- Input validation with Zod schemas
+- Error message sanitization in production
+
+### Performance
+- Room cleanup for inactive sessions
+- Efficient WebSocket broadcasting
+- Memory management for game state
+
+### Monitoring
+- Health check endpoints
+- Uptime tracking
+- Error logging and monitoring
+
+## Integration Points
+
+### Frontend Integration
+- REST API for room creation
+- WebSocket for real-time game updates
+- CORS configured for Expo development server
+
+### AI Service Integration
+- Modular OpenAI integration
+- Mock service for development
+- Structured conversation analysis
+- Health monitoring
+
+### External Dependencies
+- Socket.IO for real-time communication
+- Express.js for REST API
+- Zod for validation
+- UUID for unique identifiers

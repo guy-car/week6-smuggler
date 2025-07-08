@@ -48,8 +48,7 @@ describe('Turn Validation', () => {
 
             expect(insiderTurn.type).toBe('insider_guess');
             expect(typeof insiderTurn.guess).toBe('string');
-            expect(insiderTurn.guess.length).toBeGreaterThanOrEqual(3);
-            expect(insiderTurn.guess.length).toBeLessThanOrEqual(12);
+            expect(insiderTurn.guess.length).toBeGreaterThan(0);
             expect(typeof insiderTurn.turnNumber).toBe('number');
             expect(insiderTurn.turnNumber).toBeGreaterThan(0);
         });
@@ -228,37 +227,34 @@ describe('Turn Validation', () => {
     });
 
     describe('Insider Guess Validation', () => {
-        it('should validate insider guess length constraints', () => {
+        it('should validate insider guess is not empty', () => {
             const validInsiderTurn: InsiderTurn = {
                 type: 'insider_guess',
-                guess: 'test', // 4 characters, valid
+                guess: 'test', // Any length is valid
                 turnNumber: 3
             };
 
-            expect(validInsiderTurn.guess.length).toBeGreaterThanOrEqual(3);
-            expect(validInsiderTurn.guess.length).toBeLessThanOrEqual(12);
+            expect(validInsiderTurn.guess.length).toBeGreaterThan(0);
+            expect(typeof validInsiderTurn.guess).toBe('string');
         });
 
-        it('should detect insider guess that is too short', () => {
-            const invalidInsiderTurn: InsiderTurn = {
+        it('should allow insider guess of any reasonable length', () => {
+            const shortGuess: InsiderTurn = {
                 type: 'insider_guess',
-                guess: 'ab', // 2 characters, too short
+                guess: 'a', // Single character
                 turnNumber: 3
             };
 
-            expect(invalidInsiderTurn.guess.length).toBeLessThan(3);
-            // This should be detected as invalid in validation logic
-        });
-
-        it('should detect insider guess that is too long', () => {
-            const invalidInsiderTurn: InsiderTurn = {
+            const longGuess: InsiderTurn = {
                 type: 'insider_guess',
-                guess: 'verylongguessword', // 17 characters, too long
-                turnNumber: 3
+                guess: 'verylongguesswordthatiscompletelyvalid', // Long guess
+                turnNumber: 4
             };
 
-            expect(invalidInsiderTurn.guess.length).toBeGreaterThan(12);
-            // This should be detected as invalid in validation logic
+            expect(shortGuess.guess.length).toBe(1);
+            expect(longGuess.guess.length).toBeGreaterThan(12);
+            expect(typeof shortGuess.guess).toBe('string');
+            expect(typeof longGuess.guess).toBe('string');
         });
     });
 

@@ -26,7 +26,7 @@ export type OutsiderTurn = z.infer<typeof OutsiderTurnSchema>;
  * AI's analysis of the conversation
  * @constraints
  * - thinking: Exactly 4 sentences
- * - guess: Single word, 3-12 characters
+ * - guess: Single word, 3-12 characters (AI guesses only)
  */
 export const AITurnSchema = z.object({
   type: z.literal('ai_analysis'),
@@ -49,7 +49,6 @@ export type AITurn = z.infer<typeof AITurnSchema>;
 export const InsiderTurnSchema = z.object({
   type: z.literal('insider_guess'),
   guess: z.string()
-    .min(3).max(12)
     .describe('Insider\'s guess attempt'),
   turnNumber: z.number().int().positive()
     .describe('Sequential turn number')
