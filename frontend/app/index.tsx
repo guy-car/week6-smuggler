@@ -9,6 +9,7 @@ export default function HomeScreen() {
     connected, 
     availableRooms, 
     roomId, 
+    role,
     setAvailableRooms 
   } = useGameStore();
   
@@ -22,6 +23,17 @@ export default function HomeScreen() {
     // Load available rooms
     loadRooms();
   }, []);
+
+  // Navigate to appropriate screen when roomId and role are set
+  useEffect(() => {
+    if (roomId && role) {
+      if (role === 'encryptor') {
+        router.replace('/encrypter');
+      } else if (role === 'decryptor') {
+        router.replace('/decrypter');
+      }
+    }
+  }, [roomId, role]);
 
   const loadRooms = async () => {
     setLoading(true);
@@ -39,9 +51,8 @@ export default function HomeScreen() {
     setLoading(true);
     try {
       const playerName = 'Player';
-      const roomId = await createRoom(playerName);
-      // Redirect to encrypter screen after room creation
-      router.push('/encrypter');
+      await createRoom(playerName);
+      // Navigation will happen automatically when backend confirms room join and role assignment
     } catch (error: any) {
       console.error('Failed to create room:', error);
       Alert.alert('Error', error.message || 'Failed to create room');
@@ -53,7 +64,9 @@ export default function HomeScreen() {
   const handleJoinRoom = async (roomId: string) => {
     setLoading(true);
     try {
-      joinRoom(roomId);
+      const playerName = 'Player';
+      joinRoom(roomId, playerName);
+      // Navigation will happen automatically when backend confirms room join and role assignment
     } catch (error) {
       console.error('Failed to join room:', error);
       Alert.alert('Error', 'Failed to join room');

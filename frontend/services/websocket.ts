@@ -34,12 +34,19 @@ export function getSocket() {
       console.log('[WebSocket] Join room success:', data.roomId);
       useGameStore.getState().setRoomId(data.roomId);
       useGameStore.getState().setPlayers(data.players);
-      // Optionally set player info if needed
+      
+      // Set temporary role based on player order for immediate navigation
+      const currentPlayerId = data.playerId;
+      const playerIndex = data.players.findIndex(p => p.id === currentPlayerId);
+      const temporaryRole = playerIndex === 0 ? 'encryptor' : 'decryptor';
+      useGameStore.getState().setRole(temporaryRole);
+      
+      // Set player info
       useGameStore.getState().setPlayer({
         id: data.playerId,
         name: 'Player', // You may want to store the actual name
         ready: false,
-        role: null,
+        role: temporaryRole,
         socketId: ''
       });
     });
@@ -72,12 +79,24 @@ export function getSocket() {
       useGameStore.getState().setPlayers(updatedPlayers);
     });
 
-    socket.on('room:availableRooms', (data: { rooms: any[] }) => {
+    socket.on('room_list', (data: { rooms: any[] }) => {
       console.log('[WebSocket] Available rooms:', data.rooms);
       useGameStore.getState().setAvailableRooms(data.rooms);
     });
 
     // Game events
+    socket.on('start_game', (data: { roomId: string; players: any[]; roles: any; secretWord: string }) => {
+      console.log('[WebSocket] Game started:', data);
+      useGameStore.getState().setGameStatus('active');
+      useGameStore.getState().setPlayers(data.players);
+      
+      // Set current player's actual role from backend
+      const currentPlayer = useGameStore.getState().player;
+      if (currentPlayer && data.roles[currentPlayer.id]) {
+        useGameStore.getState().setRole(data.roles[currentPlayer.id]);
+      }
+    });
+
     socket.on('game:started', (data: { players: any[]; roles: any }) => {
       console.log('[WebSocket] Game started:', data);
       useGameStore.getState().setGameStatus('active');
@@ -134,6 +153,11 @@ export function getSocket() {
       console.error('[WebSocket] Error:', data.message);
       // You might want to show a toast or alert here
     });
+
+    socket.on('player_joined', (data: { roomId: string; player: any; players: any[] }) => {
+      console.log('[WebSocket] Player joined:', data.player);
+      useGameStore.getState().setPlayers(data.players);
+    });
   }
   return socket;
 }
@@ -184,7 +208,7 @@ export function setPlayerReady(ready: boolean) {
 
 export function getAvailableRooms() {
   const socket = getSocket();
-  socket.emit('room:getAvailable');
+  socket.emit('list_rooms');
 }
 
 export function sendMessage(content: string) {
