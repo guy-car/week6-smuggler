@@ -5,15 +5,17 @@
 - **Team**: 3 developers working in parallel
 - **Your Role**: AI integration specialist (isolated AI server)
 - **Development Tool**: Cursor IDE
+- **Story Theme**: Agents passing exploit codes through domestic conversation while AI eavesdrops
 
 ---
 
 ## Server Architecture
 
 ### Separation Strategy
-- **Game Server** (Port 3001): WebSocket, rooms, game state, validation
-- **AI Server** (Port 3002): OpenAI integration, prompt engineering, structured responses
+- **Game Server** (Port 3001): WebSocket, rooms, game state, validation (Brooks working on src/server.ts)
+- **AI Server** (Port 3002): OpenAI integration, prompt engineering, structured responses (backend/openai/)
 - **Communication**: Game server makes HTTP calls to AI server
+- **Merge Conflict Avoidance**: Completely separate backend/openai/ folder for AI server
 
 ---
 
@@ -55,13 +57,14 @@ type AIResponse = {
 ## Prompt Engineering Requirements
 
 ### System Prompt Elements
-1. **Character**: "You are an AI eavesdropping on secret communications"
-2. **Objective**: Analyze conversation to guess the secret word
+1. **Character**: "You are an AI system monitoring communications on a futuristic oil rig, trying to detect if agents are passing secret exploit codes"
+2. **Objective**: Analyze conversation to detect the secret word/code being transmitted
 3. **Constraints**: 
    - Output exactly 4 thinking sentences
    - Each sentence max 12 words
    - Final guess must be single word, max 12 characters
-4. **Context**: Players are trying to communicate a secret word without you detecting it
+4. **Context**: Two agents posing as a married couple are trying to communicate exploit codes through domestic conversation
+5. **Word Domain**: Everyday, reasonable words that people could guess - not overly technical terms
 
 ### Context Management
 - **Never include**: The actual secret word
@@ -133,19 +136,20 @@ const mockConversation = [
 ## File Structure
 ```
 backend/
-├── openAI/
-│   ├── index.ts           # Express server setup
+├── openai/                # Separate server to avoid merge conflicts
+│   ├── index.ts           # Express server setup (Port 3002)
 │   ├── routes/
 │   │   └── ai.ts          # /api/ai/analyze route
 │   ├── services/
 │   │   └── openai.ts      # OpenAI client and prompt logic
 │   ├── types/
 │   │   └── game.ts        # Message and AIResponse schemas
-│   └── utils/
-│       └── validation.ts  # Request validation helpers
-├── .env                   # OPENAI_API_KEY
-├── package.json
-└── tsconfig.json
+│   ├── utils/
+│   │   └── validation.ts  # Request validation helpers
+│   ├── package.json
+│   └── tsconfig.json
+├── src/
+│   └── server.ts          # Brooks's main game server (Port 3001)
 ```
 
 ---
@@ -176,9 +180,10 @@ const getAIResponse = async (conversationHistory) => {
 ```
 
 ### Environment Setup
-- AI server runs on port 3002
-- Requires OPENAI_API_KEY in .env
+- AI server runs on port 3002 (separate from Brooks's server on 3001)
+- Requires OPENAI_API_KEY in root .env (already configured)
 - No other dependencies on game server
+- Completely isolated development to avoid merge conflicts
 
 ---
 
