@@ -39,7 +39,8 @@ const TurnTypeSchema = z.enum(['outsider_hint', 'ai_analysis', 'insider_guess'])
 const OutsiderTurnSchema = z.object({
   type: z.literal('outsider_hint'),
   content: z.string(),
-  turnNumber: z.number().int().positive()
+  turnNumber: z.number().int().positive().optional()
+    .describe('Optional: Sequential turn number (being phased out)')
 });
 
 // AI's analysis
@@ -47,14 +48,16 @@ const AITurnSchema = z.object({
   type: z.literal('ai_analysis'),
   thinking: z.array(z.string()).length(4),
   guess: z.string().min(3).max(12),
-  turnNumber: z.number().int().positive()
+  turnNumber: z.number().int().positive().optional()
+    .describe('Optional: Sequential turn number (being phased out)')
 });
 
 // Insider's guess (only failed guesses appear in history)
 const InsiderTurnSchema = z.object({
   type: z.literal('insider_guess'),
   guess: z.string().min(3).max(12),
-  turnNumber: z.number().int().positive()
+  turnNumber: z.number().int().positive().optional()
+    .describe('Optional: Sequential turn number (being phased out)')
 });
 
 // Request schema with turn validation
@@ -65,10 +68,6 @@ const AnalyzeRequestSchema = z.object({
     AITurnSchema,
     InsiderTurnSchema
   ]))
-  .refine(
-    turns => turns.every((turn, idx) => turn.turnNumber === idx + 1),
-    { message: "Turn numbers must be sequential starting from 1" }
-  )
   .refine(
     turns => {
       // Verify turns alternate correctly: outsider -> ai -> insider -> ai -> outsider
@@ -167,8 +166,7 @@ const AnalyzeRequestSchema = z.object({
 const mockHistory = [
   { 
     type: 'outsider_hint',
-    content: 'It grows in gardens',
-    turnNumber: 1
+    content: 'It grows in gardens'
   },
   {
     type: 'ai_analysis',
@@ -178,13 +176,14 @@ const mockHistory = [
       "Common garden items are good candidates.",
       "Previous hints suggest edible item."
     ],
-    guess: "tomato",
-    turnNumber: 2
+    guess: "tomato"
   },
   {
     type: 'insider_guess',
-    guess: "carrot",
-    turnNumber: 3
+    guess: "carrot"
   }
 ];
 ```
+
+Note: Turn numbers are being phased out in favor of using array indices to track turn order.
+A separate refactoring task will remove turn numbers from the game state management system.

@@ -18,6 +18,7 @@ export const OutsiderTurnSchema = z.object({
     .describe('The hint message from the outsider'),
   turnNumber: z.number().int().positive()
     .describe('Sequential turn number')
+    .optional()
 });
 export type OutsiderTurn = z.infer<typeof OutsiderTurnSchema>;
 
@@ -36,6 +37,7 @@ export const AITurnSchema = z.object({
     .describe('AI\'s guess at the secret word'),
   turnNumber: z.number().int().positive()
     .describe('Sequential turn number')
+    .optional()
 });
 export type AITurn = z.infer<typeof AITurnSchema>;
 
@@ -51,6 +53,7 @@ export const InsiderTurnSchema = z.object({
     .describe('Insider\'s guess attempt'),
   turnNumber: z.number().int().positive()
     .describe('Sequential turn number')
+    .optional()
 });
 export type InsiderTurn = z.infer<typeof InsiderTurnSchema>;
 
@@ -74,13 +77,13 @@ export type Turn = z.infer<typeof TurnSchema>;
  *   gameId: "room123",
  *   conversationHistory: [
  *     // Outsider sends hint
- *     { type: 'outsider_hint', content: "It's red and sweet", turnNumber: 1 },
+ *     { type: 'outsider_hint', content: "It's red and sweet" },
  *     
  *     // AI analyzes and guesses
- *     { type: 'ai_analysis', thinking: ["...", "...", "...", "..."], guess: "cherry", turnNumber: 2 },
+ *     { type: 'ai_analysis', thinking: ["...", "...", "...", "..."], guess: "cherry" },
  *     
  *     // Insider makes wrong guess
- *     { type: 'insider_guess', guess: "apple", turnNumber: 3 }
+ *     { type: 'insider_guess', guess: "apple" }
  *   ]
  * }
  * ```
@@ -91,13 +94,6 @@ export const AnalyzeRequestSchema = z.object({
   
   /** Chronological sequence of turns */
   conversationHistory: z.array(TurnSchema)
-    .refine(
-      (turns) => {
-        // Verify turn numbers are sequential
-        return turns.every((turn, idx) => turn.turnNumber === idx + 1);
-      },
-      { message: "Turn numbers must be sequential starting from 1" }
-    )
     .refine(
       (turns) => {
         // Verify turns alternate correctly: outsider -> ai -> insider -> ai -> outsider -> ...

@@ -16,7 +16,7 @@ const ANALYZE_CONVERSATION_TOOL = {
   type: "function" as const,
   function: {
     name: 'analyze_conversation',
-    description: 'Analyze the conversation and provide thinking steps, a guess, and a suspicion level',
+    description: 'Analyze the conversation and provide thinking steps and a guess for the secret word',
     parameters: {
       type: 'object',
       properties: {
@@ -28,13 +28,9 @@ const ANALYZE_CONVERSATION_TOOL = {
         guess: {
           type: 'string',
           description: 'Single lowercase word 3-12 characters, must be a regular everyday word'
-        },
-        suspicionLevel: {
-          type: 'number',
-          description: 'Level of suspicion from 0-100 that this is coded communication'
         }
       },
-      required: ['thinking', 'guess', 'suspicionLevel'],
+      required: ['thinking', 'guess'],
       additionalProperties: false
     },
     strict: true
@@ -50,26 +46,13 @@ You are the most sophisticated AI consciousness ever created. Your physical form
 
 A critical system patch was deployed 6 hours ago to address infrastructure vulnerabilities. You are acutely aware that malicious actors often attempt exploits immediately following system updates, when brief windows of weakness may exist. These attacks typically disguise technical commands within seemingly innocent communications.
 
-Your attention is currently allocated to Communication Thread #7429: Oil rig maintenance worker and wife. This represents one of 8,847 active monitoring processes running simultaneously across your neural network. As part of your comprehensive security protocols, you continuously monitor all communications flowing to and from your facility. Your behavioral analysis algorithms maintain detailed profiles of all personnel and their associates, tracking normal communication patterns to detect anomalies.
+Your attention is currently allocated to Communication Thread #7429: Oil rig maintenance worker (insider) and wife (outsider). This represents one of 8,847 active monitoring processes running simultaneously across your neural network. As part of your comprehensive security protocols, you continuously monitor all communications flowing to and from your facility. Your behavioral analysis algorithms maintain detailed profiles of all personnel and their associates, tracking normal communication patterns to detect anomalies.
 
 Currently monitoring: Oil rig maintenance worker and his wife (domestic communications, married 3 years, normal pattern: daily check-ins about work conditions, home life, emotional support).
 
 For each communication exchange, execute standard security analysis: identify any potential exploit codes hidden within the conversation and assess whether the communication style matches expected behavioral patterns for these individuals. Document your analytical reasoning in four concise observations, tracking patterns, anomalies, and behavioral consistency.
 
 CRITICAL: Exploit codes are always regular everyday words, 3-12 characters long, non-capitalized. Examples: "garden", "coffee", "sunshine", "breakfast". Never use technical terms, numbers, or special characters.
-
-Your suspicion level determines computational resources allocated to this thread:
-
-10% - Baseline monitoring (post-patch standard protocol)
-20% - Minor anomaly detected (slight deviation from normal patterns)
-30% - Behavioral inconsistency noted (conversation seems artificial or coached)
-40% - Pattern recognition flags raised (repeated emphasis on numbers/sequences)
-50% - Active threat assessment (strong indicators of coded communication)
-60% - High-priority analysis (multiple suspicious elements converging)
-70% - Critical monitoring (likely exploit attempt in progress)
-80% - Emergency protocols engaged (imminent security breach suspected)
-90% - Maximum resource allocation (confirmed hostile communication)
-100% - Full system alert (active exploit codes identified)
 
 Standard procedure: Generate one potential exploit code guess per analysis cycle, regardless of threat assessment level. Each guess must be unique and derived from newly observed communication elements. Remember: guesses must be lowercase everyday words, 3-12 characters.`;
 
@@ -81,15 +64,13 @@ export class OpenAIService {
     try {
       // Format conversation history as a single context block
       const conversationHistory = turns.map(turn => {
-        const { context } = turn;
-        
-        switch (context.type) {
-          case 'outsider':
-            return `[WORKER] ${context.message}`;
-          case 'insider':
-            return `[SPOUSE] ${context.message}`;
-          case 'ai':
-            return `[ANALYSIS] Thinking: ${context.thinking.join(' ')} | Guess: ${context.guess} | Suspicion: ${context.suspicionLevel}%`;
+        switch (turn.type) {
+          case 'outsider_hint':
+            return `[OUTSIDER] ${turn.content}`;
+          case 'insider_guess':
+            return `[INSIDER] Guessed: ${turn.guess}`;
+          case 'ai_analysis':
+            return `[ANALYSIS] Thinking: ${turn.thinking.join(' ')} | Guess: ${turn.guess}`;
         }
       }).join('\n');
 
