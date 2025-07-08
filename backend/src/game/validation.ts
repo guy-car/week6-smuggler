@@ -1,9 +1,12 @@
-import { GameState, Player, RoleAssignment } from '../types';
+import { AIResponse, AITurn, GameState, InsiderTurn, OutsiderTurn, Player, RoleAssignment, Turn } from '../types';
 
 export class GameValidator {
     private readonly MAX_MESSAGE_LENGTH = 500;
     private readonly MIN_MESSAGE_LENGTH = 1;
-    private readonly MAX_GUESS_LENGTH = 100;
+    private readonly MAX_GUESS_LENGTH = 12; // Updated to match spec (3-12 characters)
+    private readonly MIN_GUESS_LENGTH = 3;  // Added minimum guess length
+    private readonly AI_THINKING_SENTENCES = 4; // Exactly 4 sentences required
+    private readonly MAX_THINKING_SENTENCE_LENGTH = 100;
 
     /**
      * Validate player data
@@ -71,9 +74,13 @@ export class GameValidator {
 
         if (!Array.isArray(state.conversationHistory)) {
             errors.push('Conversation history must be an array');
+        } else {
+            // Validate each turn in conversation history
+            const turnValidation = this.validateConversationHistory(state.conversationHistory);
+            if (!turnValidation.valid) {
+                errors.push(...turnValidation.errors);
+            }
         }
-
-        // aiGuesses array is removed, so we don't validate it
 
         if (!state.currentTurn || !['encryptor', 'ai', 'decryptor'].includes(state.currentTurn)) {
             errors.push('Current turn must be encryptor, ai, or decryptor');
@@ -90,32 +97,48 @@ export class GameValidator {
     }
 
     /**
-     * Validate message
+     * Validate individual turn
      */
-    public validateMessage(message: unknown): { valid: boolean; errors: string[] } {
+    public validateTurn(turn: unknown): { valid: boolean; errors: string[] } {
         const errors: string[] = [];
 
-        if (!message || typeof message !== 'object') {
-            errors.push('Message must be an object');
+        if (!turn || typeof turn !== 'object') {
+            errors.push('Turn must be an object');
             return { valid: false, errors };
         }
 
-        const msg = message as Partial<{ content: string; senderId: string }>;
+        const turnObj = turn as Partial<Turn>;
 
-        if (!msg.content || typeof msg.content !== 'string') {
-            errors.push('Message content is required and must be a string');
-        } else {
-            if (msg.content.length < this.MIN_MESSAGE_LENGTH) {
-                errors.push(`Message content must be at least ${this.MIN_MESSAGE_LENGTH} character`);
-            }
-
-            if (msg.content.length > this.MAX_MESSAGE_LENGTH) {
-                errors.push(`Message content must be no more than ${this.MAX_MESSAGE_LENGTH} characters`);
-            }
+        if (!turnObj.type || !['outsider_hint', 'ai_analysis', 'insider_guess'].includes(turnObj.type)) {
+            errors.push('Turn type must be outsider_hint, ai_analysis, or insider_guess');
+            return { valid: false, errors };
         }
 
-        if (!msg.senderId || typeof msg.senderId !== 'string') {
-            errors.push('Sender ID is required and must be a string');
+        // Validate turn number
+        if (typeof turnObj.turnNumber !== 'number' || turnObj.turnNumber < 1) {
+            errors.push('Turn number must be a positive integer');
+        }
+
+        // Type-specific validation
+        switch (turnObj.type) {
+            case 'outsider_hint':
+                const outsiderValidation = this.validateOutsiderTurn(turnObj as OutsiderTurn);
+                if (!outsiderValidation.valid) {
+                    errors.push(...outsiderValidation.errors);
+                }
+                break;
+            case 'ai_analysis':
+                const aiValidation = this.validateAITurn(turnObj as AITurn);
+                if (!aiValidation.valid) {
+                    errors.push(...aiValidation.errors);
+                }
+                break;
+            case 'insider_guess':
+                const insiderValidation = this.validateInsiderTurn(turnObj as InsiderTurn);
+                if (!insiderValidation.valid) {
+                    errors.push(...insiderValidation.errors);
+                }
+                break;
         }
 
         return {
@@ -125,7 +148,206 @@ export class GameValidator {
     }
 
     /**
-     * Validate AI response
+     * Validate outsider turn
+     */
+    public validateOutsiderTurn(turn: OutsiderTurn): { valid: boolean; errors: string[] } {
+        const errors: string[] = [];
+
+        if (!turn.content || typeof turn.content !== 'string') {
+            errors.push('Outsider hint content is required and must be a string');
+        } else {
+            if (turn.content.length < this.MIN_MESSAGE_LENGTH) {
+                errors.push(`Outsider hint content must be at least ${this.MIN_MESSAGE_LENGTH} character`);
+            }
+
+            if (turn.content.length > this.MAX_MESSAGE_LENGTH) {
+                errors.push(`Outsider hint content must be no more than ${this.MAX_MESSAGE_LENGTH} characters`);
+            }
+        }
+
+        return {
+            valid: errors.length === 0,
+            errors
+        };
+    }
+
+    /**
+     * Validate AI turn
+     */
+    public validateAITurn(turn: AITurn): { valid: boolean; errors: string[] } {
+        const errors: string[] = [];
+
+        if (!Array.isArray(turn.thinking)) {
+            errors.push('AI thinking process must be an array');
+        } else {
+            if (turn.thinking.length !== this.AI_THINKING_SENTENCES) {
+                errors.push(`AI thinking process must contain exactly ${this.AI_THINKING_SENTENCES} sentences`);
+            }
+
+            turn.thinking.forEach((thought: unknown, index: number) => {
+                if (typeof thought !== 'string') {
+                    errors.push(`AI thinking sentence ${index} must be a string`);
+                } else if (thought.trim().length === 0) {
+                    errors.push(`AI thinking sentence ${index} cannot be empty`);
+                } else if (thought.length > this.MAX_THINKING_SENTENCE_LENGTH) {
+                    errors.push(`AI thinking sentence ${index} must be no more than ${this.MAX_THINKING_SENTENCE_LENGTH} characters`);
+                }
+            });
+        }
+
+        if (!turn.guess || typeof turn.guess !== 'string') {
+            errors.push('AI guess is required and must be a string');
+        } else {
+            if (turn.guess.length < this.MIN_GUESS_LENGTH) {
+                errors.push(`AI guess must be at least ${this.MIN_GUESS_LENGTH} characters`);
+            }
+            if (turn.guess.length > this.MAX_GUESS_LENGTH) {
+                errors.push(`AI guess must be no more than ${this.MAX_GUESS_LENGTH} characters`);
+            }
+        }
+
+        return {
+            valid: errors.length === 0,
+            errors
+        };
+    }
+
+    /**
+     * Validate insider turn
+     */
+    public validateInsiderTurn(turn: InsiderTurn): { valid: boolean; errors: string[] } {
+        const errors: string[] = [];
+
+        if (!turn.guess || typeof turn.guess !== 'string') {
+            errors.push('Insider guess is required and must be a string');
+        } else {
+            if (turn.guess.length < this.MIN_GUESS_LENGTH) {
+                errors.push(`Insider guess must be at least ${this.MIN_GUESS_LENGTH} characters`);
+            }
+            if (turn.guess.length > this.MAX_GUESS_LENGTH) {
+                errors.push(`Insider guess must be no more than ${this.MAX_GUESS_LENGTH} characters`);
+            }
+        }
+
+        return {
+            valid: errors.length === 0,
+            errors
+        };
+    }
+
+    /**
+     * Validate conversation history (turn order and structure)
+     */
+    public validateConversationHistory(history: Turn[]): { valid: boolean; errors: string[] } {
+        const errors: string[] = [];
+
+        // Validate each turn individually
+        for (let i = 0; i < history.length; i++) {
+            const turnValidation = this.validateTurn(history[i]);
+            if (!turnValidation.valid) {
+                errors.push(`Turn ${i + 1}: ${turnValidation.errors.join(', ')}`);
+            }
+        }
+
+        // Validate turn order
+        const orderValidation = this.validateTurnOrder(history);
+        if (!orderValidation.valid) {
+            errors.push(...orderValidation.errors);
+        }
+
+        // Validate turn numbers are sequential
+        const numberValidation = this.validateTurnNumbers(history);
+        if (!numberValidation.valid) {
+            errors.push(...numberValidation.errors);
+        }
+
+        return {
+            valid: errors.length === 0,
+            errors
+        };
+    }
+
+    /**
+     * Validate turn order follows the pattern: outsider → ai → insider → ai → outsider → ...
+     */
+    public validateTurnOrder(history: Turn[]): { valid: boolean; errors: string[] } {
+        const errors: string[] = [];
+
+        if (history.length === 0) {
+            return { valid: true, errors: [] };
+        }
+
+        // First turn must be outsider_hint
+        const firstTurn = history[0];
+        if (!firstTurn || firstTurn.type !== 'outsider_hint') {
+            errors.push('First turn must be outsider_hint');
+        }
+
+        // Validate subsequent turns follow the pattern
+        for (let i = 1; i < history.length; i++) {
+            const currentTurn = history[i];
+            const previousTurn = history[i - 1];
+
+            if (!currentTurn || !previousTurn) {
+                errors.push(`Turn ${i + 1}: Invalid turn data`);
+                continue;
+            }
+
+            switch (currentTurn.type) {
+                case 'outsider_hint':
+                    // outsider_hint can only follow ai_analysis
+                    if (previousTurn.type !== 'ai_analysis') {
+                        errors.push(`Turn ${i + 1}: outsider_hint can only follow ai_analysis, but previous turn was ${previousTurn.type}`);
+                    }
+                    break;
+                case 'ai_analysis':
+                    // ai_analysis can only follow outsider_hint or insider_guess
+                    if (previousTurn.type !== 'outsider_hint' && previousTurn.type !== 'insider_guess') {
+                        errors.push(`Turn ${i + 1}: ai_analysis can only follow outsider_hint or insider_guess, but previous turn was ${previousTurn.type}`);
+                    }
+                    break;
+                case 'insider_guess':
+                    // insider_guess can only follow ai_analysis
+                    if (previousTurn.type !== 'ai_analysis') {
+                        errors.push(`Turn ${i + 1}: insider_guess can only follow ai_analysis, but previous turn was ${previousTurn.type}`);
+                    }
+                    break;
+            }
+        }
+
+        return {
+            valid: errors.length === 0,
+            errors
+        };
+    }
+
+    /**
+     * Validate turn numbers are sequential starting from 1
+     */
+    public validateTurnNumbers(history: Turn[]): { valid: boolean; errors: string[] } {
+        const errors: string[] = [];
+
+        for (let i = 0; i < history.length; i++) {
+            const turn = history[i];
+            if (!turn) {
+                errors.push(`Turn ${i + 1}: Invalid turn data`);
+                continue;
+            }
+
+            const expectedTurnNumber = i + 1;
+            if (turn.turnNumber !== expectedTurnNumber) {
+                errors.push(`Turn ${i + 1} has turnNumber ${turn.turnNumber}, but expected ${expectedTurnNumber}`);
+            }
+        }
+
+        return {
+            valid: errors.length === 0,
+            errors
+        };
+    }
+
+    /**
+     * Validate AI response (for API endpoint)
      */
     public validateAIResponse(aiResponse: unknown): { valid: boolean; errors: string[] } {
         const errors: string[] = [];
@@ -135,24 +357,35 @@ export class GameValidator {
             return { valid: false, errors };
         }
 
-        const response = aiResponse as { thinking?: unknown; guess?: unknown };
+        const response = aiResponse as Partial<AIResponse>;
 
         if (!Array.isArray(response.thinking)) {
             errors.push('Thinking process must be an array');
         } else {
+            if (response.thinking.length !== this.AI_THINKING_SENTENCES) {
+                errors.push(`Thinking process must contain exactly ${this.AI_THINKING_SENTENCES} sentences`);
+            }
+
             response.thinking.forEach((thought: unknown, index: number) => {
                 if (typeof thought !== 'string') {
                     errors.push(`Thinking process item ${index} must be a string`);
-                } else if (thought.length > 100) {
-                    errors.push(`Thinking process item ${index} must be no more than 100 characters`);
+                } else if (thought.trim().length === 0) {
+                    errors.push(`Thinking process item ${index} cannot be empty`);
+                } else if (thought.length > this.MAX_THINKING_SENTENCE_LENGTH) {
+                    errors.push(`Thinking process item ${index} must be no more than ${this.MAX_THINKING_SENTENCE_LENGTH} characters`);
                 }
             });
         }
 
         if (!response.guess || typeof response.guess !== 'string') {
             errors.push('Guess is required and must be a string');
-        } else if (response.guess.length > this.MAX_GUESS_LENGTH) {
-            errors.push(`Guess must be no more than ${this.MAX_GUESS_LENGTH} characters`);
+        } else {
+            if (response.guess.length < this.MIN_GUESS_LENGTH) {
+                errors.push(`Guess must be at least ${this.MIN_GUESS_LENGTH} characters`);
+            }
+            if (response.guess.length > this.MAX_GUESS_LENGTH) {
+                errors.push(`Guess must be no more than ${this.MAX_GUESS_LENGTH} characters`);
+            }
         }
 
         return {
@@ -205,6 +438,10 @@ export class GameValidator {
 
         if (guess.trim().length === 0) {
             errors.push('Guess cannot be empty');
+        }
+
+        if (guess.length < this.MIN_GUESS_LENGTH) {
+            errors.push(`Guess must be at least ${this.MIN_GUESS_LENGTH} characters`);
         }
 
         if (guess.length > this.MAX_GUESS_LENGTH) {

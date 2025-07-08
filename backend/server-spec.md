@@ -129,20 +129,17 @@ type TurnType = 'outsider_hint' | 'ai_analysis' | 'insider_guess';
 interface OutsiderTurn {
   type: 'outsider_hint';
   content: string;
-  turnNumber: number;
 }
 
 interface AITurn {
   type: 'ai_analysis';
   thinking: string[];  // Exactly 4 sentences
   guess: string;       // Single word, 3-12 characters
-  turnNumber: number;
 }
 
 interface InsiderTurn {
   type: 'insider_guess';
   guess: string;       // Single word, 3-12 characters
-  turnNumber: number;
 }
 
 type Turn = OutsiderTurn | AITurn | InsiderTurn;
@@ -256,10 +253,6 @@ All conversation history uses the `Turn` union type with discriminated union bas
 
 The conversation history must follow strict validation rules:
 
-**Turn Number Validation:**
-- Turn numbers must be sequential starting from 1
-- Each turn must have `turnNumber = index + 1`
-
 **Turn Order Validation:**
 - Strict pattern: outsider → ai → insider → ai → outsider → ...
 - First turn must be `outsider_hint`
@@ -270,10 +263,10 @@ The conversation history must follow strict validation rules:
 **Example Valid Sequence:**
 ```typescript
 [
-  { type: 'outsider_hint', content: "It's red and sweet", turnNumber: 1 },
-  { type: 'ai_analysis', thinking: ["...", "...", "...", "..."], guess: "cherry", turnNumber: 2 },
-  { type: 'insider_guess', guess: "apple", turnNumber: 3 },
-  { type: 'ai_analysis', thinking: ["...", "...", "...", "..."], guess: "strawberry", turnNumber: 4 }
+  { type: 'outsider_hint', content: "It's red and sweet" },
+  { type: 'ai_analysis', thinking: ["...", "...", "...", "..."], guess: "cherry" },
+  { type: 'insider_guess', guess: "apple" },
+  { type: 'ai_analysis', thinking: ["...", "...", "...", "..."], guess: "strawberry" }
 ]
 ```
 
@@ -517,8 +510,7 @@ interface AnalyzeRequest {
   "conversationHistory": [
     {
       "type": "outsider_hint",
-      "content": "It's red and sweet",
-      "turnNumber": 1
+      "content": "It's red and sweet"
     },
     {
       "type": "ai_analysis",
@@ -528,13 +520,11 @@ interface AnalyzeRequest {
         "It could also be candy or dessert",
         "I should consider common red sweet foods"
       ],
-      "guess": "cherry",
-      "turnNumber": 2
+      "guess": "cherry"
     },
     {
       "type": "insider_guess",
-      "guess": "apple",
-      "turnNumber": 3
+      "guess": "apple"
     }
   ]
 }
@@ -562,7 +552,6 @@ interface AIResponse {
 ```
 
 #### Validation Rules
-- Turn numbers must be sequential starting from 1
 - Turns must follow pattern: outsider → ai → insider → ai → outsider
 - AI thinking must be exactly 4 sentences
 - Guesses must be 3-12 characters
@@ -572,7 +561,7 @@ interface AIResponse {
 ```json
 {
   "success": false,
-  "error": "Invalid conversation history: Turn numbers must be sequential"
+  "error": "Invalid conversation history: Turn order is invalid"
 }
 ```
 
@@ -590,7 +579,6 @@ interface AIResponse {
 2. **Update `backend/src/game/state.ts`**
    - [x] Update `addMessage` method to handle `Turn` structure
    - [x] Update `createGameState` to initialize empty `conversationHistory: Turn[]`
-   - [x] Add turn number tracking and validation
    - [x] Add method to transform conversation history to `AnalyzeRequest` format
    - [x] Update all methods to work with new turn types
 
@@ -600,7 +588,6 @@ interface AIResponse {
    - [x] Update `handleDecryptorGuess` to create `InsiderTurn` for incorrect guesses
    - [x] Update AI response handling to create `AITurn`
    - [x] Add turn order validation
-   - [x] Add turn number increment logic
 
 ### Phase 4: Update Socket Event Handlers
 4. **Update `backend/src/socket/handlers/gameHandlers.ts`**
@@ -636,7 +623,6 @@ interface AIResponse {
 8. **Update `backend/src/game/validation.ts`**
    - [ ] Add Zod validation for turn types
    - [ ] Add turn order validation
-   - [ ] Add turn number validation
    - [ ] Update all validation logic to work with new structure
 
 ### Success Criteria
@@ -645,7 +631,7 @@ interface AIResponse {
 - [ ] AI responses use `AIResponse` structure with exactly 4 thinking sentences
 - [ ] Decryptor incorrect guesses become `InsiderTurn` objects
 - [ ] All turn types (`outsider_hint`, `ai_analysis`, `insider_guess`) work correctly
-- [ ] Turn validation (order, numbers) works correctly
+- [ ] Turn validation (order) works correctly
 - [ ] All existing tests pass with new structure
 - [ ] New tests cover turn validation and AI analysis functionality
 - [ ] `/api/ai/analyze` endpoint works with new request/response types
