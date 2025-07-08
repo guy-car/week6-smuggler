@@ -25,7 +25,7 @@ router.post('/analyze', async (req, res) => {
       }
     });
 
-    res.json(response);
+    return res.json(response);
 
   } catch (error: unknown) {
     // Handle Zod validation errors
@@ -56,7 +56,7 @@ router.post('/analyze', async (req, res) => {
       console.error('Error processing AI analysis:', error);
     }
     
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Internal server error',
       message: 'An unexpected error occurred'
     });
