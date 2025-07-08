@@ -19,7 +19,6 @@ export interface GameState {
     currentRound: number;
     secretWord: string;
     conversationHistory: Message[];
-    aiGuesses: AIGuess[];
     currentTurn: 'encryptor' | 'ai' | 'decryptor';
     gameStatus: 'waiting' | 'active' | 'ended';
 }
@@ -29,14 +28,16 @@ export interface Message {
     content: string;
     senderId: string;
     timestamp: Date;
+    role: 'encryptor' | 'decryptor' | 'ai';
+    turnNumber: number;            // Sequential starting from 1
+
+    // Optional fields for specific message types
+    thinking?: string[];           // For AI messages (always present for AI)
 }
 
-export interface AIGuess {
-    id: string;
-    thinking: string[];
-    guess: string;
-    confidence: number;
-    timestamp: Date;
+export interface OpenAIContext {
+    gameId: string;                // Room/session identifier
+    conversationHistory: Message[];
 }
 
 export interface RoleAssignment {

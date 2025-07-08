@@ -24,7 +24,7 @@ describe('GameStateManager', () => {
             expect(gameState.currentRound).toBe(1);
             expect(gameState.secretWord).toBe('testword');
             expect(gameState.conversationHistory).toEqual([]);
-            expect(gameState.aiGuesses).toEqual([]);
+            // aiGuesses array is removed, so we don't check for it
             expect(gameState.currentTurn).toBe('encryptor');
             expect(gameState.gameStatus).toBe('active');
         });
@@ -73,37 +73,26 @@ describe('GameStateManager', () => {
     describe('addMessage', () => {
         it('should add message to conversation history', () => {
             const gameState = gameStateManager.createGameState('TestWord', []);
-            const message = { content: 'Test message', senderId: 'player1' };
+            const message = {
+                content: 'Test message',
+                senderId: 'player1',
+                role: 'encryptor' as const,
+                turnNumber: 1
+            };
 
             const newGameState = gameStateManager.addMessage(gameState, message);
 
             expect(newGameState.conversationHistory).toHaveLength(1);
             expect(newGameState.conversationHistory[0]!.content).toBe('Test message');
             expect(newGameState.conversationHistory[0]!.senderId).toBe('player1');
+            expect(newGameState.conversationHistory[0]!.role).toBe('encryptor');
+            expect(newGameState.conversationHistory[0]!.turnNumber).toBe(1);
             expect(newGameState.conversationHistory[0]!.id).toBeDefined();
             expect(newGameState.conversationHistory[0]!.timestamp).toBeInstanceOf(Date);
         });
     });
 
-    describe('addAIGuess', () => {
-        it('should add AI guess to game state', () => {
-            const gameState = gameStateManager.createGameState('TestWord', []);
-            const aiGuess = {
-                thinking: ['I think it might be...'],
-                guess: 'TestWord',
-                confidence: 0.8
-            };
-
-            const newGameState = gameStateManager.addAIGuess(gameState, aiGuess);
-
-            expect(newGameState.aiGuesses).toHaveLength(1);
-            expect(newGameState.aiGuesses[0]!.thinking).toEqual(['I think it might be...']);
-            expect(newGameState.aiGuesses[0]!.guess).toBe('TestWord');
-            expect(newGameState.aiGuesses[0]!.confidence).toBe(0.8);
-            expect(newGameState.aiGuesses[0]!.id).toBeDefined();
-            expect(newGameState.aiGuesses[0]!.timestamp).toBeInstanceOf(Date);
-        });
-    });
+    // addAIGuess method is removed as AI responses are now part of conversation history
 
     describe('updateScore', () => {
         it('should increase score when players win', () => {
@@ -147,14 +136,19 @@ describe('GameStateManager', () => {
         it('should advance to next round and reset conversation', () => {
             const gameState = gameStateManager.createGameState('TestWord', []);
             gameState.currentRound = 1;
-            gameState.conversationHistory = [{ id: '1', content: 'test', senderId: 'player1', timestamp: new Date() }];
-            gameState.aiGuesses = [{ id: '1', thinking: [], guess: 'test', confidence: 0.5, timestamp: new Date() }];
+            gameState.conversationHistory = [{
+                id: '1',
+                content: 'test',
+                senderId: 'player1',
+                timestamp: new Date(),
+                role: 'encryptor',
+                turnNumber: 1
+            }];
 
             const newGameState = gameStateManager.advanceRound(gameState);
 
             expect(newGameState.currentRound).toBe(2);
             expect(newGameState.conversationHistory).toEqual([]);
-            expect(newGameState.aiGuesses).toEqual([]);
             expect(newGameState.currentTurn).toBe('encryptor');
         });
     });
@@ -422,7 +416,7 @@ describe('GameLogic', () => {
         });
     });
 
-    describe('handleAIGuess', () => {
+    describe('handleAIResponse', () => {
         it('should handle correct AI guess', () => {
             const gameState = gameLogic.startGame([
                 { id: 'player1', name: 'Player 1', ready: true, role: null, socketId: 'socket1' },
@@ -431,13 +425,12 @@ describe('GameLogic', () => {
 
             gameState.currentTurn = 'ai';
 
-            const aiGuess = {
-                thinking: ['I think it might be...'],
-                guess: gameState.secretWord,
-                confidence: 0.8
+            const aiResponse = {
+                thinking: ['I think it might be...', 'Analyzing clues...', 'Processing context...', 'Making educated guess...'],
+                guess: gameState.secretWord
             };
 
-            const result = gameLogic.handleAIGuess(gameState, aiGuess);
+            const result = gameLogic.handleAIResponse(gameState, aiResponse);
 
             expect(result.isCorrect).toBe(true);
             expect(result.newGameState.score).toBe(4); // AI wins, score decreases
@@ -453,13 +446,12 @@ describe('GameLogic', () => {
 
             gameState.currentTurn = 'ai';
 
-            const aiGuess = {
-                thinking: ['I think it might be...'],
-                guess: 'WrongWord',
-                confidence: 0.8
+            const aiResponse = {
+                thinking: ['I think it might be...', 'Analyzing clues...', 'Processing context...', 'Making educated guess...'],
+                guess: 'WrongWord'
             };
 
-            const result = gameLogic.handleAIGuess(gameState, aiGuess);
+            const result = gameLogic.handleAIResponse(gameState, aiResponse);
 
             expect(result.isCorrect).toBe(false);
             expect(result.newGameState.currentTurn).toBe('decryptor');
@@ -484,6 +476,7 @@ describe('GameLogic', () => {
             const result = gameLogic.handleDecryptorGuess(gameState, gameState.secretWord, 'player2', roles);
 
             expect(result.isCorrect).toBe(true);
+            expect(result.isMessage).toBe(false);
             expect(result.newGameState.score).toBe(6); // Players win, score increases
             expect(result.newGameState.currentRound).toBe(2);
             expect(result.shouldAdvanceTurn).toBe(false);
@@ -505,7 +498,11 @@ describe('GameLogic', () => {
             const result = gameLogic.handleDecryptorGuess(gameState, 'WrongWord', 'player2', roles);
 
             expect(result.isCorrect).toBe(false);
-            expect(result.newGameState.currentTurn).toBe('encryptor');
+            expect(result.isMessage).toBe(true);
+            expect(result.newGameState.currentTurn).toBe('ai');
+            expect(result.newGameState.conversationHistory).toHaveLength(1);
+            expect(result.newGameState.conversationHistory[0]!.content).toBe('WrongWord');
+            expect(result.newGameState.conversationHistory[0]!.senderId).toBe('player2');
             expect(result.shouldAdvanceTurn).toBe(true);
         });
     });

@@ -76,7 +76,7 @@ logging:
 | `player_ready`            | Client → Server | `{ roomId: string }`                                                        | Player marks themselves as ready     |
 | `start_game`              | Server → Client | `{ roomId: string, players: Player[], roles: RoleAssignment }`              | Game starts when both players ready  |
 | `send_message`            | Client → Server | `{ roomId: string, message: string, senderId: string }`                     | Encryptor sends message              |
-| `ai_response`             | Server → Client | `{ roomId: string, thinking: string[], guess: string, confidence: number }` | AI thinking process and final guess  |
+| `ai_response`             | Server → Client | `{ roomId: string, message: Message }` | AI response added to conversation history |
 | `player_guess`            | Client → Server | `{ roomId: string, guess: string, playerId: string }`                       | Decryptor attempts to guess secret   |
 | `guess_result`            | Server → Client | `{ roomId: string, correct: boolean, winner: string, score: number }`       | Guess validation result              |
 | `round_end`               | Server → Client | `{ roomId: string, score: number, gameEnded: boolean, winner: string }`     | Round completion and score update    |
@@ -116,8 +116,7 @@ interface GameState {
   score: number;
   currentRound: number;
   secretWord: string;
-  conversationHistory: Message[];
-  aiGuesses: AIGuess[];
+  conversationHistory: Message[];  // Single unified array - includes all messages and AI responses
   currentTurn: 'encryptor' | 'ai' | 'decryptor';
   gameStatus: 'waiting' | 'active' | 'ended';
 }
@@ -127,14 +126,16 @@ interface Message {
   content: string;
   senderId: string;
   timestamp: Date;
+  role: 'encryptor' | 'decryptor' | 'ai';
+  turnNumber: number;            // Sequential starting from 1
+  
+  // Optional fields for specific message types
+  thinking?: string[];           // For AI messages (always present for AI)
 }
 
-interface AIGuess {
-  id: string;
-  thinking: string[];
-  guess: string;
-  confidence: number;
-  timestamp: Date;
+interface OpenAIContext {
+  gameId: string;                // Room/session identifier
+  conversationHistory: Message[];
 }
 
 interface RoleAssignment {
@@ -155,9 +156,32 @@ interface RoleAssignment {
 ### Turn Order
 1. **Encryptor** sends message
 2. **AI** analyzes and makes guess
-3. **Decryptor** attempts to guess
+3. **Decryptor** sends message/guess (if correct → round ends, if incorrect → added to conversation)
 4. **AI** analyzes again and makes another guess
 5. Repeat until someone guesses correctly
+
+### Decryptor Message Handling
+The decryptor's input serves **two purposes simultaneously**:
+- **Message**: If the input doesn't match the secret word, it's added to `conversationHistory` as a response message
+- **Guess**: If the input matches the secret word, the decryptor wins the round
+
+**Flow Example:**
+1. Encryptor: "I'm thinking of something round and red" → `conversationHistory` (role: 'encryptor')
+2. AI: "apple" → `conversationHistory` (role: 'ai' with thinking)
+3. Decryptor: "Is it something you eat?" → **CHECK AS GUESS** → incorrect → `conversationHistory` (role: 'decryptor')
+4. AI: "tomato" → `conversationHistory` (role: 'ai' with thinking)
+5. Decryptor: "apple" → **CORRECT GUESS** → round ends, players win
+
+**Implementation Requirements:**
+- All decryptor inputs are checked as guesses first
+- If decryptor input is correct: round ends, players win
+- If decryptor input is incorrect: add to `conversationHistory` as decryptor_message, continue conversation
+- AI responses must be added to `conversationHistory` as ai_message with thinking field
+- AI must analyze the full conversation including decryptor responses
+- Only correct word matches should trigger round end
+- **OpenAI Context**: Transform conversation history to simplified format for AI analysis
+- **Turn Tracking**: Maintain sequential turn numbers for OpenAI context
+- **Turn Order Validation**: Ensure strict outsider → ai → insider → ai → outsider sequence
 
 ### Role Assignment
 - **First player to join** (room creator) → **Encryptor** (fixed role)
@@ -187,7 +211,59 @@ interface AIResponse {
   thinking: string[]; // Exactly 4 sentences
   guess: string;      // Single word
 }
+
+// AI responses are integrated into conversation history as Message objects
+// with role: 'ai' and thinking field
 ```
+
+### Unified Message Structure
+
+All conversation history uses a single `Message` type with optional fields for different message types:
+
+**Message Types:**
+1. **Encryptor Messages** (`role: 'encryptor'`)
+   - `content`: The hint message
+   - `role`: 'encryptor'
+
+2. **Decryptor Messages** (`role: 'decryptor'`)
+   - `content`: The response message (checked as guess, if incorrect becomes conversation)
+   - `role`: 'decryptor'
+
+3. **AI Messages** (`role: 'ai'`)
+   - `content`: The AI's response (thinking process or final guess)
+   - `role`: 'ai'
+   - `thinking`: Array of individual thinking steps (always present for AI messages)
+
+### OpenAI Context System
+
+For AI analysis, our `Message` interface serves as the shared type for all conversation history:
+
+**Message Types:**
+1. **Encryptor Messages** (`role: 'encryptor'`)
+   - `content`: The hint message
+   - `turnNumber`: Sequential turn number
+
+2. **AI Messages** (`role: 'ai'`)
+   - `content`: The AI's guess
+   - `thinking`: Array of 4 thinking sentences
+   - `turnNumber`: Sequential turn number
+
+3. **Decryptor Messages** (`role: 'decryptor'`)
+   - `content`: The failed guess word
+   - `turnNumber`: Sequential turn number
+
+**Key Requirements:**
+- Turn numbers must be sequential starting from 1
+- Strict turn order: encryptor → ai → decryptor → ai → encryptor...
+- Failed guesses only (successful guesses end game)
+- Word validation (3-12 chars, lowercase) handled on frontend
+
+**Benefits:**
+- Single source of truth for all conversation history
+- AI responses treated as regular messages in the conversation
+- Easy chronological display of all interactions
+- Simplified state management - no separate AI guesses array
+- Consistent data structure for all message types
 
 ### Available Words
 37 curated words including: Elephant, Pizza, Sunshine, Mountain, Ocean, Butterfly, Chocolate, Rainbow, Forest, Castle, Dragon, Guitar, Diamond, Volcano, Telescope, Waterfall, Fireworks, Treasure, Pirate, Wizard, Computer, Library, Hospital, Airport, Restaurant, School, Museum, Theater, Stadium, Bridge, Tower, Temple, Palace, Cottage, Lighthouse, Windmill, Fountain
@@ -210,9 +286,10 @@ The `GameStateManager` class manages:
 - Score tracking and validation
 - Role assignment (fixed roles)
 - Turn progression and validation
-- Conversation history tracking
-- AI guess integration
+- Conversation history tracking (unified array for all messages and AI responses)
 - Game end condition checking
+- Turn number tracking for OpenAI context
+- Conversation history transformation for AI analysis
 
 ### Socket Event Handlers
 - **RoomHandlers:** Manages room-related events (`join_room`, `player_ready`, etc.)
@@ -356,109 +433,6 @@ HTTP endpoint to create rooms and auto-join the creator, enabling direct room cr
 
 #### Backend Changes
 
-#### Frontend Integration Guide
-
-**For Frontend Developer:**
-
-1. **Create Room Button Implementation**
-   ```javascript
-   // Make HTTP POST request to create room
-   const createRoom = async () => {
-     try {
-       const response = await fetch('/api/rooms', {
-         method: 'POST',
-         headers: { 'Content-Type': 'application/json' }
-       });
-       const data = await response.json();
-       
-       if (data.success) {
-         // Redirect to room page
-         router.push(`/room/${data.roomId}`);
-       } else {
-         // Handle error
-         console.error('Failed to create room:', data.error);
-       }
-     } catch (error) {
-       console.error('Error creating room:', error);
-     }
-   };
-   ```
-
-2. **Lobby Implementation**
-   ```javascript
-   // On lobby page load (e.g., useEffect or componentDidMount)
-   const enterLobby = () => {
-     // Connect to WebSocket if not already connected
-     if (!socket.connected) {
-       socket.connect();
-     }
-     
-     // Enter lobby (server will track this client as in lobby)
-     socket.emit('enter_lobby');
-     
-     // Listen for room list updates
-     socket.on('room_list', (data) => {
-       setRooms(data.rooms); // Update React state with current rooms
-     });
-   };
-   ```
-
-3. **Room Page Auto-Join Implementation**
-   ```javascript
-   // On room page load (e.g., useEffect or componentDidMount)
-   const joinRoom = (roomId) => {
-     // Connect to WebSocket if not already connected
-     if (!socket.connected) {
-       socket.connect();
-     }
-     
-     // Leave lobby when entering room
-     socket.emit('leave_lobby');
-     
-     // Join room using existing WebSocket event
-     socket.emit('join_room', { roomId });
-     
-     // Handle join responses
-     socket.on('room_joined', (data) => {
-       // Room joined successfully
-     });
-     
-     socket.on('room_full', () => {
-       // Redirect to homepage if room is full
-       router.push('/');
-     });
-     
-     socket.on('room_not_found', () => {
-       // Redirect to homepage if room doesn't exist
-       router.push('/');
-     });
-   };
-   ```
-
-3. **Required Routes**
-   - `/` - Lobby page that shows room list and create room button
-   - `/room/{roomId}` - Room page that auto-joins on load
-
-4. **Error Handling**
-   - Handle network errors during room creation
-   - Handle room full/not found scenarios
-   - Provide user feedback for all error states
-
-#### Testing
-- [x] **Unit Tests**
-  - [x] Test room creation endpoint
-  - [x] Test room creation with player auto-join
-  - [x] Test error handling (server errors, validation)
-
-- [ ] **Integration Tests**
-  - [ ] Test complete flow: create room → redirect → auto-join
-  - [ ] Test room creation from multiple clients
-  - [ ] Test room cleanup still works properly
-
-- [ ] **Frontend Integration Tests**
-  - [ ] Test create room button functionality
-  - [ ] Test room page auto-join behavior
-  - [ ] Test error scenarios and redirects
 
 #### API Specification
 
@@ -508,3 +482,146 @@ Frontend → POST /api/rooms → Backend creates room + player → Return roomId
 - Existing room cleanup logic remains unchanged
 - No authentication required for room creation
 - Graceful error handling for all failure scenarios
+
+## 14. Unified Conversation History Implementation
+
+### Overview
+Implementation of the simplified conversation history structure that unifies all messages (encryptor, decryptor, and AI) into a single `Message` array, eliminating the need for separate `aiGuesses` array.
+
+### Implementation Checklist
+
+#### Phase 1: Update Type Definitions
+1. **Update `backend/src/types/index.ts`**
+   - [ ] Update `Message` interface to include `role` field and `turnNumber`
+   - [ ] Remove `AIGuess` interface
+   - [ ] Update `GameState` interface to remove `aiGuesses` array
+   - [ ] Add optional `thinking` field for AI messages
+   - [ ] Add `OpenAIContext` interface for AI analysis
+
+#### Phase 2: Update Game State Management
+2. **Update `backend/src/game/state.ts`**
+   - [ ] Remove `addAIGuess` method
+   - [ ] Update `addMessage` method to handle `Message` structure
+   - [ ] Update `createGameState` to initialize empty `conversationHistory` array
+   - [ ] Remove any references to `aiGuesses` array
+   - [ ] Add turn number tracking for OpenAI context
+   - [ ] Add method to transform conversation history to OpenAI format
+
+#### Phase 3: Update Game Logic
+3. **Update `backend/src/game/logic.ts`**
+   - [ ] Update `handleEncryptorMessage` to create messages with `role: 'encryptor'`
+   - [ ] Update `handleDecryptorGuess` to create messages with `role: 'decryptor'` for incorrect guesses
+   - [ ] Remove any logic that adds to separate `aiGuesses` array
+   - [ ] Ensure all message creation uses the new `Message` structure
+   - [ ] Add turn order validation for OpenAI context
+   - [ ] Add turn number increment logic
+
+#### Phase 4: Update Socket Event Handlers
+4. **Update `backend/src/socket/handlers/gameHandlers.ts`**
+   - [ ] Update `handleSendMessage` to create messages with `role: 'encryptor'`
+   - [ ] Update `handlePlayerGuess` to create messages with `role: 'decryptor'` for incorrect guesses
+   - [ ] Update `handleAIResponse` to create messages with `role: 'ai'` and `thinking` field
+   - [ ] Update all message broadcasting to use new structure
+   - [ ] Remove any logic that handles separate AI guesses
+
+#### Phase 5: Update AI Integration
+5. **Update `backend/src/ai/mock.ts`**
+   - [ ] Update AI response creation to return `Message` structure
+   - [ ] Ensure AI messages always include `thinking` field
+   - [ ] Update response format to match new structure
+
+#### Phase 6: Update Socket Events
+6. **Update Socket.IO event payloads**
+   - [ ] Update `ai_response` event to send `ConversationMessage` structure
+   - [ ] Update `message_received` event to use new message format
+   - [ ] Update `message_sent` event to use new message format
+   - [ ] Remove any events that reference old `aiGuesses` structure
+
+#### Phase 7: Update Tests
+7. **Update test files**
+   - [ ] Update `backend/tests/gameState.test.ts` to test new `Message` structure
+   - [ ] Update `backend/tests/gameHandlers.test.ts` to test new message types
+   - [ ] Update `backend/tests/gameLogic.test.ts` to test unified conversation history
+   - [ ] Remove tests that reference `aiGuesses` array
+   - [ ] Add tests for new message types and AI message handling
+
+#### Phase 8: Update Validation
+8. **Update `backend/src/game/validation.ts`**
+   - [ ] Update any validation logic to work with new `Message` structure
+   - [ ] Ensure role validation works correctly
+   - [ ] Update validation for AI messages with thinking field
+
+### Key Implementation Details
+
+#### Message Type Handling
+```typescript
+// Encryptor messages
+const encryptorMessage: Message = {
+  id: generateId(),
+  content: message,
+  senderId: socket.id,
+  timestamp: new Date(),
+  role: 'encryptor',
+  turnNumber: currentTurnNumber
+};
+
+// Decryptor messages (incorrect guesses)
+const decryptorMessage: Message = {
+  id: generateId(),
+  content: guess,
+  senderId: socket.id,
+  timestamp: new Date(),
+  role: 'decryptor',
+  turnNumber: currentTurnNumber
+};
+
+// AI messages
+const aiMessage: Message = {
+  id: generateId(),
+  content: aiResponse.guess,
+  senderId: 'ai',
+  timestamp: new Date(),
+  role: 'ai',
+  turnNumber: currentTurnNumber,
+  thinking: aiResponse.thinking
+};
+```
+
+#### Decryptor Input Processing
+```typescript
+// In handlePlayerGuess
+const isCorrect = this.gameStateManager.validateGuess(guess, room.gameState.secretWord);
+
+if (isCorrect) {
+  // Handle correct guess - end round
+  // ... existing round end logic
+} else {
+  // Handle incorrect guess - add to conversation and continue
+  const updatedGameState = this.gameStateManager.addMessage(room.gameState, {
+    content: guess,
+    senderId: socket.id,
+    role: 'decryptor'
+  });
+  
+  // Advance turn to AI
+  const nextGameState = this.gameStateManager.advanceTurn(updatedGameState);
+  room.gameState = nextGameState;
+  
+  // Broadcast message and trigger AI response
+  // ... message broadcasting logic
+  setTimeout(() => {
+    this.handleAIResponse(roomId);
+  }, 1000);
+}
+```
+
+### Success Criteria
+- [ ] All conversation history unified in single `Message[]` array
+- [ ] No separate `aiGuesses` array exists
+- [ ] AI responses include `thinking` field and are added to conversation history
+- [ ] Decryptor incorrect guesses become conversation messages
+- [ ] All message roles (`encryptor`, `decryptor`, `ai`) work correctly
+- [ ] All existing tests pass with new structure
+- [ ] New tests cover unified conversation history functionality
+- [ ] All existing tests pass
+- [ ] New tests cover decryptor message scenarios

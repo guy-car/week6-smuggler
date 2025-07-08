@@ -150,10 +150,12 @@ export class GameHandlers {
                 return;
             }
 
-            // Add message to conversation history
+            // Add message to conversation history with role and turn number
             const updatedGameState = this.gameStateManager.addMessage(room.gameState, {
                 content: message,
-                senderId: socket.id
+                senderId: socket.id,
+                role: 'encryptor',
+                turnNumber: this.gameStateManager.getNextTurnNumber(room.gameState)
             });
 
             // Advance turn to AI
@@ -252,63 +254,112 @@ export class GameHandlers {
             // Validate the guess using Levenshtein distance
             const isCorrect = this.gameStateManager.validateGuess(guess, room.gameState.secretWord);
 
-            // Update score
-            const updatedGameState = this.gameStateManager.updateScore(room.gameState, isCorrect);
+            if (isCorrect) {
+                // Correct guess - end the round
+                // Update score
+                const updatedGameState = this.gameStateManager.updateScore(room.gameState, true);
 
-            // Check if game has ended
-            const gameEnded = this.gameStateManager.isGameEnded(updatedGameState);
-            const winner = this.gameStateManager.getGameWinner(updatedGameState);
+                // Check if game has ended
+                const gameEnded = this.gameStateManager.isGameEnded(updatedGameState);
+                const winner = this.gameStateManager.getGameWinner(updatedGameState);
 
-            if (gameEnded) {
-                // End the game
-                const finalGameState = this.gameStateManager.endGame(updatedGameState);
-                room.gameState = finalGameState;
+                if (gameEnded) {
+                    // End the game
+                    const finalGameState = this.gameStateManager.endGame(updatedGameState);
+                    room.gameState = finalGameState;
 
-                // Emit game end event
-                const gameEndData = {
-                    roomId,
-                    winner,
-                    finalScore: finalGameState.score,
-                    correct: isCorrect
-                };
+                    // Emit game end event
+                    const gameEndData = {
+                        roomId,
+                        winner,
+                        finalScore: finalGameState.score,
+                        correct: isCorrect
+                    };
 
-                socket.to(roomId).emit('game_end', gameEndData);
-                socket.emit('game_end', gameEndData);
-            } else {
-                // Advance to next round
-                const nextRoundState = this.gameStateManager.advanceRound(updatedGameState);
+                    socket.to(roomId).emit('game_end', gameEndData);
+                    socket.emit('game_end', gameEndData);
+                } else {
+                    // Advance to next round
+                    const nextRoundState = this.gameStateManager.advanceRound(updatedGameState);
 
-                // Keep fixed roles - no role switching
+                    // Keep fixed roles - no role switching
 
-                // Select new secret word
-                const newSecretWord = this.wordManager.selectRandomWord();
-                nextRoundState.secretWord = newSecretWord;
+                    // Select new secret word
+                    const newSecretWord = this.wordManager.selectRandomWord();
+                    nextRoundState.secretWord = newSecretWord;
 
-                room.gameState = nextRoundState;
+                    room.gameState = nextRoundState;
 
-                // Emit round end event
-                const roundEndData = {
+                    // Emit round end event
+                    const roundEndData = {
+                        roomId,
+                        correct: isCorrect,
+                        score: nextRoundState.score,
+                        gameEnded: false,
+                        newSecretWord
+                    };
+
+                    socket.to(roomId).emit('round_end', roundEndData);
+                    socket.emit('round_end', roundEndData);
+                }
+
+                // Emit guess result
+                const guessResultData = {
                     roomId,
                     correct: isCorrect,
-                    score: nextRoundState.score,
-                    gameEnded: false,
-                    newSecretWord
+                    guess,
+                    score: updatedGameState.score
                 };
 
-                socket.to(roomId).emit('round_end', roundEndData);
-                socket.emit('round_end', roundEndData);
+                socket.to(roomId).emit('guess_result', guessResultData);
+                socket.emit('guess_result', guessResultData);
+            } else {
+                // Incorrect guess - add to conversation history and continue
+                // Add message to conversation history with role and turn number
+                const updatedGameState = this.gameStateManager.addMessage(room.gameState, {
+                    content: guess,
+                    senderId: socket.id,
+                    role: 'decryptor',
+                    turnNumber: this.gameStateManager.getNextTurnNumber(room.gameState)
+                });
+
+                // Advance turn to AI
+                const nextGameState = this.gameStateManager.advanceTurn(updatedGameState);
+
+                // Update room game state
+                room.gameState = nextGameState;
+
+                // Broadcast message to all players in the room
+                const messageData = {
+                    roomId,
+                    message: {
+                        id: updatedGameState.conversationHistory[updatedGameState.conversationHistory.length - 1]!.id,
+                        content: guess,
+                        senderId: socket.id,
+                        timestamp: new Date()
+                    },
+                    currentTurn: nextGameState.currentTurn
+                };
+
+                socket.to(roomId).emit('message_received', messageData);
+                socket.emit('message_sent', messageData);
+
+                // Emit guess result (incorrect)
+                const guessResultData = {
+                    roomId,
+                    correct: false,
+                    guess,
+                    score: room.gameState.score
+                };
+
+                socket.to(roomId).emit('guess_result', guessResultData);
+                socket.emit('guess_result', guessResultData);
+
+                // Trigger AI response after a short delay
+                setTimeout(() => {
+                    this.handleAIResponse(roomId);
+                }, 1000);
             }
-
-            // Emit guess result
-            const guessResultData = {
-                roomId,
-                correct: isCorrect,
-                guess,
-                score: updatedGameState.score
-            };
-
-            socket.to(roomId).emit('guess_result', guessResultData);
-            socket.emit('guess_result', guessResultData);
 
             console.log(`Guess made in room ${roomId}: ${guess} (correct: ${isCorrect})`);
         } catch (error) {
@@ -433,7 +484,9 @@ export class GameHandlers {
                 currentRound: room.gameState.currentRound,
                 score: room.gameState.score,
                 gameStatus: room.gameState.gameStatus,
-                previousGuesses: room.gameState.aiGuesses.map(guess => guess.guess)
+                previousGuesses: room.gameState.conversationHistory
+                    .filter(message => message.role === 'ai')
+                    .map(message => message.content)
             };
 
             // Generate AI response using the comprehensive service
@@ -443,26 +496,73 @@ export class GameHandlers {
                 gameContext
             );
 
-            // Add AI guess to game state
-            const updatedGameState = this.gameStateManager.addAIGuess(room.gameState, {
-                thinking: aiResponse.thinking,
-                guess: aiResponse.guess,
-                confidence: 0.5 // Default confidence since it's no longer part of AI response
+            // Add AI response to conversation history
+            const updatedGameState = this.gameStateManager.addMessage(room.gameState, {
+                content: aiResponse.guess,
+                senderId: 'ai',
+                role: 'ai',
+                turnNumber: this.gameStateManager.getNextTurnNumber(room.gameState),
+                thinking: aiResponse.thinking
             });
 
-            // Advance turn to decryptor
-            const nextGameState = this.gameStateManager.advanceTurn(updatedGameState);
+            // Check if AI guess is correct
+            const isCorrect = this.gameStateManager.validateGuess(aiResponse.guess, room.gameState.secretWord);
 
-            // Update room game state
-            room.gameState = nextGameState;
+            if (isCorrect) {
+                // AI wins the round - update score and advance to next round
+                const scoreUpdated = this.gameStateManager.updateScore(updatedGameState, false); // false = AI wins
+                const nextRound = this.gameStateManager.advanceRound(scoreUpdated);
+
+                // Check if game ended
+                if (this.gameStateManager.isGameEnded(nextRound)) {
+                    const gameEnded = this.gameStateManager.endGame(nextRound);
+                    room.gameState = gameEnded;
+
+                    // Emit game end event
+                    const gameEndData = {
+                        roomId,
+                        winner: 'ai',
+                        finalScore: gameEnded.score,
+                        correct: true
+                    };
+
+                    this.io.to(roomId).emit('game_end', gameEndData);
+                } else {
+                    // Select new secret word
+                    const newSecretWord = this.wordManager.selectRandomWord();
+                    nextRound.secretWord = newSecretWord;
+                    room.gameState = nextRound;
+
+                    // Emit round end event
+                    const roundEndData = {
+                        roomId,
+                        correct: true,
+                        score: nextRound.score,
+                        gameEnded: false,
+                        newSecretWord
+                    };
+
+                    this.io.to(roomId).emit('round_end', roundEndData);
+                }
+            } else {
+                // AI incorrect - advance turn to decryptor
+                const nextGameState = this.gameStateManager.advanceTurn(updatedGameState);
+                room.gameState = nextGameState;
+            }
 
             // Broadcast AI response to all players
             const aiResponseData = {
                 roomId,
-                thinking: aiResponse.thinking,
-                guess: aiResponse.guess,
-                confidence: 0.5, // Default confidence
-                currentTurn: nextGameState.currentTurn
+                message: {
+                    id: updatedGameState.conversationHistory[updatedGameState.conversationHistory.length - 1]!.id,
+                    content: aiResponse.guess,
+                    senderId: 'ai',
+                    timestamp: new Date(),
+                    role: 'ai',
+                    turnNumber: this.gameStateManager.getNextTurnNumber(room.gameState),
+                    thinking: aiResponse.thinking
+                },
+                currentTurn: room.gameState.currentTurn
             };
 
             // Emit to all players in the room
@@ -488,32 +588,78 @@ export class GameHandlers {
             }
 
             // Simple fallback response
-            const thinking = ["Analyzing conversation...", "Processing clues..."];
+            const thinking = ["Analyzing conversation...", "Processing clues...", "Evaluating context...", "Making educated guess..."];
             const availableWords = this.wordManager.getAllWords();
             const guess = availableWords[Math.floor(Math.random() * availableWords.length)]!;
-            const confidence = 0.5;
 
-            // Add AI guess to game state
-            const updatedGameState = this.gameStateManager.addAIGuess(room.gameState, {
-                thinking,
-                guess,
-                confidence
+            // Add AI response to conversation history
+            const updatedGameState = this.gameStateManager.addMessage(room.gameState, {
+                content: guess,
+                senderId: 'ai',
+                role: 'ai',
+                turnNumber: this.gameStateManager.getNextTurnNumber(room.gameState),
+                thinking: thinking
             });
 
-            // Advance turn to decryptor
-            const nextGameState = this.gameStateManager.advanceTurn(updatedGameState);
+            // Check if AI guess is correct
+            const isCorrect = this.gameStateManager.validateGuess(guess, room.gameState.secretWord);
 
-            // Update room game state
-            room.gameState = nextGameState;
+            if (isCorrect) {
+                // AI wins the round - update score and advance to next round
+                const scoreUpdated = this.gameStateManager.updateScore(updatedGameState, false); // false = AI wins
+                const nextRound = this.gameStateManager.advanceRound(scoreUpdated);
+
+                // Check if game ended
+                if (this.gameStateManager.isGameEnded(nextRound)) {
+                    const gameEnded = this.gameStateManager.endGame(nextRound);
+                    room.gameState = gameEnded;
+
+                    // Emit game end event
+                    const gameEndData = {
+                        roomId,
+                        winner: 'ai',
+                        finalScore: gameEnded.score,
+                        correct: true
+                    };
+
+                    this.io.to(roomId).emit('game_end', gameEndData);
+                } else {
+                    // Select new secret word
+                    const newSecretWord = this.wordManager.selectRandomWord();
+                    nextRound.secretWord = newSecretWord;
+                    room.gameState = nextRound;
+
+                    // Emit round end event
+                    const roundEndData = {
+                        roomId,
+                        correct: true,
+                        score: nextRound.score,
+                        gameEnded: false,
+                        newSecretWord
+                    };
+
+                    this.io.to(roomId).emit('round_end', roundEndData);
+                }
+            } else {
+                // AI incorrect - advance turn to decryptor
+                const nextGameState = this.gameStateManager.advanceTurn(updatedGameState);
+                room.gameState = nextGameState;
+            }
 
             // Broadcast fallback AI response
             const aiResponseData = {
                 roomId,
-                thinking,
-                guess,
-                confidence,
-                reasoning: "Fallback response due to AI service error",
-                currentTurn: nextGameState.currentTurn
+                message: {
+                    id: updatedGameState.conversationHistory[updatedGameState.conversationHistory.length - 1]!.id,
+                    content: guess,
+                    senderId: 'ai',
+                    timestamp: new Date(),
+                    role: 'ai',
+                    turnNumber: this.gameStateManager.getNextTurnNumber(room.gameState),
+                    thinking: thinking
+                },
+                currentTurn: room.gameState.currentTurn,
+                reasoning: "Fallback response due to AI service error"
             };
 
             this.io.to(roomId).emit('ai_response', aiResponseData);

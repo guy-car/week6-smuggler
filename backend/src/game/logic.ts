@@ -1,4 +1,4 @@
-import { AIGuess, GameState, Message, Player, RoleAssignment } from '../types';
+import { GameState, Message, Player, RoleAssignment } from '../types';
 import { GameStateManager } from './state';
 import { WordManager } from './wordManager';
 
@@ -37,7 +37,7 @@ export class GameLogic {
      */
     public handleEncryptorMessage(
         gameState: GameState,
-        message: Omit<Message, 'id' | 'timestamp'>,
+        message: Omit<Message, 'id' | 'timestamp' | 'role' | 'turnNumber'>,
         roles: RoleAssignment
     ): { newGameState: GameState; shouldAdvanceTurn: boolean } {
         // Validate it's encryptor's turn
@@ -45,8 +45,13 @@ export class GameLogic {
             throw new Error('Not encryptor\'s turn');
         }
 
-        // Add message to conversation history
-        const newGameState = this.gameStateManager.addMessage(gameState, message);
+        // Add message to conversation history with role and turn number
+        const newGameState = this.gameStateManager.addMessage(gameState, {
+            content: message.content,
+            senderId: message.senderId,
+            role: 'encryptor',
+            turnNumber: this.gameStateManager.getNextTurnNumber(gameState)
+        });
 
         // Advance turn to AI
         const updatedGameState = this.gameStateManager.advanceTurn(newGameState);
@@ -58,22 +63,28 @@ export class GameLogic {
     }
 
     /**
-     * Handle AI guess
+     * Handle AI response
      */
-    public handleAIGuess(
+    public handleAIResponse(
         gameState: GameState,
-        aiGuess: Omit<AIGuess, 'id' | 'timestamp'>
+        aiResponse: { thinking: string[]; guess: string }
     ): { newGameState: GameState; isCorrect: boolean; shouldAdvanceTurn: boolean } {
         // Validate it's AI's turn
         if (gameState.currentTurn !== 'ai') {
             throw new Error('Not AI\'s turn');
         }
 
-        // Add AI guess to game state
-        const newGameState = this.gameStateManager.addAIGuess(gameState, aiGuess);
+        // Add AI response to conversation history
+        const newGameState = this.gameStateManager.addMessage(gameState, {
+            content: aiResponse.guess,
+            senderId: 'ai',
+            role: 'ai',
+            turnNumber: this.gameStateManager.getNextTurnNumber(gameState),
+            thinking: aiResponse.thinking
+        });
 
         // Check if AI guess is correct
-        const isCorrect = this.gameStateManager.validateGuess(aiGuess.guess, gameState.secretWord);
+        const isCorrect = this.gameStateManager.validateGuess(aiResponse.guess, gameState.secretWord);
 
         if (isCorrect) {
             // AI wins the round - update score and advance to next round
@@ -114,7 +125,7 @@ export class GameLogic {
         guess: string,
         playerId: string,
         roles: RoleAssignment
-    ): { newGameState: GameState; isCorrect: boolean; shouldAdvanceTurn: boolean } {
+    ): { newGameState: GameState; isCorrect: boolean; shouldAdvanceTurn: boolean; isMessage: boolean } {
         // Validate it's decryptor's turn
         if (gameState.currentTurn !== 'decryptor') {
             throw new Error('Not decryptor\'s turn');
@@ -139,22 +150,37 @@ export class GameLogic {
                 return {
                     newGameState: gameEnded,
                     isCorrect: true,
-                    shouldAdvanceTurn: false
+                    shouldAdvanceTurn: false,
+                    isMessage: false
                 };
             }
 
             return {
                 newGameState: nextRound,
                 isCorrect: true,
-                shouldAdvanceTurn: false
+                shouldAdvanceTurn: false,
+                isMessage: false
             };
         } else {
-            // Decryptor incorrect - advance turn back to AI
-            const updatedGameState = this.gameStateManager.advanceTurn(gameState);
+            // Decryptor incorrect - add to conversation history and advance turn to AI
+            const messageAdded = this.gameStateManager.addMessage(gameState, {
+                content: guess,
+                senderId: playerId,
+                role: 'decryptor',
+                turnNumber: this.gameStateManager.getNextTurnNumber(gameState)
+            });
+
+            // For incorrect decryptor guess, we want to go back to AI, not to encryptor
+            const updatedGameState = {
+                ...messageAdded,
+                currentTurn: 'ai' as const
+            };
+
             return {
                 newGameState: updatedGameState,
                 isCorrect: false,
-                shouldAdvanceTurn: true
+                shouldAdvanceTurn: true,
+                isMessage: true
             };
         }
     }
@@ -222,10 +248,10 @@ export class GameLogic {
     }
 
     /**
-     * Get AI guesses
+     * Get AI messages from conversation history
      */
-    public getAIGuesses(gameState: GameState): AIGuess[] {
-        return [...gameState.aiGuesses];
+    public getAIMessages(gameState: GameState): Message[] {
+        return gameState.conversationHistory.filter(message => message.role === 'ai');
     }
 
     /**
@@ -254,7 +280,8 @@ export class GameLogic {
         }
 
         // Check if it's time for a guess (AI has made at least one guess)
-        if (gameState.aiGuesses.length === 0) {
+        const aiMessages = gameState.conversationHistory.filter(message => message.role === 'ai');
+        if (aiMessages.length === 0) {
             errors.push('AI has not made any guesses yet');
             return { valid: false, errors };
         }
