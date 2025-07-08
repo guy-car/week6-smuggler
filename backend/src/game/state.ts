@@ -1,4 +1,4 @@
-import { AIGuess, GameState, Message, Player, RoleAssignment } from '../types';
+import { GameState, Message, Player, RoleAssignment } from '../types';
 import { fuzzyStringMatch, generateId, getMaxLevenshteinDistance } from '../utils/helpers';
 
 export class GameStateManager {
@@ -17,7 +17,6 @@ export class GameStateManager {
             currentRound: 1,
             secretWord: secretWord.toLowerCase(),
             conversationHistory: [],
-            aiGuesses: [],
             currentTurn: 'encryptor',
             gameStatus: 'active'
         };
@@ -47,30 +46,15 @@ export class GameStateManager {
             id: generateId(),
             content: message.content,
             senderId: message.senderId,
-            timestamp: new Date()
+            timestamp: new Date(),
+            role: message.role,
+            turnNumber: message.turnNumber,
+            ...(message.thinking && { thinking: message.thinking })
         };
 
         return {
             ...gameState,
             conversationHistory: [...gameState.conversationHistory, newMessage]
-        };
-    }
-
-    /**
-     * Add AI guess to game state
-     */
-    public addAIGuess(gameState: GameState, aiGuess: Omit<AIGuess, 'id' | 'timestamp'>): GameState {
-        const newAIGuess: AIGuess = {
-            id: generateId(),
-            thinking: aiGuess.thinking,
-            guess: aiGuess.guess,
-            confidence: aiGuess.confidence,
-            timestamp: new Date()
-        };
-
-        return {
-            ...gameState,
-            aiGuesses: [...gameState.aiGuesses, newAIGuess]
         };
     }
 
@@ -102,7 +86,6 @@ export class GameStateManager {
             ...gameState,
             currentRound: gameState.currentRound + 1,
             conversationHistory: [],
-            aiGuesses: [],
             currentTurn: 'encryptor'
         };
     }
@@ -153,8 +136,8 @@ export class GameStateManager {
     }
 
     /**
- * Advance turn
- */
+     * Advance turn
+     */
     public advanceTurn(gameState: GameState): GameState {
         const turnOrder: ('encryptor' | 'ai' | 'decryptor')[] = ['encryptor', 'ai', 'decryptor'];
         const currentIndex = turnOrder.indexOf(gameState.currentTurn);
@@ -195,6 +178,23 @@ export class GameStateManager {
             return 'decryptor';
         }
         return null;
+    }
+
+    /**
+     * Get next turn number for conversation history
+     */
+    public getNextTurnNumber(gameState: GameState): number {
+        return gameState.conversationHistory.length + 1;
+    }
+
+    /**
+     * Transform conversation history to OpenAI context format
+     */
+    public transformToOpenAIContext(gameState: GameState, gameId: string): { gameId: string; conversationHistory: Message[] } {
+        return {
+            gameId,
+            conversationHistory: gameState.conversationHistory
+        };
     }
 
     /**
@@ -327,7 +327,7 @@ export class GameStateManager {
             round: gameState.currentRound,
             currentTurn: gameState.currentTurn,
             messageCount: gameState.conversationHistory.length,
-            aiGuessCount: gameState.aiGuesses.length,
+            aiGuessCount: 0, // aiGuesses is removed, so this will always be 0
             gameStatus: gameState.gameStatus
         };
     }

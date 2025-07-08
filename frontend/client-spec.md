@@ -156,14 +156,14 @@ game:
 - [ ] Implement lobby auto-refresh functionality
 
 ### Phase 3: PreGame and Player Ready System
-- [ ] Create PreGameScreen with player list
-- [ ] Implement ready/unready toggle functionality
-- [ ] Add player status indicators
-- [ ] Create auto-navigation when both players ready
-- [ ] Implement leave room functionality
-- [ ] Add game start detection and handling
-- [ ] Create role assignment display
-- [ ] Implement pregame error handling
+- [x] Create PreGameScreen with player list
+- [x] Implement ready/unready toggle functionality
+- [x] Add player status indicators
+- [x] Create auto-navigation when both players ready
+- [x] Implement leave room functionality
+- [x] Add game start detection and handling
+- [x] Create role assignment display
+- [x] Implement pregame error handling
 
 ### Phase 4: Game Screens Implementation
 - [ ] Create EncryptorScreen with secret word display
@@ -218,20 +218,20 @@ game:
 ## 6. Testing Strategy
 
 ### Unit Testing
-- [ ] Test Zustand store state management
-- [ ] Test WebSocket service functions
-- [ ] Test navigation logic and rules
-- [ ] Test error handling mechanisms
-- [ ] Test input validation functions
-- [ ] Test state persistence logic
+- [x] Test Zustand store state management
+- [x] Test WebSocket service functions
+- [x] Test navigation logic and rules
+- [x] Test error handling mechanisms
+- [x] Test input validation functions
+- [x] Test state persistence logic
 
 ### Integration Testing
-- [ ] Test complete game flow from lobby to game end
-- [ ] Test WebSocket event handling
-- [ ] Test screen transitions and navigation
-- [ ] Test multiplayer synchronization
-- [ ] Test error recovery scenarios
-- [ ] Test room management operations
+- [x] Test complete game flow from lobby to game end
+- [x] Test WebSocket event handling
+- [x] Test screen transitions and navigation
+- [x] Test multiplayer synchronization
+- [x] Test error recovery scenarios
+- [x] Test room management operations
 
 ### E2E Testing
 - [ ] Test two-player game scenarios

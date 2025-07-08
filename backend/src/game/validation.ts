@@ -1,4 +1,4 @@
-import { AIGuess, GameState, Message, Player, RoleAssignment } from '../types';
+import { GameState, Message, Player, RoleAssignment } from '../types';
 
 export class GameValidator {
     private readonly MAX_MESSAGE_LENGTH = 500;
@@ -73,9 +73,7 @@ export class GameValidator {
             errors.push('Conversation history must be an array');
         }
 
-        if (!Array.isArray(state.aiGuesses)) {
-            errors.push('AI guesses must be an array');
-        }
+        // aiGuesses array is removed, so we don't validate it
 
         if (!state.currentTurn || !['encryptor', 'ai', 'decryptor'].includes(state.currentTurn)) {
             errors.push('Current turn must be encryptor, ai, or decryptor');
@@ -127,22 +125,22 @@ export class GameValidator {
     }
 
     /**
-     * Validate AI guess
+     * Validate AI response
      */
-    public validateAIGuess(aiGuess: unknown): { valid: boolean; errors: string[] } {
+    public validateAIResponse(aiResponse: unknown): { valid: boolean; errors: string[] } {
         const errors: string[] = [];
 
-        if (!aiGuess || typeof aiGuess !== 'object') {
-            errors.push('AI guess must be an object');
+        if (!aiResponse || typeof aiResponse !== 'object') {
+            errors.push('AI response must be an object');
             return { valid: false, errors };
         }
 
-        const guess = aiGuess as Partial<AIGuess>;
+        const response = aiResponse as { thinking?: unknown; guess?: unknown };
 
-        if (!Array.isArray(guess.thinking)) {
+        if (!Array.isArray(response.thinking)) {
             errors.push('Thinking process must be an array');
         } else {
-            guess.thinking.forEach((thought: unknown, index: number) => {
+            response.thinking.forEach((thought: unknown, index: number) => {
                 if (typeof thought !== 'string') {
                     errors.push(`Thinking process item ${index} must be a string`);
                 } else if (thought.length > 100) {
@@ -151,16 +149,10 @@ export class GameValidator {
             });
         }
 
-        if (!guess.guess || typeof guess.guess !== 'string') {
+        if (!response.guess || typeof response.guess !== 'string') {
             errors.push('Guess is required and must be a string');
-        } else if (guess.guess.length > this.MAX_GUESS_LENGTH) {
+        } else if (response.guess.length > this.MAX_GUESS_LENGTH) {
             errors.push(`Guess must be no more than ${this.MAX_GUESS_LENGTH} characters`);
-        }
-
-        if (typeof guess.confidence !== 'number') {
-            errors.push('Confidence must be a number');
-        } else if (guess.confidence < 0 || guess.confidence > 1) {
-            errors.push('Confidence must be between 0 and 1');
         }
 
         return {

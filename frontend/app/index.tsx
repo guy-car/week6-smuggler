@@ -32,6 +32,8 @@ export default function HomeScreen() {
       } else if (role === 'decryptor') {
         router.replace('/decrypter');
       }
+    } else if (roomId && !role) {
+      router.replace('/pregame' as any);
     }
   }, [roomId, role]);
 
