@@ -22,7 +22,7 @@ router.post('/analyze', async (req: Request, res: Response) => {
             });
         }
 
-        const { gameId, conversationHistory } = validationResult.data;
+        const { conversationHistory } = validationResult.data;
 
         const aiResponse = await aiService.analyzeConversation(
             conversationHistory,
