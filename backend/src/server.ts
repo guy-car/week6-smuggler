@@ -7,6 +7,7 @@ import { RoomManager } from './rooms/manager';
 import aiRoutes from './routes/ai';
 import roomsRoutes from './routes/rooms';
 import { GameHandlers } from './socket/handlers/gameHandlers';
+import { LobbyHandlers } from './socket/handlers/lobbyHandlers';
 import { RoomHandlers } from './socket/handlers/roomHandlers';
 
 // Load environment variables
@@ -19,6 +20,12 @@ const PORT = process.env['PORT'] || 3000;
 // Initialize room management
 const roomManager = new RoomManager();
 const roomHandlers = new RoomHandlers(roomManager);
+const lobbyHandlers = new LobbyHandlers(roomManager);
+
+// Set up room change callback for lobby broadcasting
+roomManager.setRoomChangeCallback(() => {
+    lobbyHandlers.broadcastRoomList(io);
+});
 
 // CORS configuration for Expo client
 const corsOptions = {
@@ -78,6 +85,10 @@ const gameHandlers = new GameHandlers(roomManager, io);
 io.on('connection', (socket) => {
     console.log(`Client connected: ${socket.id}`);
 
+    // Lobby events
+    socket.on('enter_lobby', () => lobbyHandlers.handleEnterLobby(socket));
+    socket.on('leave_lobby', () => lobbyHandlers.handleLeaveLobby(socket));
+
     // Room management events
     socket.on('join_room', (data) => roomHandlers.handleJoinRoom(socket, data));
     socket.on('player_ready', (data) => roomHandlers.handlePlayerReady(socket, data));
@@ -92,6 +103,7 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         console.log(`Client disconnected: ${socket.id}`);
         roomHandlers.handleDisconnect(socket);
+        lobbyHandlers.handleDisconnect(socket);
     });
 
     // Basic ping/pong for connection testing

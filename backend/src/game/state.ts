@@ -24,19 +24,18 @@ export class GameStateManager {
     }
 
     /**
- * Assign roles to players
- */
+     * Assign roles to players based on join order
+     * First player (index 0) becomes Encryptor, second player (index 1) becomes Decryptor
+     */
     public assignRoles(players: Player[]): RoleAssignment {
         if (players.length !== 2) {
             throw new Error('Exactly 2 players required for role assignment');
         }
 
-        // Randomly assign roles
-        const shuffled = [...players].sort(() => Math.random() - 0.5);
-
+        // Assign roles based on join order (first player = Encryptor, second = Decryptor)
         return {
-            encryptor: shuffled[0]!.id,
-            decryptor: shuffled[1]!.id
+            encryptor: players[0]!.id,
+            decryptor: players[1]!.id
         };
     }
 
@@ -109,7 +108,8 @@ export class GameStateManager {
     }
 
     /**
-     * Switch roles between players
+     * Switch roles between players for next round
+     * Encryptor becomes Decryptor, Decryptor becomes Encryptor
      */
     public switchRoles(players: Player[], roles: RoleAssignment): RoleAssignment {
         return {

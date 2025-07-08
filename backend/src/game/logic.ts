@@ -13,6 +13,7 @@ export class GameLogic {
 
     /**
      * Start a new game
+     * Assigns roles based on join order: first player is Encryptor, second is Decryptor
      */
     public startGame(players: Player[]): { gameState: GameState; roles: RoleAssignment; secretWord: string } {
         if (players.length !== 2) {
@@ -25,7 +26,7 @@ export class GameLogic {
         // Create game state
         const gameState = this.gameStateManager.createGameState(secretWord, players);
 
-        // Assign roles
+        // Assign roles based on join order (deterministic)
         const roles = this.gameStateManager.assignRoles(players);
 
         return { gameState, roles, secretWord };

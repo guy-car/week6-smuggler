@@ -31,7 +31,7 @@ describe('GameStateManager', () => {
     });
 
     describe('assignRoles', () => {
-        it('should assign roles to exactly 2 players', () => {
+        it('should assign roles based on join order (first player = Encryptor, second = Decryptor)', () => {
             const players: Player[] = [
                 { id: 'player1', name: 'Player 1', ready: true, role: null, socketId: 'socket1' },
                 { id: 'player2', name: 'Player 2', ready: true, role: null, socketId: 'socket2' }
@@ -39,11 +39,26 @@ describe('GameStateManager', () => {
 
             const roles = gameStateManager.assignRoles(players);
 
-            expect(roles.encryptor).toBeDefined();
-            expect(roles.decryptor).toBeDefined();
+            expect(roles.encryptor).toBe('player1'); // First player becomes Encryptor
+            expect(roles.decryptor).toBe('player2'); // Second player becomes Decryptor
             expect(roles.encryptor).not.toBe(roles.decryptor);
-            expect([roles.encryptor, roles.decryptor]).toContain('player1');
-            expect([roles.encryptor, roles.decryptor]).toContain('player2');
+        });
+
+        it('should consistently assign roles in the same order', () => {
+            const players: Player[] = [
+                { id: 'player1', name: 'Player 1', ready: true, role: null, socketId: 'socket1' },
+                { id: 'player2', name: 'Player 2', ready: true, role: null, socketId: 'socket2' }
+            ];
+
+            // Test multiple calls to ensure deterministic behavior
+            const roles1 = gameStateManager.assignRoles(players);
+            const roles2 = gameStateManager.assignRoles(players);
+            const roles3 = gameStateManager.assignRoles(players);
+
+            expect(roles1.encryptor).toBe(roles2.encryptor);
+            expect(roles2.encryptor).toBe(roles3.encryptor);
+            expect(roles1.decryptor).toBe(roles2.decryptor);
+            expect(roles2.decryptor).toBe(roles3.decryptor);
         });
 
         it('should throw error for incorrect number of players', () => {
