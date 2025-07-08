@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { ZodError } from 'zod';
 import { openAIService } from '../services/openai';
-import { AnalyzeRequestSchema, AnalyzeResponseSchema } from '../types/game';
+import { AIResponseSchema, AnalyzeRequestSchema } from '../types/game';
 
 const router = Router();
 
@@ -10,22 +10,15 @@ router.post('/analyze', async (req, res) => {
 
   try {
     // Validate request body
-    const { conversationHistory } = AnalyzeRequestSchema.parse(req.body);
+    const { gameId, conversationHistory } = AnalyzeRequestSchema.parse(req.body);
 
     // Get AI analysis
     const aiResponse = await openAIService.analyzeConversation(conversationHistory);
 
-    // Add metadata and validate response
-    const response = AnalyzeResponseSchema.parse({
-      ...aiResponse,
-      metadata: {
-        messageCount: conversationHistory.length,
-        timestamp: new Date().toISOString(),
-        processingTime: Date.now() - startTime
-      }
-    });
+    // Validate response matches expected schema
+    const validatedResponse = AIResponseSchema.parse(aiResponse);
 
-    return res.json(response);
+    return res.json(validatedResponse);
 
   } catch (error: unknown) {
     // Handle Zod validation errors
