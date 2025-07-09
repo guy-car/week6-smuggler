@@ -1,5 +1,5 @@
 import { Socket, Server as SocketIOServer } from 'socket.io';
-import { MockAIService } from '../../ai/mock';
+import { OpenAIService } from '../../../openai/services/openai';
 import { GameLogic } from '../../game/logic';
 import { GameStateManager } from '../../game/state';
 import { WordManager } from '../../game/wordManager';
@@ -10,7 +10,7 @@ export class GameHandlers {
     private roomManager: RoomManager;
     private gameStateManager: GameStateManager;
     private wordManager: WordManager;
-    private aiService: MockAIService;
+    private aiService: OpenAIService;
     private gameLogic: GameLogic;
     private io: SocketIOServer;
 
@@ -18,7 +18,7 @@ export class GameHandlers {
         this.roomManager = roomManager;
         this.gameStateManager = new GameStateManager();
         this.wordManager = new WordManager();
-        this.aiService = new MockAIService();
+        this.aiService = new OpenAIService();
         this.gameLogic = new GameLogic();
         this.io = io;
     }
@@ -468,21 +468,9 @@ export class GameHandlers {
                 return;
             }
 
-            // Create game context for AI
-            const gameContext = {
-                currentRound: room.gameState.currentRound,
-                score: room.gameState.score,
-                gameStatus: room.gameState.gameStatus,
-                previousGuesses: room.gameState.conversationHistory
-                    .filter(turn => turn.type === 'ai_analysis')
-                    .map(turn => (turn as any).guess)
-            };
-
-            // Generate AI response using the comprehensive service
+            // Generate AI response using the OpenAI service
             const aiResponse = await this.aiService.analyzeConversation(
-                room.gameState.conversationHistory,
-                room.gameState.secretWord,
-                gameContext
+                room.gameState.conversationHistory
             );
 
             // Add AI response to conversation history
@@ -522,8 +510,7 @@ export class GameHandlers {
                         correct: true,
                         score: nextRound.score,
                         gameEnded: false,
-                        newSecretWord,
-                        currentTurn: nextRound.currentTurn
+                        newSecretWord
                     };
 
                     this.io.to(roomId).emit('round_end', roundEndData);
