@@ -17,16 +17,19 @@ export function getSocket() {
     socket.on('connect', () => {
       console.log('[WebSocket] Connected:', socket?.id);
       useGameStore.getState().setConnected(true);
+      useGameStore.getState().setSocketId(socket?.id || null);
     });
 
     socket.on('disconnect', (reason: any) => {
       console.log('[WebSocket] Disconnected:', reason);
       useGameStore.getState().setConnected(false);
+      useGameStore.getState().setSocketId(null);
     });
 
     socket.on('connect_error', (err: any) => {
       console.error('[WebSocket] Connection error:', err);
       useGameStore.getState().setConnected(false);
+      useGameStore.getState().setSocketId(null);
     });
 
     // Room events
@@ -34,20 +37,21 @@ export function getSocket() {
       console.log('[WebSocket] Join room success:', data.roomId);
       useGameStore.getState().setRoomId(data.roomId);
       useGameStore.getState().setPlayers(data.players);
+      useGameStore.getState().setCurrentScreen('room');
 
       // Set temporary role based on player order for immediate navigation
       const currentPlayerId = data.playerId;
       const playerIndex = data.players.findIndex(p => p.id === currentPlayerId);
       const temporaryRole = playerIndex === 0 ? 'encryptor' : 'decryptor';
-      useGameStore.getState().setRole(temporaryRole);
+      useGameStore.getState().setPlayerRole(temporaryRole);
 
       // Set player info
       useGameStore.getState().setPlayer({
         id: data.playerId,
-        name: 'Player', // You may want to store the actual name
+        name: `Player ${playerIndex + 1}`,
         ready: false,
         role: temporaryRole,
-        socketId: ''
+        socketId: socket?.id || ''
       });
     });
 
@@ -55,6 +59,7 @@ export function getSocket() {
       console.log('[WebSocket] Left room');
       useGameStore.getState().setRoomId(null);
       useGameStore.getState().setPlayers([]);
+      useGameStore.getState().setCurrentScreen('lobby');
     });
 
     socket.on('room:playerJoined', (data: { player: any }) => {
@@ -77,6 +82,12 @@ export function getSocket() {
         p.id === data.playerId ? { ...p, ready: data.ready } : p
       );
       useGameStore.getState().setPlayers(updatedPlayers);
+
+      // Update current player's ready status
+      const currentPlayer = useGameStore.getState().player;
+      if (currentPlayer && currentPlayer.id === data.playerId) {
+        useGameStore.getState().setIsReady(data.ready);
+      }
     });
 
     socket.on('room_list', (data: { rooms: any[] }) => {
@@ -89,29 +100,48 @@ export function getSocket() {
       console.log('[WebSocket] Game started:', data);
       useGameStore.getState().setGameStatus('active');
       useGameStore.getState().setPlayers(data.players);
+      useGameStore.getState().setSecretWord(data.secretWord);
 
       // Set current player's actual role from backend
       const currentPlayer = useGameStore.getState().player;
       if (currentPlayer && data.roles[currentPlayer.id]) {
-        useGameStore.getState().setRole(data.roles[currentPlayer.id]);
+        useGameStore.getState().setPlayerRole(data.roles[currentPlayer.id]);
+      }
+
+      // Navigate to appropriate game screen
+      const playerRole = useGameStore.getState().playerRole;
+      if (playerRole === 'encryptor') {
+        useGameStore.getState().setCurrentScreen('encryptor-game');
+      } else if (playerRole === 'decryptor') {
+        useGameStore.getState().setCurrentScreen('decryptor-game');
       }
     });
 
-    socket.on('game:started', (data: { players: any[]; roles: any }) => {
+    socket.on('game:started', (data: { players: any[]; roles: any; secretWord: string }) => {
       console.log('[WebSocket] Game started:', data);
       useGameStore.getState().setGameStatus('active');
       useGameStore.getState().setPlayers(data.players);
+      useGameStore.getState().setSecretWord(data.secretWord);
 
       // Set current player's role
       const currentPlayer = useGameStore.getState().player;
       if (currentPlayer && data.roles[currentPlayer.id]) {
-        useGameStore.getState().setRole(data.roles[currentPlayer.id]);
+        useGameStore.getState().setPlayerRole(data.roles[currentPlayer.id]);
+      }
+
+      // Navigate to appropriate game screen
+      const playerRole = useGameStore.getState().playerRole;
+      if (playerRole === 'encryptor') {
+        useGameStore.getState().setCurrentScreen('encryptor-game');
+      } else if (playerRole === 'decryptor') {
+        useGameStore.getState().setCurrentScreen('decryptor-game');
       }
     });
 
-    socket.on('game:ended', (data: { scores: any }) => {
+    socket.on('game:ended', (data: { scores: any; winner: string }) => {
       console.log('[WebSocket] Game ended:', data);
       useGameStore.getState().setGameStatus('ended');
+      useGameStore.getState().setCurrentScreen('game-end');
 
       // Update player scores
       const currentPlayer = useGameStore.getState().player;
@@ -123,7 +153,8 @@ export function getSocket() {
     socket.on('game:roundStart', (data: { round: number; word: string; role: string }) => {
       console.log('[WebSocket] Round start:', data);
       useGameStore.getState().setRound(data.round);
-      useGameStore.getState().setRole(data.role as 'encryptor' | 'decryptor' | null);
+      useGameStore.getState().setSecretWord(data.word);
+      useGameStore.getState().setPlayerRole(data.role as 'encryptor' | 'decryptor' | null);
     });
 
     socket.on('game:roundEnd', (data: { round: number; scores: any }) => {
@@ -137,21 +168,68 @@ export function getSocket() {
       }
     });
 
-    // Message events
+    // Turn-based game events
+    socket.on('game:turnStart', (data: { turn: 'encryptor' | 'ai' | 'decryptor' }) => {
+      console.log('[WebSocket] Turn start:', data.turn);
+      useGameStore.getState().setCurrentTurn(data.turn);
+    });
+
+    socket.on('game:turnEnd', () => {
+      console.log('[WebSocket] Turn end');
+      useGameStore.getState().setCurrentTurn(null);
+    });
+
+    // Message and conversation events
     socket.on('game:message', (data: { message: any }) => {
       console.log('[WebSocket] New message:', data.message);
-      useGameStore.getState().addMessage(data.message);
+      const turn: any = {
+        id: data.message.id,
+        type: data.message.type || 'hint',
+        content: data.message.content,
+        timestamp: data.message.timestamp,
+        playerId: data.message.senderId
+      };
+      useGameStore.getState().addTurn(turn);
     });
 
     socket.on('game:messageHistory', (data: { messages: any[] }) => {
       console.log('[WebSocket] Message history:', data.messages);
-      useGameStore.getState().setMessages(data.messages);
+      const turns = data.messages.map(msg => ({
+        id: msg.id,
+        type: msg.type || 'hint',
+        content: msg.content,
+        timestamp: msg.timestamp,
+        playerId: msg.senderId
+      }));
+      useGameStore.getState().setConversationHistory(turns);
+    });
+
+    socket.on('game:aiThinking', (data: { content: string }) => {
+      console.log('[WebSocket] AI thinking:', data.content);
+      const turn = {
+        id: `ai-thinking-${Date.now()}`,
+        type: 'ai' as const,
+        content: data.content,
+        timestamp: new Date().toISOString(),
+      };
+      useGameStore.getState().addTurn(turn);
+    });
+
+    socket.on('game:aiGuess', (data: { guess: string; confidence: number }) => {
+      console.log('[WebSocket] AI guess:', data.guess);
+      const turn = {
+        id: `ai-guess-${Date.now()}`,
+        type: 'ai' as const,
+        content: `AI guesses: ${data.guess} (confidence: ${data.confidence}%)`,
+        timestamp: new Date().toISOString(),
+      };
+      useGameStore.getState().addTurn(turn);
     });
 
     // Error events
     socket.on('error', (data: { message: string }) => {
       console.error('[WebSocket] Error:', data.message);
-      // You might want to show a toast or alert here
+      useGameStore.getState().setError(data.message);
     });
 
     socket.on('player_joined', (data: { roomId: string; player: any; players: any[] }) => {
@@ -224,4 +302,12 @@ export function submitGuess(guess: string) {
 export function submitWord(word: string) {
   const socket = getSocket();
   socket.emit('game:word', { word });
+}
+
+export function startGame() {
+  const socket = getSocket();
+  const roomId = useGameStore.getState().roomId;
+  if (roomId) {
+    socket.emit('start_game', { roomId });
+  }
 } 
