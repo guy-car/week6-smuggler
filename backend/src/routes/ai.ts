@@ -1,15 +1,17 @@
 import { Request, Response, Router } from 'express';
-import { MockAIService } from '../ai/mock';
-import { AIResponseSchema, AnalyzeRequestSchema } from '../types';
+import { ZodError } from 'zod';
+import { openAIService } from '../../openai/services/openai';
+import { AIResponseSchema, AnalyzeRequestSchema } from '../../openai/types/game';
 
 const router = Router();
-const aiService = new MockAIService();
 
 /**
  * POST /api/ai/analyze
  * Analyze conversation and generate AI response using new Turn structure
  */
 router.post('/analyze', async (req: Request, res: Response) => {
+    const startTime = Date.now();
+
     try {
         // Validate request body using Zod schema
         const validationResult = AnalyzeRequestSchema.safeParse(req.body);
@@ -24,19 +26,25 @@ router.post('/analyze', async (req: Request, res: Response) => {
 
         const { conversationHistory } = validationResult.data;
 
-        const aiResponse = await aiService.analyzeConversation(
-            conversationHistory,
-            'mock-secret-word', // Mock secret word for now
-            { currentRound: 1, score: 5, gameStatus: 'active' }
-        );
+        // Get AI analysis
+        const aiResponse = await openAIService.analyzeConversation(conversationHistory);
 
-        // Validate AI response using Zod schema
-        const responseValidation = AIResponseSchema.safeParse(aiResponse);
+        // Add metadata and validate response
+        const responseValidation = AIResponseSchema.safeParse({
+            ...aiResponse,
+            metadata: {
+                messageCount: conversationHistory.length,
+                timestamp: new Date().toISOString(),
+                processingTime: Date.now() - startTime
+            }
+        });
+
         if (!responseValidation.success) {
             console.error('AI service returned invalid response:', responseValidation.error);
             return res.status(500).json({
                 success: false,
-                error: 'AI service returned invalid response'
+                error: 'AI service returned invalid response',
+                details: responseValidation.error.errors
             });
         }
 
@@ -44,91 +52,41 @@ router.post('/analyze', async (req: Request, res: Response) => {
             success: true,
             data: responseValidation.data
         });
-    } catch (error) {
-        console.error('Error in AI analyze endpoint:', error);
-        return res.status(500).json({
-            success: false,
-            error: 'Internal server error'
-        });
-    }
-});
-
-/**
- * POST /api/ai/thinking
- * Generate thinking process for AI analysis using new Turn structure
- */
-router.post('/thinking', async (req: Request, res: Response) => {
-    try {
-        const { conversationHistory, gameContext } = req.body;
-
-        // Validate conversation history using TurnSchema array
-        const historyValidation = AnalyzeRequestSchema.shape.conversationHistory.safeParse(conversationHistory);
-        if (!historyValidation.success) {
+    } catch (error: unknown) {
+        // Handle Zod validation errors
+        if (error instanceof ZodError) {
             return res.status(400).json({
                 success: false,
-                error: 'Invalid conversation history',
-                details: historyValidation.error.errors
+                error: 'Invalid request format',
+                details: error.errors
             });
         }
 
-        const thinking = await aiService.generateThinkingProcess(
-            conversationHistory,
-            gameContext
-        );
+        // Handle known OpenAI errors
+        if (error instanceof Error) {
+            if (error.message.includes('Rate limit exceeded')) {
+                return res.status(429).json({
+                    success: false,
+                    error: 'Rate limit exceeded',
+                    message: 'Please try again later'
+                });
+            }
 
-        return res.json({
-            success: true,
-            data: { thinking }
-        });
-    } catch (error) {
-        console.error('Error in AI thinking endpoint:', error);
-        return res.status(500).json({
-            success: false,
-            error: 'Internal server error'
-        });
-    }
-});
+            if (error.message.includes('OpenAI service temporarily unavailable')) {
+                return res.status(503).json({
+                    success: false,
+                    error: 'AI service unavailable',
+                    message: 'Please try again later'
+                });
+            }
 
-/**
- * POST /api/ai/guess
- * Generate AI guess based on conversation using new Turn structure
- */
-router.post('/guess', async (req: Request, res: Response) => {
-    try {
-        const { conversationHistory, availableWords, gameContext } = req.body;
-
-        // Validate conversation history using TurnSchema array
-        const historyValidation = AnalyzeRequestSchema.shape.conversationHistory.safeParse(conversationHistory);
-        if (!historyValidation.success) {
-            return res.status(400).json({
-                success: false,
-                error: 'Invalid conversation history',
-                details: historyValidation.error.errors
-            });
+            console.error('Error in AI analyze endpoint:', error);
         }
 
-        if (!availableWords || !Array.isArray(availableWords)) {
-            return res.status(400).json({
-                success: false,
-                error: 'availableWords is required and must be an array'
-            });
-        }
-
-        const guess = await aiService.generateGuess(
-            conversationHistory,
-            availableWords,
-            gameContext
-        );
-
-        return res.json({
-            success: true,
-            data: guess
-        });
-    } catch (error) {
-        console.error('Error in AI guess endpoint:', error);
         return res.status(500).json({
             success: false,
-            error: 'Internal server error'
+            error: 'Internal server error',
+            message: error instanceof Error ? error.message : 'An unexpected error occurred'
         });
     }
 });
@@ -139,16 +97,21 @@ router.post('/guess', async (req: Request, res: Response) => {
  */
 router.get('/health', async (req: Request, res: Response) => {
     try {
-        const health = await aiService.getHealth();
         return res.json({
             success: true,
-            data: health
+            data: {
+                status: 'ok',
+                service: 'smuggler-ai-integration',
+                openaiKey: process.env['OPENAI_API_KEY'] ? '✅ Loaded' : '❌ Missing',
+                timestamp: new Date().toISOString()
+            }
         });
-    } catch (error) {
+    } catch (error: unknown) {
         console.error('Error in AI health endpoint:', error);
         return res.status(500).json({
             success: false,
-            error: 'Internal server error'
+            error: 'Internal server error',
+            message: error instanceof Error ? error.message : 'An unexpected error occurred'
         });
     }
 });

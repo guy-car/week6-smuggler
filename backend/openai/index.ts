@@ -2,7 +2,6 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
 import path from 'path';
-import aiRoutes from './routes/ai';
 
 // Load environment variables from root .env file
 dotenv.config({ path: path.join(__dirname, '../../.env') });
@@ -20,9 +19,6 @@ if (!process.env['OPENAI_API_KEY']) {
  */
 export function setupOpenAiRoute(app: express.Express): void {
   console.log('🤖 Setting up OpenAI routes...');
-  
-  // Mount AI routes under /api/ai
-  app.use('/api/ai', aiRoutes);
   
   // Add AI-specific health check
   app.get('/api/ai/health', (req, res) => {

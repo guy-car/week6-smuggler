@@ -1,10 +1,10 @@
-import { GameState, Player, RoleAssignment, Turn } from '../types';
+import { GameState, Player, RoleAssignment } from '../types';
 import { GameStateManager } from './state';
 import { WordManager } from './wordManager';
 
 export class GameLogic {
-    private gameStateManager: GameStateManager;
-    private wordManager: WordManager;
+    private readonly gameStateManager: GameStateManager;
+    private readonly wordManager: WordManager;
 
     constructor() {
         this.gameStateManager = new GameStateManager();
@@ -13,46 +13,38 @@ export class GameLogic {
 
     /**
      * Start a new game
-     * Assigns roles based on join order: first player is Encryptor, second is Decryptor
+     * Assigns roles based on join order: first player is Encoder, second is Decoder
      */
     public startGame(players: Player[]): { gameState: GameState; roles: RoleAssignment; secretWord: string } {
         if (players.length !== 2) {
             throw new Error('Exactly 2 players required to start game');
         }
 
-        // Select random secret word
-        const secretWord = this.wordManager.selectRandomWord();
-
-        // Create game state
-        const gameState = this.gameStateManager.createGameState(secretWord, players);
-
-        // Assign roles based on join order (deterministic)
         const roles = this.gameStateManager.assignRoles(players);
+        const secretWord = this.wordManager.selectRandomWord();
+        const gameState = this.gameStateManager.createGameState(secretWord, players);
 
         return { gameState, roles, secretWord };
     }
 
     /**
-     * Handle encryptor sending a message
+     * Handle encoder sending a message
      */
-    public handleEncryptorMessage(
+    public handleEncoderMessage(
         gameState: GameState,
-        content: string,
+        message: string,
         roles: RoleAssignment
     ): { newGameState: GameState; shouldAdvanceTurn: boolean } {
-        // Validate it's encryptor's turn
-        if (gameState.currentTurn !== 'encryptor') {
-            throw new Error('Not encryptor\'s turn');
+        // Validate it's encoder's turn
+        if (gameState.currentTurn !== 'encoder') {
+            throw new Error('Not encoder\'s turn');
         }
 
-        // Add outsider turn to conversation history
-        const newGameState = this.gameStateManager.addOutsiderTurn(gameState, content);
-
-        // Advance turn to AI
-        const updatedGameState = this.gameStateManager.advanceTurn(newGameState);
+        // Add message to conversation history
+        const newGameState = this.gameStateManager.addEncoderTurn(gameState, message);
 
         return {
-            newGameState: updatedGameState,
+            newGameState,
             shouldAdvanceTurn: true
         };
     }
@@ -63,91 +55,68 @@ export class GameLogic {
     public handleAIResponse(
         gameState: GameState,
         aiResponse: { thinking: string[]; guess: string }
-    ): { newGameState: GameState; isCorrect: boolean; shouldAdvanceTurn: boolean } {
-        // Validate it's AI's turn
-        if (gameState.currentTurn !== 'ai') {
-            throw new Error('Not AI\'s turn');
-        }
+    ): { newGameState: GameState; shouldAdvanceTurn: boolean; isCorrect: boolean } {
+        // Add AI response to conversation history
+        const newGameState = this.gameStateManager.addAITurn(
+            gameState,
+            aiResponse.thinking,
+            aiResponse.guess
+        );
 
-        // Add AI turn to conversation history
-        const newGameState = this.gameStateManager.addAITurn(gameState, aiResponse.thinking, aiResponse.guess);
-
-        // Check if AI guess is correct
+        // Check if AI guessed correctly
         const isCorrect = this.gameStateManager.validateGuess(aiResponse.guess, gameState.secretWord);
 
         if (isCorrect) {
-            // AI wins the round - update score and advance to next round
-            const scoreUpdated = this.gameStateManager.updateScore(newGameState, false); // false = AI wins
-            const nextRound = this.gameStateManager.advanceRound(scoreUpdated);
-
-            // Check if game ended
-            if (this.gameStateManager.isGameEnded(nextRound)) {
-                const gameEnded = this.gameStateManager.endGame(nextRound);
-                return {
-                    newGameState: gameEnded,
-                    isCorrect: true,
-                    shouldAdvanceTurn: false
-                };
-            }
+            // AI wins - decrease score and advance round
+            const updatedState = this.gameStateManager.updateScore(newGameState, false);
+            const finalState = this.gameStateManager.advanceRound(updatedState);
 
             return {
-                newGameState: nextRound,
-                isCorrect: true,
-                shouldAdvanceTurn: false
-            };
-        } else {
-            // AI incorrect - advance turn to decryptor
-            const updatedGameState = this.gameStateManager.advanceTurn(newGameState);
-            return {
-                newGameState: updatedGameState,
-                isCorrect: false,
-                shouldAdvanceTurn: true
+                newGameState: finalState,
+                shouldAdvanceTurn: false,
+                isCorrect: true
             };
         }
+
+        // AI incorrect - advance turn to decoder
+        return {
+            newGameState,
+            shouldAdvanceTurn: true,
+            isCorrect: false
+        };
     }
 
     /**
-     * Handle decryptor guess
+     * Handle decoder guess
      */
-    public handleDecryptorGuess(
+    public handleDecoderGuess(
         gameState: GameState,
         guess: string,
         playerId: string,
         roles: RoleAssignment
-    ): { newGameState: GameState; isCorrect: boolean; shouldAdvanceTurn: boolean; isMessage: boolean } {
-        // Validate it's decryptor's turn
-        if (gameState.currentTurn !== 'decryptor') {
-            throw new Error('Not decryptor\'s turn');
+    ): { newGameState: GameState; shouldAdvanceTurn: boolean; isCorrect: boolean; isMessage: boolean } {
+        // Validate it's decoder's turn
+        if (gameState.currentTurn !== 'decoder') {
+            throw new Error('Not decoder\'s turn');
         }
 
-        // Validate it's the correct player
-        if (roles.decryptor !== playerId) {
-            throw new Error('Not decryptor\'s turn');
+        // Validate it's the decoder's guess
+        if (roles.decoder !== playerId) {
+            throw new Error('Not decoder\'s turn');
         }
 
         // Check if guess is correct
         const isCorrect = this.gameStateManager.validateGuess(guess, gameState.secretWord);
 
         if (isCorrect) {
-            // Players win the round - update score and advance to next round
-            const scoreUpdated = this.gameStateManager.updateScore(gameState, true); // true = players win
-            const nextRound = this.gameStateManager.advanceRound(scoreUpdated);
-
-            // Check if game ended
-            if (this.gameStateManager.isGameEnded(nextRound)) {
-                const gameEnded = this.gameStateManager.endGame(nextRound);
-                return {
-                    newGameState: gameEnded,
-                    isCorrect: true,
-                    shouldAdvanceTurn: false,
-                    isMessage: false
-                };
-            }
+            // Players win - increase score and advance round
+            const updatedState = this.gameStateManager.updateScore(gameState, true);
+            const finalState = this.gameStateManager.advanceRound(updatedState);
 
             return {
-                newGameState: nextRound,
-                isCorrect: true,
+                newGameState: finalState,
                 shouldAdvanceTurn: false,
+                isCorrect: true,
                 isMessage: false
             };
         } else {
@@ -164,174 +133,16 @@ export class GameLogic {
                 isMessage: true
             };
         }
-    }
 
-    /**
-     * Get current game status
-     */
-    public getGameStatus(gameState: GameState): {
-        isGameEnded: boolean;
-        winner: 'players' | 'ai' | null;
-        currentTurn: 'encryptor' | 'ai' | 'decryptor';
-        score: number;
-        round: number;
-    } {
+        // Decoder incorrect - add to conversation history as decoder turn and advance turn to AI
+        const newGameState = this.gameStateManager.addDecoderTurn(gameState, guess);
+
+        // For incorrect decoder guess, we want to go back to AI, not to encoder
         return {
-            isGameEnded: this.gameStateManager.isGameEnded(gameState),
-            winner: this.gameStateManager.getGameWinner(gameState),
-            currentTurn: gameState.currentTurn,
-            score: gameState.score,
-            round: gameState.currentRound
+            newGameState,
+            shouldAdvanceTurn: true,
+            isCorrect: false,
+            isMessage: true
         };
-    }
-
-    /**
-     * Check if a player can perform an action
-     */
-    public canPlayerAct(
-        gameState: GameState,
-        playerId: string,
-        action: 'send_message' | 'guess',
-        roles: RoleAssignment
-    ): boolean {
-        if (gameState.gameStatus !== 'active') {
-            return false;
-        }
-
-        if (action === 'send_message') {
-            return gameState.currentTurn === 'encryptor' && roles.encryptor === playerId;
-        } else if (action === 'guess') {
-            return gameState.currentTurn === 'decryptor' && roles.decryptor === playerId;
-        }
-
-        return false;
-    }
-
-    /**
-     * Get player role
-     */
-    public getPlayerRole(playerId: string, roles: RoleAssignment): 'encryptor' | 'decryptor' | null {
-        return this.gameStateManager.getPlayerRole(playerId, roles);
-    }
-
-    /**
-     * Switch roles for next round (if needed)
-     */
-    public switchRolesForNextRound(roles: RoleAssignment): RoleAssignment {
-        return this.gameStateManager.switchRoles([], roles);
-    }
-
-    /**
-     * Get conversation history
-     */
-    public getConversationHistory(gameState: GameState): Turn[] {
-        return [...gameState.conversationHistory];
-    }
-
-    /**
-     * Get AI turns from conversation history
-     */
-    public getAITurns(gameState: GameState): Turn[] {
-        return gameState.conversationHistory.filter(turn => turn.type === 'ai_analysis');
-    }
-
-    /**
-     * Get secret word (for testing/debugging)
-     */
-    public getSecretWord(gameState: GameState): string {
-        return gameState.secretWord;
-    }
-
-    /**
-     * Validate conversation flow
-     */
-    public validateConversationFlow(gameState: GameState): { valid: boolean; errors: string[] } {
-        const errors: string[] = [];
-
-        // Check if game is active
-        if (gameState.gameStatus !== 'active') {
-            errors.push('Game is not active');
-            return { valid: false, errors };
-        }
-
-        // Check if conversation has started
-        if (gameState.conversationHistory.length === 0) {
-            errors.push('Conversation has not started');
-            return { valid: false, errors };
-        }
-
-        // Check if it's time for a guess (AI has made at least one guess)
-        const aiTurns = gameState.conversationHistory.filter(turn => turn.type === 'ai_analysis');
-        if (aiTurns.length === 0) {
-            errors.push('AI has not made any guesses yet');
-            return { valid: false, errors };
-        }
-
-        // Check if there are enough turns for meaningful conversation
-        if (gameState.conversationHistory.length < 2) {
-            errors.push('Not enough turns for meaningful conversation');
-            return { valid: false, errors };
-        }
-
-        return { valid: errors.length === 0, errors };
-    }
-
-    /**
-     * Check if turn order is being followed correctly
-     */
-    public validateTurnOrder(
-        gameState: GameState,
-        playerId: string,
-        action: 'send_message' | 'guess',
-        roles: RoleAssignment
-    ): { valid: boolean; errors: string[] } {
-        const errors: string[] = [];
-
-        if (action === 'send_message') {
-            if (gameState.currentTurn !== 'encryptor') {
-                errors.push('Not encryptor\'s turn');
-            }
-            if (roles.encryptor !== playerId) {
-                errors.push('Only encryptor can send messages');
-            }
-        } else if (action === 'guess') {
-            if (gameState.currentTurn !== 'decryptor') {
-                errors.push('Not decryptor\'s turn');
-            }
-            if (roles.decryptor !== playerId) {
-                errors.push('Only decryptor can make guesses');
-            }
-        }
-
-        return { valid: errors.length === 0, errors };
-    }
-
-    /**
-     * Check if game state is consistent
-     */
-    public validateGameStateConsistency(gameState: GameState): { valid: boolean; errors: string[] } {
-        const errors: string[] = [];
-
-        // Check score bounds
-        if (gameState.score < 0 || gameState.score > 10) {
-            errors.push('Score is out of bounds (0-10)');
-        }
-
-        // Check round number
-        if (gameState.currentRound < 1) {
-            errors.push('Round number must be at least 1');
-        }
-
-        // Check if game ended but status is still active
-        if ((gameState.score >= 10 || gameState.score <= 0) && gameState.gameStatus === 'active') {
-            errors.push('Game should be ended but status is still active');
-        }
-
-        // Check if game is ended but score is in valid range
-        if (gameState.gameStatus === 'ended' && gameState.score > 0 && gameState.score < 10) {
-            errors.push('Game is ended but score is not at win/lose condition');
-        }
-
-        return { valid: errors.length === 0, errors };
     }
 } 
