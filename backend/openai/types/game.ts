@@ -1,111 +1,110 @@
 import { z } from 'zod';
 
 /**
- * Type of turn in the conversation:
- * - outsider_hint: A hint message from the outsider trying to communicate the secret
- * - ai_analysis: AI's analysis of the conversation with thinking and guess
- * - insider_guess: Insider's attempt to guess the secret word (only failed guesses appear in history)
+ * Turn types in the conversation:
+ * - encoder: A hint message from the encoder trying to communicate the secret
+ * - ai_analysis: AI's analysis of the conversation and its guess attempt
+ * - decoder: Decoder's attempt to guess the secret word (only failed guesses appear in history)
  */
-export const TurnTypeSchema = z.enum(['outsider_hint', 'ai_analysis', 'insider_guess']);
+export const TurnTypeSchema = z.enum(['encoder', 'ai_analysis', 'decoder']);
+
 export type TurnType = z.infer<typeof TurnTypeSchema>;
 
 /**
- * Outsider's hint in the conversation
+ * Encoder's hint in the conversation
  */
-export const OutsiderTurnSchema = z.object({
-  type: z.literal('outsider_hint'),
-  content: z.string()
-    .describe('The hint message from the outsider'),
-  turnNumber: z.number().int().positive()
-    .describe('Sequential turn number')
-    .optional()
+export const EncoderTurnSchema = z.object({
+    type: z.literal('encoder'),
+    content: z.string()
+        .min(1)
+        .describe('The hint message from the encoder'),
+    turnNumber: z.number()
+        .int()
+        .positive()
 });
-export type OutsiderTurn = z.infer<typeof OutsiderTurnSchema>;
+
+export type EncoderTurn = z.infer<typeof EncoderTurnSchema>;
 
 /**
- * AI's analysis of the conversation
- * @constraints
- * - thinking: Exactly 4 sentences
- * - guess: Single word, 3-12 characters (AI guesses only)
+ * AI's analysis and guess attempt
  */
 export const AITurnSchema = z.object({
-  type: z.literal('ai_analysis'),
-  thinking: z.array(z.string()).length(4)
-    .describe('AI\'s thought process as exactly 4 sentences'),
-  guess: z.string()
-    .min(3).max(12)
-    .describe('AI\'s guess at the secret word'),
-  turnNumber: z.number().int().positive()
-    .describe('Sequential turn number')
-    .optional()
+    type: z.literal('ai_analysis'),
+    thinking: z.array(z.string())
+        .length(4)
+        .describe('AI\'s thought process (exactly 4 sentences)'),
+    guess: z.string()
+        .min(1)
+        .describe('AI\'s guess attempt'),
+    turnNumber: z.number()
+        .int()
+        .positive()
 });
+
 export type AITurn = z.infer<typeof AITurnSchema>;
 
 /**
- * Insider's guess attempt
- * Note: Only failed guesses appear in conversation history
- * as correct guesses end the game
+ * Decoder's guess attempt
  */
-export const InsiderTurnSchema = z.object({
-  type: z.literal('insider_guess'),
-  guess: z.string()
-    .describe('Insider\'s guess attempt'),
-  turnNumber: z.number().int().positive()
-    .describe('Sequential turn number')
-    .optional()
+export const DecoderTurnSchema = z.object({
+    type: z.literal('decoder'),
+    guess: z.string()
+        .min(1)
+        .describe('Decoder\'s guess attempt'),
+    turnNumber: z.number()
+        .int()
+        .positive()
 });
-export type InsiderTurn = z.infer<typeof InsiderTurnSchema>;
+
+export type DecoderTurn = z.infer<typeof DecoderTurnSchema>;
 
 /**
- * Union type for all possible turns
+ * Union of all possible turn types
  */
 export const TurnSchema = z.discriminatedUnion('type', [
-  OutsiderTurnSchema,
-  AITurnSchema,
-  InsiderTurnSchema
+    EncoderTurnSchema,
+    AITurnSchema,
+    DecoderTurnSchema
 ]);
+
 export type Turn = z.infer<typeof TurnSchema>;
 
 /**
- * Request body for /api/ai/analyze endpoint
- * Contains game ID and chronological sequence of turns
- * 
+ * Request to analyze conversation history
  * @example
- * ```typescript
- * const request = {
- *   gameId: "room123",
- *   conversationHistory: [
- *     // Outsider sends hint
- *     { type: 'outsider_hint', content: "It's red and sweet" },
- *     
+ * {
+ *     gameId: "room123",
+ *     conversationHistory: [
+ *     // Encoder sends hint
+ *     { type: 'encoder', content: "It's red and sweet" },
  *     // AI analyzes and guesses
- *     { type: 'ai_analysis', thinking: ["...", "...", "...", "..."], guess: "cherry" },
- *     
- *     // Insider makes wrong guess
- *     { type: 'insider_guess', guess: "apple" }
- *   ]
+ *     { type: 'ai_analysis', thinking: ["...", "...", "...", "..."], guess: "strawberry" },
+ *     // Decoder makes wrong guess
+ *     { type: 'decoder', guess: "apple" }
+ *     ]
  * }
- * ```
  */
 export const AnalyzeRequestSchema = z.object({
-  /** Room/session identifier */
-  gameId: z.string().optional(),
+    /** Room/session identifier */
+    gameId: z.string().optional(),
 
-  /** Chronological sequence of turns */
-  conversationHistory: z.array(TurnSchema)
+    /** Chronological sequence of turns */
+    conversationHistory: z.array(TurnSchema)
 
 });
+
 export type AnalyzeRequest = z.infer<typeof AnalyzeRequestSchema>;
 
 /**
- * AI's response to analyzing the conversation
+ * AI's response to analyzing conversation
  */
 export const AIResponseSchema = z.object({
-  /** AI's thought process as exactly 4 sentences */
-  thinking: z.array(z.string()).length(4),
-
-  /** AI's guess at the secret word */
-  guess: z.string()
-    .min(3).max(12)
+    thinking: z.array(z.string())
+        .length(4)
+        .describe('AI\'s thought process (exactly 4 sentences)'),
+    guess: z.string()
+        .min(1)
+        .describe('AI\'s guess attempt')
 });
+
 export type AIResponse = z.infer<typeof AIResponseSchema>; 

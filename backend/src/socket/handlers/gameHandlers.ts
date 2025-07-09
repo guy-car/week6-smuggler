@@ -4,23 +4,21 @@ import { GameLogic } from '../../game/logic';
 import { GameStateManager } from '../../game/state';
 import { WordManager } from '../../game/wordManager';
 import { RoomManager } from '../../rooms/manager';
-import { GameStartData } from '../../types';
+import { GameStartData, Player, RoleAssignment, Room } from '../../types';
 
 export class GameHandlers {
-    private roomManager: RoomManager;
-    private gameStateManager: GameStateManager;
-    private wordManager: WordManager;
-    private aiService: OpenAIService;
-    private gameLogic: GameLogic;
-    private io: SocketIOServer;
+    private readonly wordManager: WordManager;
+    private readonly aiService: OpenAIService;
+    private readonly gameLogic: GameLogic;
 
-    constructor(roomManager: RoomManager, io: SocketIOServer) {
-        this.roomManager = roomManager;
-        this.gameStateManager = new GameStateManager();
+    constructor(
+        private readonly roomManager: RoomManager,
+        private readonly gameStateManager: GameStateManager,
+        private readonly io: SocketIOServer
+    ) {
         this.wordManager = new WordManager();
         this.aiService = new OpenAIService();
         this.gameLogic = new GameLogic();
-        this.io = io;
     }
 
     /**
@@ -63,13 +61,7 @@ export class GameHandlers {
             room.gameState = gameState;
 
             // Update player roles in the room
-            room.players.forEach(player => {
-                if (roles.encryptor === player.id) {
-                    player.role = 'encryptor';
-                } else if (roles.decryptor === player.id) {
-                    player.role = 'decryptor';
-                }
-            });
+            this.updatePlayerRoles(room, roles);
 
             // Prepare game start data
             const gameStartData: GameStartData = {
@@ -91,102 +83,79 @@ export class GameHandlers {
     };
 
     /**
-     * Handle send_message event - encryptor sends a message
+     * Update player roles in room
      */
-    public handleSendMessage = (socket: Socket, data: { roomId: string; message: string }) => {
-        try {
-            const { roomId, message } = data;
+    private updatePlayerRoles(room: Room, roles: RoleAssignment) {
+        room.players.forEach((player: Player) => {
+            if (roles.encoder === player.id) {
+                player.role = 'encoder';
+            } else if (roles.decoder === player.id) {
+                player.role = 'decoder';
+            }
+        });
+    }
 
-            if (!roomId || !message) {
-                socket.emit('error', { message: 'Room ID and message are required' });
-                return;
+    /**
+     * Handle send_message event - encoder sends a message
+     */
+    public handleSendMessage = async (socket: Socket, data: { roomId: string; message: string }) => {
+        try {
+            const room = await this.roomManager.getRoom(data.roomId);
+            if (!room) {
+                throw new Error('Room not found');
             }
 
-            const room = this.roomManager.getRoom(roomId);
-            if (!room || !room.gameState) {
-                socket.emit('error', { message: 'Game not found or not started' });
-                return;
+            if (!room.gameState) {
+                throw new Error('Game not started');
             }
 
             // Get current roles
-            const roles = {
-                encryptor: room.players.find(p => p.role === 'encryptor')!.id,
-                decryptor: room.players.find(p => p.role === 'decryptor')!.id
+            const roles: RoleAssignment = {
+                encoder: room.players.find((p: Player) => p.role === 'encoder')!.id,
+                decoder: room.players.find((p: Player) => p.role === 'decoder')!.id
             };
 
-            // Validate turn order
-            const turnValidation = this.gameLogic.validateTurnOrder(
-                room.gameState,
-                socket.id,
-                'send_message',
+            // Validate it's player's turn
+            if (!this.gameStateManager.isPlayerTurn(room.gameState, socket.id, roles)) {
+                throw new Error('Not your turn');
+            }
+
+            // Add message to conversation history
+            const gameStateWithMessage = this.gameStateManager.addEncoderTurn(room.gameState, data.message);
+            room.gameState = gameStateWithMessage;
+
+            // Broadcast updated game state
+            this.io.to(room.id).emit('game_state_update', {
+                gameState: gameStateWithMessage,
                 roles
+            });
+
+            // Process AI response
+            const analyzeRequest = this.gameStateManager.transformToAnalyzeRequest(room.gameState, room.id);
+            const aiResponse = await this.aiService.analyzeConversation(analyzeRequest.conversationHistory);
+
+            // Add AI response to conversation history
+            const gameStateWithAI = this.gameStateManager.addAITurn(
+                room.gameState,
+                aiResponse.thinking,
+                aiResponse.guess
             );
+            room.gameState = gameStateWithAI;
 
-            if (!turnValidation.valid) {
-                socket.emit('send_message_error', {
-                    roomId,
-                    error: turnValidation.errors.join(', ')
-                });
-                return;
-            }
+            // Broadcast updated game state with AI response
+            this.io.to(room.id).emit('game_state_update', {
+                gameState: gameStateWithAI,
+                roles
+            });
 
-            // Validate conversation flow
-            const flowValidation = this.gameLogic.validateConversationFlow(room.gameState);
-            if (!flowValidation.valid && room.gameState.conversationHistory.length > 0) {
-                socket.emit('send_message_error', {
-                    roomId,
-                    error: flowValidation.errors.join(', ')
-                });
-                return;
-            }
-
-            // Validate game state consistency
-            const consistencyValidation = this.gameLogic.validateGameStateConsistency(room.gameState);
-            if (!consistencyValidation.valid) {
-                socket.emit('send_message_error', {
-                    roomId,
-                    error: 'Game state is inconsistent: ' + consistencyValidation.errors.join(', ')
-                });
-                return;
-            }
-
-            // Add outsider turn to conversation history
-            const updatedGameState = this.gameStateManager.addOutsiderTurn(room.gameState, message);
-
-            // Advance turn to AI
-            const nextGameState = this.gameStateManager.advanceTurn(updatedGameState);
-
-            // Update room game state
-            room.gameState = nextGameState;
-
-            // Broadcast message to all players in the room
-            const messageData = {
-                roomId,
-                message: {
-                    content: message,
-                    senderId: socket.id,
-                    timestamp: new Date()
-                },
-                currentTurn: nextGameState.currentTurn
-            };
-
-            socket.to(roomId).emit('message_received', messageData);
-            socket.emit('message_sent', messageData);
-
-            // Trigger AI response after a short delay
-            setTimeout(() => {
-                this.handleAIResponse(roomId);
-            }, 1000);
-
-            console.log(`Message sent in room ${roomId}: ${message}`);
+            console.log(`Message sent in room ${room.id}: ${data.message}`);
         } catch (error) {
-            console.error('Error in handleSendMessage:', error);
-            socket.emit('error', { message: 'Internal server error' });
+            socket.emit('error', { message: error instanceof Error ? error.message : 'Unknown error' });
         }
     };
 
     /**
-     * Handle player_guess event - decryptor attempts to guess the secret word
+     * Handle player_guess event - decoder attempts to guess the secret word
      */
     public handlePlayerGuess = (socket: Socket, data: { roomId: string; guess: string }) => {
         try {
@@ -204,9 +173,9 @@ export class GameHandlers {
             }
 
             // Get current roles
-            const roles = {
-                encryptor: room.players.find(p => p.role === 'encryptor')!.id,
-                decryptor: room.players.find(p => p.role === 'decryptor')!.id
+            const roles: RoleAssignment = {
+                encoder: room.players.find(p => p.role === 'encoder')!.id,
+                decoder: room.players.find(p => p.role === 'decoder')!.id
             };
 
             // Validate turn order
@@ -310,8 +279,8 @@ export class GameHandlers {
                 socket.emit('guess_result', guessResultData);
             } else {
                 // Incorrect guess - add to conversation history and continue
-                // Add decryptor guess to conversation history
-                const updatedGameState = this.gameStateManager.addInsiderTurn(room.gameState, guess);
+                // Add decoder guess to conversation history
+                const updatedGameState = this.gameStateManager.addDecoderTurn(room.gameState, guess);
 
                 // Advance turn to AI
                 const nextGameState = this.gameStateManager.advanceTurn(updatedGameState);
@@ -393,9 +362,9 @@ export class GameHandlers {
 
             // If game is active, check if player can rejoin
             if (room.gameState) {
-                const roles = {
-                    encryptor: room.players.find(p => p.role === 'encryptor')!.id,
-                    decryptor: room.players.find(p => p.role === 'decryptor')!.id
+                const roles: RoleAssignment = {
+                    encoder: room.players.find(p => p.role === 'encoder')!.id,
+                    decoder: room.players.find(p => p.role === 'decoder')!.id
                 };
 
                 const canRejoin = this.gameStateManager.canPlayerRejoin(
@@ -516,7 +485,7 @@ export class GameHandlers {
                     this.io.to(roomId).emit('round_end', roundEndData);
                 }
             } else {
-                // AI incorrect - advance turn to decryptor
+                // AI incorrect - advance turn to decoder
                 const nextGameState = this.gameStateManager.advanceTurn(updatedGameState);
                 room.gameState = nextGameState;
             }
@@ -604,7 +573,7 @@ export class GameHandlers {
                     this.io.to(roomId).emit('round_end', roundEndData);
                 }
             } else {
-                // AI incorrect - advance turn to decryptor
+                // AI incorrect - advance turn to decoder
                 const nextGameState = this.gameStateManager.advanceTurn(updatedGameState);
                 room.gameState = nextGameState;
             }
