@@ -11,23 +11,24 @@ const ConversationHistory: React.FC<ConversationHistoryProps> = ({
     conversation,
     currentPlayerId
 }) => {
+    // Filter out AI messages from display (but keep them in data for backend)
+    const displayConversation = conversation.filter(turn => turn.type !== 'ai');
+
     const renderTurn = ({ item }: { item: Turn }) => {
         const isCurrentPlayer = item.playerId === currentPlayerId;
-        const isAI = item.type === 'ai';
+        // Only handle encryptor and decryptor messages now
+        const isEncryptor = item.type === 'encryptor';
+        const isDecryptor = item.type === 'decryptor';
 
         let backgroundColor = '#F2F2F7';
         let textColor = '#000000';
         let borderColor = '#E5E5EA';
 
-        if (isAI) {
-            backgroundColor = '#E3F2FD';
-            textColor = '#1976D2';
-            borderColor = '#BBDEFB';
-        } else if (item.type === 'encryptor') {
+        if (isEncryptor) {
             backgroundColor = '#E8F5E8';
             textColor = '#2E7D32';
             borderColor = '#C8E6C9';
-        } else if (item.type === 'decryptor') {
+        } else if (isDecryptor) {
             backgroundColor = '#FFF3E0';
             textColor = '#F57C00';
             borderColor = '#FFCC02';
@@ -43,7 +44,7 @@ const ConversationHistory: React.FC<ConversationHistoryProps> = ({
             ]}>
                 <View style={styles.turnHeader}>
                     <Text style={[styles.turnType, { color: textColor }]}>
-                        {isAI ? 'AI' : item.type === 'encryptor' ? 'Encryptor' : 'Decryptor'}
+                        {isEncryptor ? 'Encryptor' : 'Decryptor'}
                     </Text>
                     <Text style={[styles.timestamp, { color: textColor }]}>
                         {new Date(item.timestamp).toLocaleTimeString()}
@@ -60,7 +61,7 @@ const ConversationHistory: React.FC<ConversationHistoryProps> = ({
         <View style={styles.container}>
             <Text style={styles.title}>Conversation History</Text>
             <FlatList
-                data={conversation}
+                data={displayConversation}
                 keyExtractor={(item) => item.id}
                 renderItem={renderTurn}
                 style={styles.list}

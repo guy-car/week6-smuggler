@@ -270,9 +270,24 @@ export function getSocket() {
     });
 
     // AI response event: update turn and optionally conversation
-    socket.on('ai_response', (data: any) => {
+    socket.on('ai_response', (data: {
+      turn: {
+        thinking: string[],
+        guess: string
+      },
+      currentTurn: string
+    }) => {
       console.log('[WebSocket] AI response:', data);
-      useGameStore.getState().setCurrentTurn(data.currentTurn);
+      const formattedContent = `Thinking: ${data.turn.thinking.join(' ')}\n\nGuess: ${data.turn.guess}`;
+      const turn = {
+        id: `ai-response-${Date.now()}`,
+        type: 'ai' as const,
+        content: formattedContent,
+        timestamp: new Date().toISOString(),
+      };
+      // Add to conversation history (will be filtered out in display)
+      useGameStore.getState().addTurn(turn);
+      useGameStore.getState().setCurrentTurn(data.currentTurn as 'encryptor' | 'ai' | 'decryptor' | null);
     });
 
     // Message received (from other player)

@@ -155,6 +155,7 @@ export class GameHandlers {
 
             // Advance turn to AI
             const nextGameState = this.gameStateManager.advanceTurn(updatedGameState);
+            console.log(`[DEBUG] handleSendMessage: Turn advanced from ${updatedGameState.currentTurn} to ${nextGameState.currentTurn}`);
 
             // Update room game state
             room.gameState = nextGameState;
@@ -174,7 +175,9 @@ export class GameHandlers {
             socket.emit('message_sent', messageData);
 
             // Trigger AI response after a short delay
+            console.log(`[DEBUG] About to trigger AI response for room ${roomId}. Current turn: ${nextGameState.currentTurn}`);
             setTimeout(() => {
+                console.log(`[DEBUG] Triggering AI response for room ${roomId}`);
                 this.handleAIResponse(roomId);
             }, 1000);
 
@@ -315,6 +318,7 @@ export class GameHandlers {
 
                 // Advance turn to AI
                 const nextGameState = this.gameStateManager.advanceTurn(updatedGameState);
+                console.log(`[DEBUG] handlePlayerGuess: Turn advanced from ${updatedGameState.currentTurn} to ${nextGameState.currentTurn}`);
 
                 // Update room game state
                 room.gameState = nextGameState;
@@ -345,7 +349,9 @@ export class GameHandlers {
                 socket.emit('guess_result', guessResultData);
 
                 // Trigger AI response after a short delay
+                console.log(`[DEBUG] About to trigger AI response for room ${roomId}. Current turn: ${nextGameState.currentTurn}`);
                 setTimeout(() => {
+                    console.log(`[DEBUG] Triggering AI response for room ${roomId}`);
                     this.handleAIResponse(roomId);
                 }, 1000);
             }
@@ -460,18 +466,24 @@ export class GameHandlers {
         try {
             const room = this.roomManager.getRoom(roomId);
             if (!room || !room.gameState) {
+                console.log(`[DEBUG] handleAIResponse: Room or game state not found for room ${roomId}`);
                 return;
             }
 
+            console.log(`[DEBUG] handleAIResponse: Current turn is ${room.gameState.currentTurn} for room ${roomId}`);
+
             // Check if it's AI's turn
             if (room.gameState.currentTurn !== 'ai') {
+                console.log(`[DEBUG] handleAIResponse: Not AI's turn, current turn is ${room.gameState.currentTurn} for room ${roomId}`);
                 return;
             }
 
             // Generate AI response using the OpenAI service
+            console.log(`[DEBUG] Calling AI service with conversation history:`, room.gameState.conversationHistory);
             const aiResponse = await this.aiService.analyzeConversation(
                 room.gameState.conversationHistory
             );
+            console.log(`[DEBUG] AI service returned:`, aiResponse);
 
             // Add AI response to conversation history
             const updatedGameState = this.gameStateManager.addAITurn(room.gameState, aiResponse.thinking, aiResponse.guess);
@@ -525,10 +537,8 @@ export class GameHandlers {
             const aiResponseData = {
                 roomId,
                 turn: {
-                    type: 'ai_analysis',
                     thinking: aiResponse.thinking,
-                    guess: aiResponse.guess,
-                    turnNumber: this.gameStateManager.getNextTurnNumber(room.gameState)
+                    guess: aiResponse.guess
                 },
                 currentTurn: room.gameState.currentTurn
             };
@@ -536,11 +546,13 @@ export class GameHandlers {
             // Emit to all players in the room
             this.io.to(roomId).emit('ai_response', aiResponseData);
 
+            console.log(`[DEBUG] AI response successfully generated and emitted in room ${roomId}: ${aiResponse.guess}`);
             console.log(`AI response generated in room ${roomId}: ${aiResponse.guess}`);
         } catch (error) {
-            console.error('Error in handleAIResponse:', error);
+            console.error('[DEBUG] Error in handleAIResponse:', error);
 
             // Fallback to simple mock response if AI service fails
+            console.log(`[DEBUG] Falling back to AI fallback response for room ${roomId}`);
             this.handleAIFallback(roomId);
         }
     };
@@ -555,10 +567,39 @@ export class GameHandlers {
                 return;
             }
 
-            // Simple fallback response
+            // Simple fallback response using real word list
             const thinking = ["Analyzing conversation...", "Processing clues...", "Evaluating context...", "Making educated guess..."];
             const availableWords = this.wordManager.getAllWords();
-            const guess = availableWords[Math.floor(Math.random() * availableWords.length)]!;
+
+            // Try to make a contextual guess based on conversation history
+            let guess: string;
+            if (room.gameState.conversationHistory.length > 0) {
+                // Look for words in the conversation that might be clues
+                const conversationText = room.gameState.conversationHistory
+                    .map(turn => {
+                        if (turn.type === 'outsider_hint') {
+                            return turn.content.toLowerCase();
+                        } else if (turn.type === 'insider_guess') {
+                            return turn.guess.toLowerCase();
+                        }
+                        return '';
+                    })
+                    .join(' ');
+
+                // Find words that might be related to the conversation
+                const relatedWords = availableWords.filter(word =>
+                    conversationText.includes(word.toLowerCase()) ||
+                    word.toLowerCase().includes(conversationText.split(' ')[0] || '')
+                );
+
+                if (relatedWords.length > 0) {
+                    guess = relatedWords[Math.floor(Math.random() * relatedWords.length)]!;
+                } else {
+                    guess = availableWords[Math.floor(Math.random() * availableWords.length)]!;
+                }
+            } else {
+                guess = availableWords[Math.floor(Math.random() * availableWords.length)]!;
+            }
 
             // Add AI response to conversation history
             const updatedGameState = this.gameStateManager.addAITurn(room.gameState, thinking, guess);
@@ -613,17 +654,15 @@ export class GameHandlers {
             const aiResponseData = {
                 roomId,
                 turn: {
-                    type: 'ai_analysis',
                     thinking: thinking,
-                    guess: guess,
-                    turnNumber: this.gameStateManager.getNextTurnNumber(room.gameState)
+                    guess: guess
                 },
-                currentTurn: room.gameState.currentTurn,
-                reasoning: "Fallback response due to AI service error"
+                currentTurn: room.gameState.currentTurn
             };
 
             this.io.to(roomId).emit('ai_response', aiResponseData);
 
+            console.log(`[DEBUG] AI fallback response successfully generated and emitted in room ${roomId}: ${guess}`);
             console.log(`AI fallback response generated in room ${roomId}: ${guess}`);
         } catch (error) {
             console.error('Error in handleAIFallback:', error);
