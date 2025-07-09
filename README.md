@@ -1,5 +1,7 @@
 # Week 6 Smuggler
 
+test
+
 A full-stack React Native app with Express/Socket.IO backend - a real-time 2-player game where players attempt to pass secret messages while an AI eavesdropper tries to decode them.
 
 ## Project Structure
