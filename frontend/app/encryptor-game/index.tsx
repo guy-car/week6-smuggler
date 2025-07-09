@@ -67,25 +67,12 @@ const EncryptorGameScreen = () => {
     };
 
     const handleQuit = () => {
-        Alert.alert(
-            'Quit Game',
-            'Are you sure you want to quit? This will end the game for all players.',
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Quit',
-                    style: 'destructive',
-                    onPress: () => {
-                        leaveRoom();
-                        // Use state-based navigation to return to lobby
-                        useGameStore.getState().setCurrentScreen('lobby');
-                        useGameStore.getState().setRoomId(null);
-                        useGameStore.getState().setPlayers([]);
-                        useGameStore.getState().reset();
-                    },
-                },
-            ]
-        );
+        leaveRoom();
+        // Use state-based navigation to return to lobby
+        useGameStore.getState().setCurrentScreen('lobby');
+        useGameStore.getState().setRoomId(null);
+        useGameStore.getState().setPlayers([]);
+        useGameStore.getState().reset();
     };
 
     // Auto-scroll to bottom when new messages arrive

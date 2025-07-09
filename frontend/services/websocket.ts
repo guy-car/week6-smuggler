@@ -144,6 +144,9 @@ export function getSocket() {
         }
       }
 
+      // Set the initial turn to encryptor
+      useGameStore.getState().setCurrentTurn('encryptor');
+
       // Navigate to appropriate game screen
       const playerRole = useGameStore.getState().playerRole;
       if (playerRole === 'encryptor') {
@@ -266,6 +269,76 @@ export function getSocket() {
       useGameStore.getState().addTurn(turn);
     });
 
+    // AI response event: update turn and optionally conversation
+    socket.on('ai_response', (data: any) => {
+      console.log('[WebSocket] AI response:', data);
+      useGameStore.getState().setCurrentTurn(data.currentTurn);
+    });
+
+    // Message received (from other player)
+    socket.on('message_received', (data: any) => {
+      console.log('[WebSocket] Message received:', data);
+      // Add to conversation history
+      useGameStore.getState().addTurn({
+        id: data.message.id || `${data.message.senderId}-${Date.now()}`,
+        type: data.message.type || 'hint',
+        content: data.message.content,
+        timestamp: data.message.timestamp,
+        playerId: data.message.senderId
+      });
+      // Update turn if included
+      if (data.currentTurn) {
+        useGameStore.getState().setCurrentTurn(data.currentTurn);
+      }
+    });
+
+    // Message sent (confirmation to sender)
+    socket.on('message_sent', (data: any) => {
+      console.log('[WebSocket] Message sent:', data);
+      useGameStore.getState().addTurn({
+        id: data.message.id || `${data.message.senderId}-${Date.now()}`,
+        type: data.message.type || 'hint',
+        content: data.message.content,
+        timestamp: data.message.timestamp,
+        playerId: data.message.senderId
+      });
+      if (data.currentTurn) {
+        useGameStore.getState().setCurrentTurn(data.currentTurn);
+      }
+    });
+
+    // Game end event
+    socket.on('game_end', (data: any) => {
+      console.log('[WebSocket] Game end:', data);
+      useGameStore.getState().setGameStatus('ended');
+      useGameStore.getState().setCurrentScreen('game-end');
+      if (data.finalScore !== undefined) {
+        useGameStore.getState().setScore(data.finalScore);
+      }
+    });
+
+    // Round end event
+    socket.on('round_end', (data: any) => {
+      console.log('[WebSocket] Round end:', data);
+      useGameStore.getState().setRound(data.round || 1);
+      if (data.score !== undefined) {
+        useGameStore.getState().setScore(data.score);
+      }
+      // Optionally update secret word for next round
+      if (data.newSecretWord) {
+        useGameStore.getState().setSecretWord(data.newSecretWord);
+      }
+    });
+
+    // Guess result event
+    socket.on('guess_result', (data: any) => {
+      console.log('[WebSocket] Guess result:', data);
+      // Optionally update score
+      if (data.score !== undefined) {
+        useGameStore.getState().setScore(data.score);
+      }
+    });
+
     // Error events
     socket.on('error', (data: { message: string }) => {
       console.error('[WebSocket] Error:', data.message);
@@ -369,18 +442,31 @@ export function getAvailableRooms() {
 
 export function sendMessage(content: string) {
   const socket = getSocket();
-  socket.emit('game:message', { content });
+  const roomId = useGameStore.getState().roomId;
+  if (!roomId) {
+    useGameStore.getState().setError('No room ID found');
+    return;
+  }
+  // Backend expects 'send_message' with { roomId, message }
+  socket.emit('send_message', { roomId, message: content });
 }
 
 export function submitGuess(guess: string) {
   const socket = getSocket();
-  socket.emit('game:guess', { guess });
+  const roomId = useGameStore.getState().roomId;
+  if (!roomId) {
+    useGameStore.getState().setError('No room ID found');
+    return;
+  }
+  // Backend expects 'player_guess' with { roomId, guess }
+  socket.emit('player_guess', { roomId, guess });
 }
 
-export function submitWord(word: string) {
-  const socket = getSocket();
-  socket.emit('game:word', { word });
-}
+// The backend does not use 'game:word', so we comment this out for now
+// export function submitWord(word: string) {
+//   const socket = getSocket();
+//   socket.emit('game:word', { word });
+// }
 
 export function startGame() {
   const socket = getSocket();

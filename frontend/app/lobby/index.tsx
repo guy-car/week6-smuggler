@@ -61,6 +61,7 @@ const LobbyScreen = () => {
                 style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 8, marginBottom: 12 }}
             />
             <Button title="Create Room" onPress={handleCreateRoom} disabled={loading || !connected} />
+            {/*
             <Text style={{ marginVertical: 16, fontWeight: 'bold' }}>Or join a room:</Text>
             <TextInput
                 placeholder="Room ID"
@@ -69,6 +70,7 @@ const LobbyScreen = () => {
                 style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 8, marginBottom: 8 }}
             />
             <Button title="Join Room" onPress={handleJoinRoom} disabled={loading || !connected} />
+            */}
             <Text style={{ marginVertical: 16, fontWeight: 'bold' }}>Available Rooms:</Text>
             {loading && <ActivityIndicator />}
             {error && <Text style={{ color: 'red' }}>{error}</Text>}
@@ -78,7 +80,7 @@ const LobbyScreen = () => {
                 renderItem={({ item }) => (
                     <View style={{ padding: 8, borderBottomWidth: 1, borderColor: '#eee' }}>
                         <Text>Room ID: {item.id} ({item.playerCount}/{item.maxPlayers})</Text>
-                        <Button title="Select" onPress={() => setRoomIdInput(item.id)} />
+                        <Button title="Join Room" onPress={() => joinRoom(item.id, playerName || `Player${Math.floor(Math.random() * 1000)}`)} />
                     </View>
                 )}
                 ListEmptyComponent={<Text>No rooms available.</Text>}
