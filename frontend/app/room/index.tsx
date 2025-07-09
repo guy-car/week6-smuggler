@@ -1,7 +1,8 @@
 import { ResizeMode, Video } from 'expo-av';
 import { BlurView } from 'expo-blur';
+import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { leaveRoom, setPlayerReady } from '../../services/websocket';
 import { useGameStore } from '../../store/gameStore';
 
@@ -39,6 +40,7 @@ const RoomScreen = () => {
 
     return (
         <View style={{ flex: 1 }}>
+            <StatusBar style="light" translucent backgroundColor="transparent" />
             <Video
                 source={require('../../assets/videos/sequence.mp4')}
                 style={StyleSheet.absoluteFill}
@@ -47,56 +49,58 @@ const RoomScreen = () => {
                 shouldPlay
                 isMuted
             />
-            <View style={[styles.overlay, { flex: 1 }]}> {/* Overlay for readability */}
-                {/* Header */}
-                <BlurView intensity={40} tint="dark" style={styles.headerBlur}>
-                    <View style={styles.header}>
-                        <TouchableOpacity onPress={handleLeave} style={styles.backButton}>
-                            <Text style={styles.backButtonText}>BACK</Text>
-                        </TouchableOpacity>
-                        <View style={styles.roomIdContainer}>
-                            <Text style={styles.roomIdLabel}>ROOM ID</Text>
-                            <Text style={styles.roomId}>{roomId?.slice(0, 8).toUpperCase()}</Text>
+            <SafeAreaView style={{ flex: 1 }}>
+                <View style={[styles.overlay, { flex: 1 }]}> {/* Overlay for readability */}
+                    {/* Header */}
+                    <BlurView intensity={40} tint="dark" style={styles.headerBlur}>
+                        <View style={styles.header}>
+                            <TouchableOpacity onPress={handleLeave} style={styles.backButton}>
+                                <Text style={styles.backButtonText}>BACK</Text>
+                            </TouchableOpacity>
+                            <View style={styles.roomIdContainer}>
+                                <Text style={styles.roomIdLabel}>ROOM ID</Text>
+                                <Text style={styles.roomId}>{roomId?.slice(0, 8).toUpperCase()}</Text>
+                            </View>
+                            <View style={{ width: 60 }} /> {/* Spacer for symmetry */}
                         </View>
-                        <View style={{ width: 60 }} /> {/* Spacer for symmetry */}
-                    </View>
-                </BlurView>
-
-                {/* Footer: Pills stacked above Ready button */}
-                <View style={styles.footerStack}>
-                    <View style={styles.pillsRow}>
-                        <View style={styles.pillContainer}>
-                            <BlurView intensity={40} tint="dark" style={styles.pillBlur}>
-                                <View style={styles.pillContent}>
-                                    <Text style={styles.pillRole}>ENCODER</Text>
-                                    <View style={[styles.pillStatus, { backgroundColor: encoder?.ready ? '#34C759' : '#FF3B30' }]}> 
-                                        <Text style={styles.pillStatusText}>{encoder?.ready ? 'READY' : 'NOT READY'}</Text>
-                                    </View>
-                                </View>
-                            </BlurView>
-                        </View>
-                        <View style={styles.pillContainer}>
-                            <BlurView intensity={40} tint="dark" style={styles.pillBlur}>
-                                <View style={styles.pillContent}>
-                                    <Text style={styles.pillRole}>DECODER</Text>
-                                    <View style={[styles.pillStatus, { backgroundColor: decoder?.ready ? '#34C759' : '#FF3B30' }]}> 
-                                        <Text style={styles.pillStatusText}>{decoder?.ready ? 'READY' : 'NOT READY'}</Text>
-                                    </View>
-                                </View>
-                            </BlurView>
-                        </View>
-                    </View>
-                    <BlurView intensity={40} tint="dark" style={styles.readyButtonBlur}>
-                        <TouchableOpacity
-                            style={[styles.readyButton, isReady && styles.readyButtonActive]}
-                            onPress={handleReadyToggle}
-                            disabled={loading}
-                        >
-                            <Text style={styles.readyButtonText}>{isReady ? 'UNREADY' : 'READY'}</Text>
-                        </TouchableOpacity>
                     </BlurView>
+
+                    {/* Footer: Pills stacked above Ready button */}
+                    <View style={styles.footerStack}>
+                        <View style={styles.pillsRow}>
+                            <View style={styles.pillContainer}>
+                                <BlurView intensity={40} tint="dark" style={styles.pillBlur}>
+                                    <View style={styles.pillContent}>
+                                        <Text style={styles.pillRole}>ENCODER</Text>
+                                        <View style={[styles.pillStatus, { backgroundColor: encoder?.ready ? '#34C759' : '#FF3B30' }]}> 
+                                            <Text style={styles.pillStatusText}>{encoder?.ready ? 'READY' : 'NOT READY'}</Text>
+                                        </View>
+                                    </View>
+                                </BlurView>
+                            </View>
+                            <View style={styles.pillContainer}>
+                                <BlurView intensity={40} tint="dark" style={styles.pillBlur}>
+                                    <View style={styles.pillContent}>
+                                        <Text style={styles.pillRole}>DECODER</Text>
+                                        <View style={[styles.pillStatus, { backgroundColor: decoder?.ready ? '#34C759' : '#FF3B30' }]}> 
+                                            <Text style={styles.pillStatusText}>{decoder?.ready ? 'READY' : 'NOT READY'}</Text>
+                                        </View>
+                                    </View>
+                                </BlurView>
+                            </View>
+                        </View>
+                        <BlurView intensity={40} tint="dark" style={styles.readyButtonBlur}>
+                            <TouchableOpacity
+                                style={[styles.readyButton, isReady && styles.readyButtonActive]}
+                                onPress={handleReadyToggle}
+                                disabled={loading}
+                            >
+                                <Text style={styles.readyButtonText}>{isReady ? 'UNREADY' : 'READY'}</Text>
+                            </TouchableOpacity>
+                        </BlurView>
+                    </View>
                 </View>
-            </View>
+            </SafeAreaView>
         </View>
     );
 };
@@ -250,5 +254,5 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
     },
 });
-
 export default RoomScreen; 
+
