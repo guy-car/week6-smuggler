@@ -13,9 +13,9 @@ const RoomScreen = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Find encoder and decoder
-    const encoder = players.find(p => p.role === 'encryptor');
-    const decoder = players.find(p => p.role === 'decryptor');
+    // Assign encoder and decoder based on join order
+    const encoder = players[0];
+    const decoder = players[1];
 
     const handleReadyToggle = () => {
         setLoading(true);
