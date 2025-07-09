@@ -36,12 +36,13 @@ const ScoreProgressBar: React.FC<ScoreProgressBarProps> = ({
                         ]}
                     />
 
-                    {/* Center line */}
+                    {/* Center line (neutral position) */}
                     <View style={styles.centerLine} />
 
                     {/* Score labels */}
                     <View style={styles.scoreLabels}>
                         <Text style={styles.scoreLabel}>{aiWinsScore}</Text>
+                        <Text style={styles.scoreLabel}>5</Text>
                         <Text style={styles.scoreLabel}>{humansWinScore}</Text>
                     </View>
                 </View>
@@ -118,7 +119,7 @@ const styles = StyleSheet.create({
         bottom: 0,
         left: '50%',
         width: 2,
-        backgroundColor: '#C7C7CC',
+        backgroundColor: '#007AFF',
         transform: [{ translateX: -1 }],
     },
     scoreLabels: {

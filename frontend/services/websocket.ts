@@ -324,6 +324,10 @@ export function getSocket() {
       if (data.score !== undefined) {
         useGameStore.getState().setScore(data.score);
       }
+      // Update current turn for next round
+      if (data.currentTurn) {
+        useGameStore.getState().setCurrentTurn(data.currentTurn);
+      }
       // Optionally update secret word for next round
       if (data.newSecretWord) {
         useGameStore.getState().setSecretWord(data.newSecretWord);
@@ -458,8 +462,8 @@ export function submitGuess(guess: string) {
     useGameStore.getState().setError('No room ID found');
     return;
   }
-  // Backend expects 'player_guess' with { roomId, guess }
-  socket.emit('player_guess', { roomId, guess });
+  // Backend expects 'player_guess' with { roomId, guess, type: 'decryptor' }
+  socket.emit('player_guess', { roomId, guess, type: 'decryptor' });
 }
 
 // The backend does not use 'game:word', so we comment this out for now

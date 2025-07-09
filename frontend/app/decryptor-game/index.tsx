@@ -131,8 +131,8 @@ const DecryptorGameScreen = () => {
                 <ScoreProgressBar
                     score={score}
                     maxScore={10}
-                    aiWinsScore={-5}
-                    humansWinScore={5}
+                    aiWinsScore={0}
+                    humansWinScore={10}
                 />
 
                 <View style={styles.controlsContainer}>
