@@ -1,7 +1,8 @@
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
     Alert,
+    Keyboard,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
@@ -82,6 +83,24 @@ const DecryptorGameScreen = () => {
         (turn) => turn.type === 'encryptor'
     );
 
+    const scrollViewRef = useRef<ScrollView>(null);
+    const inputRef = useRef<TextInput>(null);
+
+    // Scroll input into view when focused
+    const handleInputFocus = () => {
+        setTimeout(() => {
+            scrollViewRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+    };
+    // Dismiss keyboard on submit
+    const handleSubmitEditing = () => {
+        Keyboard.dismiss();
+    };
+    // Auto-focus input on mount
+    React.useEffect(() => {
+        inputRef.current?.focus();
+    }, []);
+
     return (
         <KeyboardAvoidingView
             style={styles.container}
@@ -94,7 +113,24 @@ const DecryptorGameScreen = () => {
                 </TouchableOpacity>
             </View>
 
-            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+            <ScrollView
+                style={styles.content}
+                showsVerticalScrollIndicator={false}
+                ref={scrollViewRef}
+                keyboardShouldPersistTaps="handled"
+            >
+                {/* Encoder Avatar Placeholder */}
+                <View style={styles.avatarContainer}>
+                    <View style={styles.avatarCircle}>
+                        <Text style={styles.avatarLabel}>Encoder</Text>
+                    </View>
+                </View>
+                {/* Decryptor Instructions */}
+                <View style={styles.instructionsContainer}>
+                    <Text style={styles.instructionsText}>
+                        Your role: <Text style={{ fontWeight: 'bold' }}>Decryptor</Text>. Use the hints to guess the secret word. You win if you guess before the AI does!
+                    </Text>
+                </View>
                 <GameStatusIndicator
                     gameStatus={gameStatus}
                     currentTurn={currentTurn}
@@ -132,10 +168,29 @@ const DecryptorGameScreen = () => {
                     conversation={conversationHistory}
                     currentPlayerId={player?.id}
                 />
+                {/* Guess History & Feedback */}
+                <View style={styles.guessHistoryContainer}>
+                    <Text style={styles.guessHistoryTitle}>Your Guesses</Text>
+                    {conversationHistory.filter(turn => turn.type === 'decryptor' && turn.playerId === player?.id).length === 0 ? (
+                        <Text style={styles.noGuessesText}>No guesses yet</Text>
+                    ) : (
+                        conversationHistory
+                            .filter(turn => turn.type === 'decryptor' && turn.playerId === player?.id)
+                            .map((turn, idx) => (
+                                <View key={turn.id} style={styles.guessHistoryItem}>
+                                    <Text style={styles.guessHistoryGuess}>{turn.content}</Text>
+                                    {/* Feedback placeholder */}
+                                    <Text style={styles.guessHistoryFeedback}>-</Text>
+                                    <Text style={styles.guessHistoryTime}>{new Date(turn.timestamp).toLocaleTimeString()}</Text>
+                                </View>
+                            ))
+                    )}
+                </View>
             </ScrollView>
 
             <View style={styles.inputContainer}>
                 <TextInput
+                    ref={inputRef}
                     style={[
                         styles.guessInput,
                         !canSubmitGuess && styles.guessInputDisabled,
@@ -150,6 +205,10 @@ const DecryptorGameScreen = () => {
                     multiline
                     maxLength={50}
                     editable={canSubmitGuess}
+                    onFocus={handleInputFocus}
+                    onSubmitEditing={handleSubmitEditing}
+                    blurOnSubmit={true}
+                    testID="decryptor-guess-input"
                 />
                 <TouchableOpacity
                     style={[
@@ -364,6 +423,82 @@ const styles = StyleSheet.create({
         color: '#8E8E93',
     },
     noHintsText: {
+        textAlign: 'center',
+        color: '#8E8E93',
+        fontStyle: 'italic',
+        paddingVertical: 20,
+    },
+    avatarContainer: {
+        alignItems: 'center',
+        marginTop: 16,
+        marginBottom: 8,
+    },
+    avatarCircle: {
+        width: 72,
+        height: 72,
+        borderRadius: 36,
+        backgroundColor: '#E5E5EA',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 4,
+    },
+    avatarLabel: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#5856D6',
+    },
+    instructionsContainer: {
+        marginHorizontal: 16,
+        marginBottom: 8,
+        padding: 12,
+        backgroundColor: '#FFF3E0',
+        borderRadius: 8,
+        borderLeftWidth: 4,
+        borderLeftColor: '#F57C00',
+    },
+    instructionsText: {
+        color: '#F57C00',
+        fontSize: 15,
+        lineHeight: 20,
+    },
+    guessHistoryContainer: {
+        marginHorizontal: 16,
+        marginTop: 12,
+        marginBottom: 16,
+        backgroundColor: '#F2F2F7',
+        borderRadius: 8,
+        padding: 12,
+        borderWidth: 1,
+        borderColor: '#E5E5EA',
+    },
+    guessHistoryTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginBottom: 8,
+        color: '#007AFF',
+    },
+    guessHistoryItem: {
+        marginBottom: 8,
+        paddingBottom: 8,
+        borderBottomWidth: 1,
+        borderBottomColor: '#E5E5EA',
+    },
+    guessHistoryGuess: {
+        fontSize: 15,
+        fontWeight: '500',
+        color: '#000',
+    },
+    guessHistoryFeedback: {
+        fontSize: 13,
+        color: '#F57C00',
+        marginTop: 2,
+    },
+    guessHistoryTime: {
+        fontSize: 11,
+        color: '#8E8E93',
+        marginTop: 2,
+    },
+    noGuessesText: {
         textAlign: 'center',
         color: '#8E8E93',
         fontStyle: 'italic',

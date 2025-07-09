@@ -219,18 +219,18 @@ interface GameStore {
 - [x] Add quit confirmation dialog
 
 ### Phase 5: Decryptor Game Interface
-- [ ] Create DecryptorGameScreen component
-- [ ] Implement guess input functionality
-- [ ] Add conversation history display for decryptor view
-- [ ] Add always-visible AI thinking/guess section
-- [ ] Add "Clues" button to open previous clues modal
-- [ ] Add placeholder avatar for encoder
-- [ ] Create guess submission and validation
-- [ ] Implement AI turn display and processing
-- [ ] Add decryptor-specific instructions and UI elements
-- [ ] Create mobile-optimized input handling
-- [ ] Add guess history and feedback display
-- [ ] Add quit confirmation dialog
+- [x] Create DecryptorGameScreen component
+- [x] Implement guess input functionality
+- [x] Add conversation history display for decryptor view
+- [x] Add always-visible AI thinking/guess section
+- [x] Add "Clues" button to open previous clues modal
+- [x] Add placeholder avatar for encoder
+- [x] Create guess submission and validation
+- [x] Implement AI turn display and processing
+- [x] Add decryptor-specific instructions and UI elements
+- [x] Create mobile-optimized input handling
+- [x] Add guess history and feedback display
+- [x] Add quit confirmation dialog
 
 ### Phase 6: Game End & Polish
 - [ ] Create GameEndScreen with results display
@@ -244,19 +244,26 @@ interface GameStore {
 
 ## 6. Testing Strategy
 
+### Logic Testing Only
+- Only logic (non-UI) tests are required.
+- Test state management, store actions, websocket and REST service functions, and utility logic.
+- UI/component rendering tests are not required and will be tested manually.
+
 ### Unit Testing
 - [ ] Zustand store actions and state updates
 - [ ] WebSocket service connection handling
 - [ ] REST API service calls
 - [ ] Utility functions and helpers
-- [ ] Component rendering and props
 
 ### Integration Testing
-- [ ] Full game flow from lobby to game end
+- [ ] Full game flow from lobby to game end (logic only)
 - [ ] WebSocket event handling and state synchronization
 - [ ] Room creation and joining flow
 - [ ] Real-time message updates
 - [ ] Error handling and recovery scenarios
+
+### Manual UI Testing
+- All UI and component rendering will be tested manually during development and review.
 
 ### Mobile Testing
 - [ ] Touch interactions and gestures
