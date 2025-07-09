@@ -1,3 +1,4 @@
+import { ResizeMode, Video } from 'expo-av';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Button, FlatList, StyleSheet, Text, View } from 'react-native';
 import { leaveRoom, setPlayerReady, startGame } from '../../services/websocket';
@@ -72,76 +73,88 @@ const RoomScreen = () => {
     };
 
     return (
-        <View style={styles.container}>
-            <View style={styles.header}>
-                <Text style={styles.roomTitle}>Room: {roomId}</Text>
-                <Button title="Leave Room" onPress={handleLeave} color="#FF3B30" />
-            </View>
-
-            <View style={styles.statusSection}>
-                <Text style={styles.sectionTitle}>Game Status</Text>
-                <View style={styles.statusCard}>
-                    <Text style={styles.statusText}>
-                        {allPlayersReady ? 'Ready to start!' : 'Waiting for players...'}
-                    </Text>
-                    <Text style={styles.playerCount}>
-                        {players.length}/2 players
-                    </Text>
+        <View style={{ flex: 1 }}>
+            <Video
+                source={require('../../assets/videos/smuggler-poc.mp4')}
+                style={StyleSheet.absoluteFill}
+                resizeMode={ResizeMode.COVER}
+                isLooping
+                shouldPlay
+                isMuted
+            />
+            <View style={[styles.overlay, { flex: 1 }]}> {/* Overlay for readability */}
+                {/* Existing content starts here */}
+                <View style={styles.header}>
+                    <Text style={styles.roomTitle}>Room: {roomId}</Text>
+                    <Button title="Leave Room" onPress={handleLeave} color="#FF3B30" />
                 </View>
-            </View>
 
-            <View style={styles.playersSection}>
-                <Text style={styles.sectionTitle}>Players</Text>
-                {loading && <ActivityIndicator style={styles.loading} />}
-                {error && <Text style={styles.errorText}>{error}</Text>}
+                <View style={styles.statusSection}>
+                    <Text style={styles.sectionTitle}>Game Status</Text>
+                    <View style={styles.statusCard}>
+                        <Text style={styles.statusText}>
+                            {allPlayersReady ? 'Ready to start!' : 'Waiting for players...'}
+                        </Text>
+                        <Text style={styles.playerCount}>
+                            {players.length}/2 players
+                        </Text>
+                    </View>
+                </View>
 
-                <FlatList
-                    data={players}
-                    keyExtractor={(item) => item.id}
-                    renderItem={({ item }) => (
-                        <View style={styles.playerItem}>
-                            <View style={styles.playerInfo}>
-                                <Text style={styles.playerName}>
-                                    {item.name} {item.id === player?.id ? '(You)' : ''}
-                                </Text>
-                                <Text style={styles.playerRole}>
-                                    {item.role ? item.role.charAt(0).toUpperCase() + item.role.slice(1) : 'Unknown'}
-                                </Text>
+                <View style={styles.playersSection}>
+                    <Text style={styles.sectionTitle}>Players</Text>
+                    {loading && <ActivityIndicator style={styles.loading} />}
+                    {error && <Text style={styles.errorText}>{error}</Text>}
+
+                    <FlatList
+                        data={players}
+                        keyExtractor={(item) => item.id}
+                        renderItem={({ item }) => (
+                            <View style={styles.playerItem}>
+                                <View style={styles.playerInfo}>
+                                    <Text style={styles.playerName}>
+                                        {item.name} {item.id === player?.id ? '(You)' : ''}
+                                    </Text>
+                                    <Text style={styles.playerRole}>
+                                        {item.role ? item.role.charAt(0).toUpperCase() + item.role.slice(1) : 'Unknown'}
+                                    </Text>
+                                </View>
+                                <View style={[
+                                    styles.readyIndicator,
+                                    { backgroundColor: item.ready ? '#34C759' : '#FF3B30' }
+                                ]}>
+                                    <Text style={styles.readyText}>
+                                        {item.ready ? 'Ready' : 'Not Ready'}
+                                    </Text>
+                                </View>
                             </View>
-                            <View style={[
-                                styles.readyIndicator,
-                                { backgroundColor: item.ready ? '#34C759' : '#FF3B30' }
-                            ]}>
-                                <Text style={styles.readyText}>
-                                    {item.ready ? 'Ready' : 'Not Ready'}
-                                </Text>
+                        )}
+                        ListEmptyComponent={
+                            <View style={styles.emptyContainer}>
+                                <Text style={styles.emptyText}>No players in room.</Text>
                             </View>
-                        </View>
-                    )}
-                    ListEmptyComponent={
-                        <View style={styles.emptyContainer}>
-                            <Text style={styles.emptyText}>No players in room.</Text>
-                        </View>
-                    }
-                />
-            </View>
+                        }
+                    />
+                </View>
 
-            <View style={styles.actionsSection}>
-                <Button
-                    title={isReady ? 'Unready' : 'Ready'}
-                    onPress={handleReadyToggle}
-                    color={isReady ? '#FF3B30' : '#34C759'}
-                    disabled={loading}
-                />
-
-                {canStartGame && (
+                <View style={styles.actionsSection}>
                     <Button
-                        title="Start Game"
-                        onPress={handleStartGame}
-                        color="#007AFF"
+                        title={isReady ? 'Unready' : 'Ready'}
+                        onPress={handleReadyToggle}
+                        color={isReady ? '#FF3B30' : '#34C759'}
                         disabled={loading}
                     />
-                )}
+
+                    {canStartGame && (
+                        <Button
+                            title="Start Game"
+                            onPress={handleStartGame}
+                            color="#007AFF"
+                            disabled={loading}
+                        />
+                    )}
+                </View>
+                {/* Existing content ends here */}
             </View>
         </View>
     );
@@ -152,6 +165,10 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#F2F2F7',
         padding: 16,
+    },
+    overlay: {
+        backgroundColor: 'rgba(242,242,247,0.3)', // Lower opacity for more video visibility
+        flex: 1,
     },
     header: {
         flexDirection: 'row',
