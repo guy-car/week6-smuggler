@@ -154,11 +154,8 @@ export class GameLogic {
             // Decryptor incorrect - add to conversation history as insider turn and advance turn to AI
             const messageAdded = this.gameStateManager.addInsiderTurn(gameState, guess);
 
-            // For incorrect decryptor guess, we want to go back to AI, not to encryptor
-            const updatedGameState = {
-                ...messageAdded,
-                currentTurn: 'ai' as const
-            };
+            // Use the advanceTurn method for consistency with the 4-step cycle
+            const updatedGameState = this.gameStateManager.advanceTurn(messageAdded);
 
             return {
                 newGameState: updatedGameState,

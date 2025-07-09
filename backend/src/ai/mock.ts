@@ -206,15 +206,22 @@ export class MockAIService {
     }
 
     /**
-     * Get mock available words (would be replaced with real word list)
+     * Get mock available words (using real word list)
      */
     private getMockAvailableWords(): string[] {
-        return [
-            'elephant', 'pizza', 'sunshine', 'mountain', 'ocean',
-            'butterfly', 'chocolate', 'rainbow', 'forest', 'castle',
-            'dragon', 'guitar', 'diamond', 'volcano', 'telescope',
-            'waterfall', 'fireworks', 'treasure', 'pirate', 'wizard'
-        ];
+        // Import the real word list from the data file
+        try {
+            const wordsData = require('../data/words.json');
+            return wordsData.words || [];
+        } catch (error) {
+            console.warn('Could not load real word list, using fallback words');
+            return [
+                'elephant', 'pizza', 'sunshine', 'mountain', 'ocean',
+                'butterfly', 'chocolate', 'rainbow', 'forest', 'castle',
+                'dragon', 'guitar', 'diamond', 'volcano', 'telescope',
+                'waterfall', 'fireworks', 'treasure', 'pirate', 'wizard'
+            ];
+        }
     }
 
     /**
