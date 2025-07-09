@@ -84,6 +84,13 @@ export class RoomManager {
      * Mark a player as ready
      */
     public setPlayerReady(roomId: string, playerId: string): boolean {
+        return this.setPlayerReadyStatus(roomId, playerId, true);
+    }
+
+    /**
+     * Set a player's ready status
+     */
+    public setPlayerReadyStatus(roomId: string, playerId: string, ready: boolean): boolean {
         const room = this.rooms.get(roomId);
         if (!room) {
             return false;
@@ -91,7 +98,7 @@ export class RoomManager {
 
         const player = room.players.find(p => p.id === playerId);
         if (player) {
-            player.ready = true;
+            player.ready = ready;
             room.lastActivity = new Date();
 
             // Trigger room change callback for lobby broadcasting

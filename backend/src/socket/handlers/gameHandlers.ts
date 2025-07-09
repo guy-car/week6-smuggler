@@ -290,7 +290,8 @@ export class GameHandlers {
                         correct: isCorrect,
                         score: nextRoundState.score,
                         gameEnded: false,
-                        newSecretWord
+                        newSecretWord,
+                        currentTurn: nextRoundState.currentTurn
                     };
 
                     socket.to(roomId).emit('round_end', roundEndData);
@@ -309,13 +310,8 @@ export class GameHandlers {
                 socket.emit('guess_result', guessResultData);
             } else {
                 // Incorrect guess - add to conversation history and continue
-                // Add message to conversation history with role and turn number
-                const updatedGameState = this.gameStateManager.addMessage(room.gameState, {
-                    content: guess,
-                    senderId: socket.id,
-                    role: 'decryptor',
-                    turnNumber: this.gameStateManager.getNextTurnNumber(room.gameState)
-                });
+                // Add decryptor guess to conversation history
+                const updatedGameState = this.gameStateManager.addInsiderTurn(room.gameState, guess);
 
                 // Advance turn to AI
                 const nextGameState = this.gameStateManager.advanceTurn(updatedGameState);
@@ -526,7 +522,8 @@ export class GameHandlers {
                         correct: true,
                         score: nextRound.score,
                         gameEnded: false,
-                        newSecretWord
+                        newSecretWord,
+                        currentTurn: nextRound.currentTurn
                     };
 
                     this.io.to(roomId).emit('round_end', roundEndData);
@@ -613,7 +610,8 @@ export class GameHandlers {
                         correct: true,
                         score: nextRound.score,
                         gameEnded: false,
-                        newSecretWord
+                        newSecretWord,
+                        currentTurn: nextRound.currentTurn
                     };
 
                     this.io.to(roomId).emit('round_end', roundEndData);
