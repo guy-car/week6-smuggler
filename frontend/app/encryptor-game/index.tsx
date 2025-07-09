@@ -14,7 +14,6 @@ import { leaveRoom, sendMessage } from '../../services/websocket';
 import { useGameStore } from '../../store/gameStore';
 import AISectionComponent from '../components/AISectionComponent';
 import ConversationHistory from '../components/ConversationHistory';
-import GameStatusIndicator from '../components/GameStatusIndicator';
 import ScoreProgressBar from '../components/ScoreProgressBar';
 
 const EncryptorGameScreen = () => {
@@ -29,8 +28,6 @@ const EncryptorGameScreen = () => {
         secretWord,
         player,
         roomId,
-        showQuitConfirm,
-        setShowQuitConfirm,
     } = useGameStore();
 
     const [messageInput, setMessageInput] = useState('');
@@ -76,52 +73,46 @@ const EncryptorGameScreen = () => {
             style={styles.container}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-            <View style={styles.header}>
-                <Text style={styles.title}>Encryptor Game</Text>
+            {/* Score bar and quit button in a row at the very top */}
+            <View style={styles.topRow}>
+                <View style={{ flex: 1 }}>
+                    <ScoreProgressBar
+                        score={score}
+                        maxScore={10}
+                        aiWinsScore={0}
+                        humansWinScore={10}
+                    />
+                </View>
                 <TouchableOpacity style={styles.quitButton} onPress={handleQuit}>
                     <Text style={styles.quitButtonText}>Quit</Text>
                 </TouchableOpacity>
             </View>
 
-            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-                <GameStatusIndicator
-                    gameStatus={gameStatus}
-                    currentTurn={currentTurn}
-                    playerRole={playerRole}
-                    round={round}
-                    maxRounds={maxRounds}
-                />
-
-                <ScoreProgressBar
-                    score={score}
-                    maxScore={10}
-                    aiWinsScore={0}
-                    humansWinScore={10}
-                />
-
-                {/* Always visible secret word for encryptor */}
-                <View style={styles.secretWordContainer}>
-                    <Text style={styles.secretWordTitle}>Secret Word:</Text>
-                    <Text style={styles.secretWordText}>{secretWord || 'Loading...'}</Text>
-                </View>
-
-                {/* Decoder avatar placeholder */}
-                <View style={styles.avatarContainer}>
-                    <View style={styles.avatarCircle}>
-                        <Text style={styles.avatarLabel}>Decoder</Text>
+            {/* Avatar below the score bar and quit button */}
+            <View style={styles.avatarRow}>
+                <View style={styles.avatarContainerUnified}>
+                    <View style={styles.avatarCircleUnified}>
+                        <Text style={styles.avatarLabelUnified}>Encoder</Text>
                     </View>
                 </View>
+            </View>
 
+            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
                 <AISectionComponent
                     currentTurn={currentTurn}
                     conversationHistory={conversationHistory}
                 />
-
                 <ConversationHistory
                     conversation={conversationHistory}
                     currentPlayerId={player?.id}
                 />
             </ScrollView>
+
+            {/* Secret word above input field, no extra margin above */}
+            <View style={[styles.secretWordContainerUnified, { marginTop: 0 }]}>
+                <Text style={styles.secretWordTitleUnified}>Secret Word:</Text>
+                <Text style={styles.secretWordTextUnified}>{secretWord || 'Loading...'}</Text>
+            </View>
 
             <View style={styles.inputContainer}>
                 <TextInput
@@ -154,8 +145,6 @@ const EncryptorGameScreen = () => {
                     </Text>
                 </TouchableOpacity>
             </View>
-
-
         </KeyboardAvoidingView>
     );
 };
@@ -379,6 +368,61 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: '600',
         color: '#8E8E93',
+    },
+    avatarRow: {
+        alignItems: 'center',
+        paddingVertical: 8,
+    },
+    avatarContainerUnified: {
+        alignItems: 'center',
+    },
+    avatarCircleUnified: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        backgroundColor: '#E5E5EA',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 2,
+        borderColor: '#C7C7CC',
+    },
+    avatarLabelUnified: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: '#8E8E93',
+    },
+    topRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 16, // match decoder
+        paddingVertical: 8,    // match decoder
+    },
+    secretWordContainerUnified: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 12,
+        padding: 16,
+        marginHorizontal: 16,
+        marginVertical: 8,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    secretWordTitleUnified: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#8E8E93',
+        marginBottom: 4,
+    },
+    secretWordTextUnified: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#007AFF',
     },
 });
 
