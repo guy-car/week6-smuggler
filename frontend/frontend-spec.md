@@ -12,9 +12,9 @@ The Smuggler frontend is a React Native/Expo application that provides the clien
 - Mobile-optimized touch interface
 - Zustand state management for complex game state
 - Visual score progress bar with endpoints (AI Wins / Humans Win)
-- Encoder-only "Secret" button to reveal the secret word
-- Modal for previous guesses (Encoder) or clues (Decoder)
-- Always-visible AI thinking/guess section
+- **Shared AI component displaying thinking and guesses as plain text**
+- **Always-visible secret word for encryptor**
+- **Simplified UI without modals or turn indicators**
 - Placeholder avatars for players
 - Quit confirmation dialog
 
@@ -37,10 +37,14 @@ graph LR
         EncryptorGame[EncryptorGameScreen]
         DecryptorGame[DecryptorGameScreen]
         GameEnd[GameEndScreen]
-        ModalGuesses[GuessesModal]
-        ModalClues[CluesModal]
         ModalQuit[QuitConfirmModal]
-        ModalSecret[SecretRevealModal]
+    end
+    
+    subgraph "Shared Components"
+        AIComponent[AISectionComponent]
+        ConversationHistory[ConversationHistoryComponent]
+        ScoreProgressBar[ScoreProgressBarComponent]
+        GameStatusIndicator[GameStatusIndicatorComponent]
     end
     
     ExpoApp --> Lobby
@@ -48,12 +52,14 @@ graph LR
     ExpoApp --> EncryptorGame
     ExpoApp --> DecryptorGame
     ExpoApp --> GameEnd
-    EncryptorGame --> ModalGuesses
-    DecryptorGame --> ModalClues
-    EncryptorGame --> ModalSecret
     EncryptorGame --> ModalQuit
     DecryptorGame --> ModalQuit
     Room --> ModalQuit
+    
+    EncryptorGame --> AIComponent
+    DecryptorGame --> AIComponent
+    EncryptorGame --> ConversationHistory
+    DecryptorGame --> ConversationHistory
 ```
 
 ## 3. Configuration
@@ -92,6 +98,10 @@ ui:
     indicator: "dot"
     steps: 11 # Example, adjust as needed
   quitConfirmation: true
+  aiSection:
+    backgroundColor: "#E3F2FD"
+    textColor: "#1976D2"
+    borderColor: "#BBDEFB"
 ```
 
 ## 4. API / Protocol
@@ -145,9 +155,6 @@ interface GameStore {
   currentScreen: 'lobby' | 'room' | 'encryptor-game' | 'decryptor-game' | 'game-end';
   isLoading: boolean;
   error: string | null;
-  showGuessesModal: boolean;
-  showCluesModal: boolean;
-  showSecretModal: boolean;
   showQuitConfirm: boolean;
   
   // Actions
@@ -161,12 +168,6 @@ interface GameStore {
   submitGuess: (guess: string) => void;
   leaveRoom: () => void;
   resetGame: () => void;
-  openGuessesModal: () => void;
-  closeGuessesModal: () => void;
-  openCluesModal: () => void;
-  closeCluesModal: () => void;
-  openSecretModal: () => void;
-  closeSecretModal: () => void;
   openQuitConfirm: () => void;
   closeQuitConfirm: () => void;
 }
@@ -204,35 +205,43 @@ interface GameStore {
 - [x] Implement game start/end state management
 - [x] Add game status indicators and loading states
 
-### Phase 4: Encryptor Game Interface
+### Phase 4: Shared AI Component & UI Simplification
+- [x] Create shared AISectionComponent for both encryptor and decryptor screens
+- [x] Display AI thinking and guesses as plain text in the shared component
+- [x] Remove turn indicator ("Decryptor is thinking...") from GameStatusIndicator
+- [x] Remove "Previous Guesses" button and modal from encryptor screen
+- [x] Remove "Secret Word" button and modal - always display secret word for encryptor
+- [x] Remove "Your Guesses" section from decryptor screen
+- [x] Remove "Previous Hints" button and modal from decryptor screen
+- [x] Update ConversationHistory component to properly display AI messages from backend
+- [x] Ensure AI messages are added to conversation history (backend sanity check completed)
+
+### Phase 5: Encryptor Game Interface (Updated)
 - [x] Create EncryptorGameScreen component
 - [x] Implement message input for encryptor hints
 - [x] Add conversation history display for encryptor view
-- [x] Add always-visible AI thinking/guess section
-- [x] Add "Secret" button to reveal secret word (modal)
-- [x] Add "Guesses" button to open previous guesses modal
-- [x] Add placeholder avatar for decoder
-- [x] Implement message sending functionality
-- [x] Add input validation and error handling
-- [x] Create mobile-optimized keyboard handling
-- [x] Add encryptor-specific instructions and UI elements
-- [x] Add quit confirmation dialog
+- [ ] Add shared AI component displaying thinking and guesses
+- [ ] Always display secret word (no modal needed)
+- [ ] Add placeholder avatar for decoder
+- [ ] Implement message sending functionality
+- [ ] Add input validation and error handling
+- [ ] Create mobile-optimized keyboard handling
+- [ ] Add encryptor-specific instructions and UI elements
+- [ ] Add quit confirmation dialog
 
-### Phase 5: Decryptor Game Interface
+### Phase 6: Decryptor Game Interface (Updated)
 - [x] Create DecryptorGameScreen component
 - [x] Implement guess input functionality
 - [x] Add conversation history display for decryptor view
-- [x] Add always-visible AI thinking/guess section
-- [x] Add "Clues" button to open previous clues modal
-- [x] Add placeholder avatar for encoder
-- [x] Create guess submission and validation
-- [x] Implement AI turn display and processing
-- [x] Add decryptor-specific instructions and UI elements
-- [x] Create mobile-optimized input handling
-- [x] Add guess history and feedback display
-- [x] Add quit confirmation dialog
+- [ ] Add shared AI component displaying thinking and guesses
+- [ ] Add placeholder avatar for encoder
+- [ ] Create guess submission and validation
+- [ ] Implement AI turn display and processing
+- [ ] Add decryptor-specific instructions and UI elements
+- [ ] Create mobile-optimized input handling
+- [ ] Add quit confirmation dialog
 
-### Phase 6: Game End & Polish
+### Phase 7: Game End & Polish
 - [x] Create GameEndScreen with results display
 - [x] Implement 5-second delay before returning to lobby
 - [x] Add game end animations and visual feedback
@@ -242,7 +251,63 @@ interface GameStore {
 - [x] Implement proper error boundaries and fallbacks
 - [x] Add basic accessibility features and screen reader support
 
-## 6. Testing Strategy
+## 6. Component Specifications
+
+### AISectionComponent (New Shared Component)
+```typescript
+interface AISectionProps {
+  currentTurn: 'encryptor' | 'ai' | 'decryptor' | null;
+  conversationHistory: Turn[];
+}
+
+// Displays AI thinking and guesses as plain text
+// Shows "AI is analyzing..." when it's AI's turn
+// Shows "AI is waiting..." when it's not AI's turn
+// Displays latest AI thinking and guess from conversation history
+```
+
+### Updated ConversationHistory Component
+```typescript
+interface ConversationHistoryProps {
+  conversation: Turn[];
+  currentPlayerId?: string;
+}
+
+// Enhanced to properly display AI messages from backend
+// AI messages should show thinking and guess in a readable format
+// Maintains existing styling for different message types
+```
+
+### Updated GameStatusIndicator Component
+```typescript
+interface GameStatusIndicatorProps {
+  gameStatus: GameStatus;
+  currentTurn: 'encryptor' | 'ai' | 'decryptor' | null;
+  playerRole: 'encryptor' | 'decryptor' | null;
+  round: number;
+  maxRounds: number;
+}
+
+// Removed turn indicator text ("Decryptor is thinking...")
+// Simplified to show only game status, round, and role
+```
+
+## 7. Backend Integration Verification
+
+### AI Messages in Conversation History ✅
+The backend properly adds AI messages to conversation history through:
+- `gameStateManager.addAITurn()` method in `backend/src/game/state.ts`
+- AI responses are added after each analysis in `backend/src/socket/handlers/gameHandlers.ts`
+- AI turns include both thinking process and guess in the conversation history
+- Frontend receives AI messages via WebSocket events and adds them to the store
+
+### WebSocket Events for AI Messages
+- `game:aiThinking` - AI thinking process
+- `game:aiGuess` - AI guess with confidence
+- `ai_response` - Complete AI response with turn update
+- `message_received` - Messages from other players (including AI)
+
+## 8. Testing Strategy
 
 ### Logic Testing Only
 - Only logic (non-UI) tests are required.
@@ -254,12 +319,14 @@ interface GameStore {
 - [ ] WebSocket service connection handling
 - [ ] REST API service calls
 - [ ] Utility functions and helpers
+- [ ] AISectionComponent logic (shared component)
 
 ### Integration Testing
 - [ ] Full game flow from lobby to game end (logic only)
 - [ ] WebSocket event handling and state synchronization
 - [ ] Room creation and joining flow
 - [ ] Real-time message updates
+- [ ] AI message integration and display
 - [ ] Error handling and recovery scenarios
 
 ### Manual UI Testing
@@ -272,7 +339,7 @@ interface GameStore {
 - [ ] App state management (background/foreground)
 - [ ] Network connectivity changes
 
-## 7. Monitoring & Metrics
+## 9. Monitoring & Metrics
 
 ### Performance Metrics
 - [ ] App launch time < 3 seconds
@@ -295,7 +362,7 @@ interface GameStore {
 - [ ] Memory leaks and performance issues
 - [ ] Error tracking and reporting
 
-## 8. Deployment
+## 10. Deployment
 
 ### Development Environment
 - [ ] Expo development server on localhost:8081
@@ -310,7 +377,7 @@ interface GameStore {
 - [ ] Performance optimization
 - [ ] Security hardening
 
-## 9. Success Criteria
+## 11. Success Criteria
 
 ### Functional Requirements
 - [ ] Users can create and join rooms successfully
@@ -320,7 +387,10 @@ interface GameStore {
 - [ ] Messages and guesses are transmitted accurately
 - [ ] Game end flow works with proper delay and navigation
 - [ ] Score progress bar and endpoints update correctly
-- [ ] Secret reveal, guesses/clues modals, and quit confirmation work as intended
+- [ ] **Shared AI component displays thinking and guesses correctly**
+- [ ] **Secret word is always visible for encryptor (no modal)**
+- [ ] **No turn indicators or unnecessary modals**
+- [ ] **AI messages are properly integrated into conversation history**
 
 ### Technical Requirements
 - [ ] All WebSocket events handled correctly
@@ -329,6 +399,7 @@ interface GameStore {
 - [ ] Error handling prevents app crashes
 - [ ] Connection recovery works automatically
 - [ ] Performance meets mobile app standards
+- [ ] **AI messages are properly added to conversation history on backend**
 
 ### User Experience Requirements
 - [ ] Intuitive navigation between screens
@@ -337,4 +408,6 @@ interface GameStore {
 - [ ] Proper feedback for user actions
 - [ ] Accessible design for different screen sizes
 - [ ] Consistent visual design throughout the app
-- [ ] Placeholder avatars and modal flows are clear and user-friendly
+- [ ] **Simplified UI without unnecessary modals or buttons**
+- [ ] **Clear display of AI thinking and guesses**
+- [ ] **Always-visible secret word for encryptor**

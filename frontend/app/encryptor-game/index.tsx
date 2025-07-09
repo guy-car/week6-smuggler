@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { leaveRoom, sendMessage } from '../../services/websocket';
 import { useGameStore } from '../../store/gameStore';
+import AISectionComponent from '../components/AISectionComponent';
 import ConversationHistory from '../components/ConversationHistory';
 import GameStatusIndicator from '../components/GameStatusIndicator';
 import ScoreProgressBar from '../components/ScoreProgressBar';
@@ -28,11 +29,7 @@ const EncryptorGameScreen = () => {
         secretWord,
         player,
         roomId,
-        showSecretModal,
-        showGuessesModal,
         showQuitConfirm,
-        setShowSecretModal,
-        setShowGuessesModal,
         setShowQuitConfirm,
     } = useGameStore();
 
@@ -58,13 +55,7 @@ const EncryptorGameScreen = () => {
         }
     };
 
-    const handleShowSecret = () => {
-        setShowSecretModal(true);
-    };
 
-    const handleShowGuesses = () => {
-        setShowGuessesModal(true);
-    };
 
     const handleQuit = () => {
         leaveRoom();
@@ -108,30 +99,23 @@ const EncryptorGameScreen = () => {
                     humansWinScore={10}
                 />
 
-                <View style={styles.controlsContainer}>
-                    <TouchableOpacity
-                        style={styles.controlButton}
-                        onPress={handleShowSecret}
-                    >
-                        <Text style={styles.controlButtonText}>Secret Word</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={styles.controlButton}
-                        onPress={handleShowGuesses}
-                    >
-                        <Text style={styles.controlButtonText}>Previous Guesses</Text>
-                    </TouchableOpacity>
+                {/* Always visible secret word for encryptor */}
+                <View style={styles.secretWordContainer}>
+                    <Text style={styles.secretWordTitle}>Secret Word:</Text>
+                    <Text style={styles.secretWordText}>{secretWord || 'Loading...'}</Text>
                 </View>
 
-                <View style={styles.aiSection}>
-                    <Text style={styles.aiSectionTitle}>AI Thinking</Text>
-                    <View style={styles.aiThinkingBox}>
-                        <Text style={styles.aiThinkingText}>
-                            {currentTurn === 'ai' ? 'AI is analyzing the conversation...' : 'AI is waiting for the next turn...'}
-                        </Text>
+                {/* Decoder avatar placeholder */}
+                <View style={styles.avatarContainer}>
+                    <View style={styles.avatarCircle}>
+                        <Text style={styles.avatarLabel}>Decoder</Text>
                     </View>
                 </View>
+
+                <AISectionComponent
+                    currentTurn={currentTurn}
+                    conversationHistory={conversationHistory}
+                />
 
                 <ConversationHistory
                     conversation={conversationHistory}
@@ -171,51 +155,7 @@ const EncryptorGameScreen = () => {
                 </TouchableOpacity>
             </View>
 
-            {/* Secret Word Modal */}
-            {showSecretModal && (
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Secret Word</Text>
-                        <Text style={styles.secretWord}>{secretWord || 'Loading...'}</Text>
-                        <TouchableOpacity
-                            style={styles.modalButton}
-                            onPress={() => setShowSecretModal(false)}
-                        >
-                            <Text style={styles.modalButtonText}>Close</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            )}
 
-            {/* Previous Guesses Modal */}
-            {showGuessesModal && (
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Previous Guesses</Text>
-                        <ScrollView style={styles.guessesList}>
-                            {conversationHistory
-                                .filter((turn) => turn.type === 'decryptor')
-                                .map((turn, index) => (
-                                    <View key={turn.id} style={styles.guessItem}>
-                                        <Text style={styles.guessText}>{turn.content}</Text>
-                                        <Text style={styles.guessTime}>
-                                            {new Date(turn.timestamp).toLocaleTimeString()}
-                                        </Text>
-                                    </View>
-                                ))}
-                            {conversationHistory.filter((turn) => turn.type === 'decryptor').length === 0 && (
-                                <Text style={styles.noGuessesText}>No guesses yet</Text>
-                            )}
-                        </ScrollView>
-                        <TouchableOpacity
-                            style={styles.modalButton}
-                            onPress={() => setShowGuessesModal(false)}
-                        >
-                            <Text style={styles.modalButtonText}>Close</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            )}
         </KeyboardAvoidingView>
     );
 };
@@ -394,6 +334,51 @@ const styles = StyleSheet.create({
         color: '#8E8E93',
         fontStyle: 'italic',
         paddingVertical: 20,
+    },
+    secretWordContainer: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 12,
+        padding: 16,
+        marginHorizontal: 16,
+        marginVertical: 8,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    secretWordTitle: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#8E8E93',
+        marginBottom: 4,
+    },
+    secretWordText: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#007AFF',
+    },
+    avatarContainer: {
+        alignItems: 'center',
+        marginVertical: 8,
+    },
+    avatarCircle: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        backgroundColor: '#E5E5EA',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 2,
+        borderColor: '#C7C7CC',
+    },
+    avatarLabel: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: '#8E8E93',
     },
 });
 

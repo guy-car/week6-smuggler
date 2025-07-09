@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { leaveRoom, submitGuess } from '../../services/websocket';
 import { useGameStore } from '../../store/gameStore';
+import AISectionComponent from '../components/AISectionComponent';
 import ConversationHistory from '../components/ConversationHistory';
 import GameStatusIndicator from '../components/GameStatusIndicator';
 import ScoreProgressBar from '../components/ScoreProgressBar';
@@ -28,8 +29,6 @@ const DecryptorGameScreen = () => {
         score,
         player,
         roomId,
-        showCluesModal,
-        setShowCluesModal,
     } = useGameStore();
 
     const [guessInput, setGuessInput] = useState('');
@@ -54,9 +53,7 @@ const DecryptorGameScreen = () => {
         }
     };
 
-    const handleShowClues = () => {
-        setShowCluesModal(true);
-    };
+
 
     const handleQuit = () => {
         leaveRoom();
@@ -135,46 +132,18 @@ const DecryptorGameScreen = () => {
                     humansWinScore={10}
                 />
 
-                <View style={styles.controlsContainer}>
-                    <TouchableOpacity
-                        style={styles.controlButton}
-                        onPress={handleShowClues}
-                    >
-                        <Text style={styles.controlButtonText}>Previous Hints</Text>
-                    </TouchableOpacity>
-                </View>
 
-                <View style={styles.aiSection}>
-                    <Text style={styles.aiSectionTitle}>AI Thinking</Text>
-                    <View style={styles.aiThinkingBox}>
-                        <Text style={styles.aiThinkingText}>
-                            {currentTurn === 'ai' ? 'AI is analyzing the conversation...' : 'AI is waiting for the next turn...'}
-                        </Text>
-                    </View>
-                </View>
+
+                <AISectionComponent
+                    currentTurn={currentTurn}
+                    conversationHistory={conversationHistory}
+                />
 
                 <ConversationHistory
                     conversation={conversationHistory}
                     currentPlayerId={player?.id}
                 />
-                {/* Guess History & Feedback */}
-                <View style={styles.guessHistoryContainer}>
-                    <Text style={styles.guessHistoryTitle}>Your Guesses</Text>
-                    {conversationHistory.filter(turn => turn.type === 'decryptor' && turn.playerId === player?.id).length === 0 ? (
-                        <Text style={styles.noGuessesText}>No guesses yet</Text>
-                    ) : (
-                        conversationHistory
-                            .filter(turn => turn.type === 'decryptor' && turn.playerId === player?.id)
-                            .map((turn, idx) => (
-                                <View key={turn.id} style={styles.guessHistoryItem}>
-                                    <Text style={styles.guessHistoryGuess}>{turn.content}</Text>
-                                    {/* Feedback placeholder */}
-                                    <Text style={styles.guessHistoryFeedback}>-</Text>
-                                    <Text style={styles.guessHistoryTime}>{new Date(turn.timestamp).toLocaleTimeString()}</Text>
-                                </View>
-                            ))
-                    )}
-                </View>
+
             </ScrollView>
 
             <View style={styles.inputContainer}>
@@ -214,34 +183,7 @@ const DecryptorGameScreen = () => {
                 </TouchableOpacity>
             </View>
 
-            {/* Previous Hints Modal */}
-            {showCluesModal && (
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
-                        <Text style={styles.modalTitle}>Previous Hints</Text>
-                        <ScrollView style={styles.hintsList}>
-                            {previousHints.map((hint, index) => (
-                                <View key={hint.id} style={styles.hintItem}>
-                                    <Text style={styles.hintNumber}>Hint {index + 1}</Text>
-                                    <Text style={styles.hintText}>{hint.content}</Text>
-                                    <Text style={styles.hintTime}>
-                                        {new Date(hint.timestamp).toLocaleTimeString()}
-                                    </Text>
-                                </View>
-                            ))}
-                            {previousHints.length === 0 && (
-                                <Text style={styles.noHintsText}>No hints yet</Text>
-                            )}
-                        </ScrollView>
-                        <TouchableOpacity
-                            style={styles.modalButton}
-                            onPress={() => setShowCluesModal(false)}
-                        >
-                            <Text style={styles.modalButtonText}>Close</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            )}
+
         </KeyboardAvoidingView>
     );
 };
