@@ -184,15 +184,15 @@ interface GameStore {
 - [ ] Set up navigation structure and screen routing
 - [ ] Create basic UI components (buttons, inputs, cards)
 
-### Phase 2: Lobby & Room Management
-- [ ] Create LobbyScreen with create/join room options
-- [ ] Implement room creation via REST API
-- [ ] Add room listing functionality via WebSocket
-- [ ] Create RoomScreen for pre-game lobby
-- [ ] Implement player ready/unready functionality
-- [ ] Add player list display with ready status
-- [ ] Implement room joining with validation
-- [ ] Add auto-generated player names (Player 1, Player 2, etc.)
+### Phase 2: Lobby & Room Management (in progress)
+- [x] Create LobbyScreen with create/join room options
+- [x] Implement room creation via REST API
+- [x] Add room listing functionality via WebSocket
+- [x] Create RoomScreen for pre-game lobby
+- [x] Implement player ready/unready functionality
+- [x] Add player list display with ready status
+- [x] Implement room joining with validation
+- [x] Add auto-generated player names (Player 1, Player 2, etc.)
 
 ### Phase 3: Game State Management
 - [ ] Implement game state synchronization with backend
