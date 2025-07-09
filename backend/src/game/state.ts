@@ -1,4 +1,4 @@
-import { AITurn, AnalyzeRequest, GameState, InsiderTurn, OutsiderTurn, Player, RoleAssignment } from '../types';
+import { AITurn, AnalyzeRequest, DecoderTurn, EncoderTurn, GameState, Player, RoleAssignment } from '../types';
 import { fuzzyStringMatch, getMaxLevenshteinDistance } from '../utils/helpers';
 
 export class GameStateManager {
@@ -9,48 +9,49 @@ export class GameStateManager {
     private readonly LOSE_SCORE = 0;
 
     /**
-     * Create a new game state
+     * Create initial game state
      */
     public createGameState(secretWord: string, players: Player[]): GameState {
         return {
-            score: this.INITIAL_SCORE,
+            score: 5,
             currentRound: 1,
-            secretWord: secretWord.toLowerCase(),
-            conversationHistory: [], // Now uses Turn[] instead of Message[]
-            currentTurn: 'encryptor',
+            secretWord,
+            conversationHistory: [],
+            currentTurn: 'encoder',
             gameStatus: 'active'
         };
     }
 
     /**
-     * Assign roles to players based on join order
-     * First player (index 0) becomes Encryptor, second player (index 1) becomes Decryptor
+     * Assign roles to players
+     * First player (index 0) becomes Encoder, second player (index 1) becomes Decoder
      */
     public assignRoles(players: Player[]): RoleAssignment {
-        if (players.length !== 2) {
-            throw new Error('Exactly 2 players required for role assignment');
+        if (players.length < 2) {
+            throw new Error('Not enough players to assign roles');
         }
 
-        // Assign roles based on join order (first player = Encryptor, second = Decryptor)
+        // Assign roles based on join order (first player = Encoder, second = Decoder)
         return {
-            encryptor: players[0]!.id,
-            decryptor: players[1]!.id
+            encoder: players[0]!.id,
+            decoder: players[1]!.id
         };
     }
 
     /**
-     * Add an outsider turn to conversation history
+     * Add an encoder turn to conversation history
      */
-    public addOutsiderTurn(gameState: GameState, content: string): GameState {
-        const outsiderTurn: OutsiderTurn = {
-            type: 'outsider_hint',
+    public addEncoderTurn(gameState: GameState, content: string): GameState {
+        const encoderTurn: EncoderTurn = {
+            type: 'encoder',
             content,
-            turnNumber: this.getNextTurnNumber(gameState)
+            turnNumber: gameState.conversationHistory.length + 1
         };
 
         return {
             ...gameState,
-            conversationHistory: [...gameState.conversationHistory, outsiderTurn]
+            conversationHistory: [...gameState.conversationHistory, encoderTurn],
+            currentTurn: 'ai'
         };
     }
 
@@ -62,46 +63,54 @@ export class GameStateManager {
             type: 'ai_analysis',
             thinking,
             guess,
-            turnNumber: this.getNextTurnNumber(gameState)
+            turnNumber: gameState.conversationHistory.length + 1
         };
 
         return {
             ...gameState,
-            conversationHistory: [...gameState.conversationHistory, aiTurn]
+            conversationHistory: [...gameState.conversationHistory, aiTurn],
+            currentTurn: 'decoder'
         };
     }
 
     /**
-     * Add an insider turn to conversation history
+     * Add a decoder turn to conversation history
      */
-    public addInsiderTurn(gameState: GameState, guess: string): GameState {
-        const insiderTurn: InsiderTurn = {
-            type: 'insider_guess',
+    public addDecoderTurn(gameState: GameState, guess: string): GameState {
+        const decoderTurn: DecoderTurn = {
+            type: 'decoder',
             guess,
-            turnNumber: this.getNextTurnNumber(gameState)
+            turnNumber: gameState.conversationHistory.length + 1
         };
 
         return {
             ...gameState,
-            conversationHistory: [...gameState.conversationHistory, insiderTurn]
+            conversationHistory: [...gameState.conversationHistory, decoderTurn],
+            currentTurn: 'encoder'
         };
     }
 
     /**
-     * Legacy method for backward compatibility - now delegates to specific turn methods
+     * Add a turn to conversation history based on type
      */
-    public addMessage(gameState: GameState, message: any): GameState {
-        // This method is kept for backward compatibility but should be replaced
-        // with specific turn methods in new code
-        if (message.type === 'outsider_hint') {
-            return this.addOutsiderTurn(gameState, message.content);
-        } else if (message.type === 'ai_analysis') {
-            return this.addAITurn(gameState, message.thinking, message.guess);
-        } else if (message.type === 'insider_guess') {
-            return this.addInsiderTurn(gameState, message.guess);
+    public addTurn(gameState: GameState, message: { type: 'encoder' | 'decoder'; content?: string; guess?: string }): GameState {
+        if (message.type === 'encoder' && message.content) {
+            return this.addEncoderTurn(gameState, message.content);
+        } else if (message.type === 'decoder' && message.guess) {
+            return this.addDecoderTurn(gameState, message.guess);
         }
+        throw new Error(`Invalid turn type or missing required fields: ${message.type}`);
+    }
 
-        throw new Error('Invalid message type for addMessage');
+    /**
+     * Swap roles between players
+     * Encoder becomes Decoder, Decoder becomes Encoder
+     */
+    public swapRoles(roles: RoleAssignment): RoleAssignment {
+        return {
+            encoder: roles.decoder,
+            decoder: roles.encoder
+        };
     }
 
     /**
@@ -132,18 +141,7 @@ export class GameStateManager {
             ...gameState,
             currentRound: gameState.currentRound + 1,
             conversationHistory: [],
-            currentTurn: 'encryptor'
-        };
-    }
-
-    /**
-     * Switch roles between players for next round
-     * Encryptor becomes Decryptor, Decryptor becomes Encryptor
-     */
-    public switchRoles(players: Player[], roles: RoleAssignment): RoleAssignment {
-        return {
-            encryptor: roles.decryptor,
-            decryptor: roles.encryptor
+            currentTurn: 'encoder'
         };
     }
 
@@ -175,9 +173,9 @@ export class GameStateManager {
     }
 
     /**
-     * Get current turn
+     * Get current turn type
      */
-    public getCurrentTurn(gameState: GameState): 'encryptor' | 'ai' | 'decryptor' {
+    public getCurrentTurn(gameState: GameState): 'encoder' | 'ai' | 'decoder' {
         return gameState.currentTurn;
     }
 
@@ -185,7 +183,7 @@ export class GameStateManager {
      * Advance turn
      */
     public advanceTurn(gameState: GameState): GameState {
-        const turnOrder: ('encryptor' | 'ai' | 'decryptor')[] = ['encryptor', 'ai', 'decryptor'];
+        const turnOrder: ('encoder' | 'ai' | 'decoder')[] = ['encoder', 'ai', 'decoder'];
         const currentIndex = turnOrder.indexOf(gameState.currentTurn);
         const nextIndex = (currentIndex + 1) % turnOrder.length;
 
@@ -196,15 +194,23 @@ export class GameStateManager {
     }
 
     /**
-     * Check if it's a player's turn
+     * Check if it's player's turn
      */
     public isPlayerTurn(gameState: GameState, playerId: string, roles: RoleAssignment): boolean {
-        if (gameState.currentTurn === 'encryptor') {
-            return roles.encryptor === playerId;
-        } else if (gameState.currentTurn === 'decryptor') {
-            return roles.decryptor === playerId;
+        const turnOrder: ('encoder' | 'ai' | 'decoder')[] = ['encoder', 'ai', 'decoder'];
+        const currentTurnIndex = turnOrder.indexOf(gameState.currentTurn);
+
+        if (currentTurnIndex === -1) {
+            throw new Error(`Invalid turn: ${gameState.currentTurn}`);
         }
-        return false;
+
+        if (gameState.currentTurn === 'encoder') {
+            return roles.encoder === playerId;
+        } else if (gameState.currentTurn === 'decoder') {
+            return roles.decoder === playerId;
+        }
+
+        return false; // AI's turn
     }
 
     /**
@@ -215,13 +221,13 @@ export class GameStateManager {
     }
 
     /**
-     * Get player role
+     * Get player's role
      */
-    public getPlayerRole(playerId: string, roles: RoleAssignment): 'encryptor' | 'decryptor' | null {
-        if (roles.encryptor === playerId) {
-            return 'encryptor';
-        } else if (roles.decryptor === playerId) {
-            return 'decryptor';
+    public getPlayerRole(playerId: string, roles: RoleAssignment): 'encoder' | 'decoder' | null {
+        if (roles.encoder === playerId) {
+            return 'encoder';
+        } else if (roles.decoder === playerId) {
+            return 'decoder';
         }
         return null;
     }
@@ -262,7 +268,7 @@ export class GameStateManager {
         gameState: GameState,
         playerId: string,
         roles: RoleAssignment
-    ): { gameState: GameState; playerRole: 'encryptor' | 'decryptor' | null } {
+    ): { gameState: GameState; playerRole: 'encoder' | 'decoder' | null } {
         // Create a copy of the game state for the player
         const savedGameState = { ...gameState };
 
@@ -363,7 +369,7 @@ export class GameStateManager {
     public getGameStateSummary(gameState: GameState): {
         score: number;
         round: number;
-        currentTurn: 'encryptor' | 'ai' | 'decryptor';
+        currentTurn: 'encoder' | 'ai' | 'decoder';
         messageCount: number;
         gameStatus: 'waiting' | 'active' | 'ended';
     } {
@@ -373,6 +379,22 @@ export class GameStateManager {
             currentTurn: gameState.currentTurn,
             messageCount: gameState.conversationHistory.length,
             gameStatus: gameState.gameStatus
+        };
+    }
+
+    /**
+     * Get game state for a specific player
+     */
+    public getGameStateForPlayer(
+        gameState: GameState,
+        playerId: string,
+        roles: RoleAssignment
+    ): { gameState: GameState; playerRole: 'encoder' | 'decoder' | null } {
+        const playerRole = this.getPlayerRole(playerId, roles);
+
+        return {
+            gameState,
+            playerRole
         };
     }
 } 
