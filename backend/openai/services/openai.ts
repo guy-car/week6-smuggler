@@ -2,7 +2,9 @@ import OpenAI from 'openai';
 import { AIResponse, Turn } from '../types/game';
 
 export class OpenAIService {
+
     private openai: OpenAI;
+
 
     constructor() {
         this.openai = new OpenAI({

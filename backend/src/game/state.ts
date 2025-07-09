@@ -180,16 +180,47 @@ export class GameStateManager {
     }
 
     /**
-     * Advance turn
-     */
+ * Advance turn
+ */
     public advanceTurn(gameState: GameState): GameState {
-        const turnOrder: ('encoder' | 'ai' | 'decoder')[] = ['encoder', 'ai', 'decoder'];
-        const currentIndex = turnOrder.indexOf(gameState.currentTurn);
-        const nextIndex = (currentIndex + 1) % turnOrder.length;
+
+        let nextTurn: 'encryptor' | 'ai' | 'decryptor';
+
+        switch (gameState.currentTurn) {
+            case 'encryptor':
+                nextTurn = 'ai';
+                break;
+            case 'ai':
+                // AI should go to decryptor if the last non-AI turn was from encryptor
+                // AI should go to encryptor if the last non-AI turn was from decryptor
+                const lastNonAITurn = gameState.conversationHistory
+                    .reverse()
+                    .find(turn => turn.type === 'outsider_hint' || turn.type === 'insider_guess');
+
+                if (lastNonAITurn?.type === 'outsider_hint') {
+                    // Last turn was from encryptor, AI should go to decryptor
+                    nextTurn = 'decryptor';
+                } else if (lastNonAITurn?.type === 'insider_guess') {
+                    // Last turn was from decryptor, AI should go to encryptor
+                    nextTurn = 'encryptor';
+                } else {
+                    // Fallback: go to decryptor
+                    nextTurn = 'decryptor';
+                }
+                break;
+            case 'decryptor':
+                nextTurn = 'ai';
+                break;
+            default:
+                throw new Error(`Invalid current turn: ${gameState.currentTurn}`);
+        }
+
+        console.log(`[DEBUG] advanceTurn: ${gameState.currentTurn} → ${nextTurn}`);
+
 
         return {
             ...gameState,
-            currentTurn: turnOrder[nextIndex]!
+            currentTurn: nextTurn
         };
     }
 

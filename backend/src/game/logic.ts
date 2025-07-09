@@ -119,6 +119,19 @@ export class GameLogic {
                 isCorrect: true,
                 isMessage: false
             };
+        } else {
+            // Decryptor incorrect - add to conversation history as insider turn and advance turn to AI
+            const messageAdded = this.gameStateManager.addInsiderTurn(gameState, guess);
+
+            // Use the advanceTurn method for consistency with the 4-step cycle
+            const updatedGameState = this.gameStateManager.advanceTurn(messageAdded);
+
+            return {
+                newGameState: updatedGameState,
+                isCorrect: false,
+                shouldAdvanceTurn: true,
+                isMessage: true
+            };
         }
 
         // Decoder incorrect - add to conversation history as decoder turn and advance turn to AI

@@ -1,0 +1,20 @@
+# Problem
+AI response is not triggered after decryptor makes an incorrect guess. The game flow should be: encryptor → AI → decryptor → AI, but the AI only responds to encryptor messages, not decryptor guesses.
+
+# Affected Systems
+- Backend game handlers (`backend/src/socket/handlers/gameHandlers.ts`)
+- Game state management (`backend/src/game/state.ts`)
+- Turn advancement logic
+
+# Root Cause
+The issue was in the `handleAIResponse` method where the AI service was being called with incorrect parameters. The `OpenAIService.analyzeConversation` method expects only one parameter (`turns: Turn[]`), but the code was trying to pass a second `secretWord` parameter, causing the method to fail silently.
+
+# Solution
+Fixed the AI service call to pass only the conversation history parameter. Added comprehensive debugging logs to track turn state changes and AI service calls to prevent similar issues in the future.
+
+# Debugging Process
+1. Added logging to track turn state changes in both encryptor and decryptor handlers
+2. Added debugging to `handleAIResponse` to track when AI service is called and what it returns
+3. Identified parameter mismatch in AI service call
+4. Fixed the AI service call to use correct parameters
+5. Added comprehensive error logging to prevent silent failures 
