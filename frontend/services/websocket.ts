@@ -75,18 +75,50 @@ export function getSocket() {
       useGameStore.getState().setPlayers(updatedPlayers);
     });
 
-    socket.on('room:playerReady', (data: { playerId: string; ready: boolean }) => {
-      console.log('[WebSocket] Player ready:', data.playerId, data.ready);
-      const currentPlayers = useGameStore.getState().players;
-      const updatedPlayers = currentPlayers.map(p =>
-        p.id === data.playerId ? { ...p, ready: data.ready } : p
-      );
-      useGameStore.getState().setPlayers(updatedPlayers);
+    socket.on('player_ready', (data: { roomId: string; playerId: string; players: any[] }) => {
+      console.log('[WebSocket] Player ready:', data.playerId, data.players);
+      // Update players list with the latest state from backend
+      useGameStore.getState().setPlayers(data.players);
 
-      // Update current player's ready status
+      // Update current player's ready status based on the updated players list
       const currentPlayer = useGameStore.getState().player;
-      if (currentPlayer && currentPlayer.id === data.playerId) {
-        useGameStore.getState().setIsReady(data.ready);
+      if (currentPlayer) {
+        const updatedPlayer = data.players.find(p => p.id === currentPlayer.id);
+        if (updatedPlayer) {
+          useGameStore.getState().setIsReady(updatedPlayer.ready);
+        }
+      }
+    });
+
+    // Add listeners for player_ready_success and player_ready_error
+    socket.on('player_ready_success', (data: { roomId: string; players: any[] }) => {
+      console.log('[WebSocket] Player ready success:', data);
+      // Update players list with the latest state from backend
+      useGameStore.getState().setPlayers(data.players);
+
+      // Update current player's ready status based on the updated players list
+      const currentPlayer = useGameStore.getState().player;
+      if (currentPlayer) {
+        const updatedPlayer = data.players.find(p => p.id === currentPlayer.id);
+        if (updatedPlayer) {
+          useGameStore.getState().setIsReady(updatedPlayer.ready);
+        }
+      }
+    });
+    socket.on('player_ready_error', (data: { message: string }) => {
+      useGameStore.getState().setError(data.message);
+    });
+
+    // Add listener for room_ready event (when both players are ready)
+    socket.on('room_ready', (data: { roomId: string; players: any[] }) => {
+      console.log('[WebSocket] Room ready, starting game automatically:', data.roomId);
+      // Only the first player should start the game to prevent double starts
+      const currentPlayer = useGameStore.getState().player;
+      if (currentPlayer && data.players.length > 0 && currentPlayer.id === data.players[0].id) {
+        const roomId = useGameStore.getState().roomId;
+        if (roomId && socket) {
+          socket!.emit('start_game', { roomId });
+        }
       }
     });
 
@@ -104,8 +136,12 @@ export function getSocket() {
 
       // Set current player's actual role from backend
       const currentPlayer = useGameStore.getState().player;
-      if (currentPlayer && data.roles[currentPlayer.id]) {
-        useGameStore.getState().setPlayerRole(data.roles[currentPlayer.id]);
+      if (currentPlayer) {
+        // Find the player in the updated players list to get their role
+        const updatedPlayer = data.players.find(p => p.id === currentPlayer.id);
+        if (updatedPlayer && updatedPlayer.role) {
+          useGameStore.getState().setPlayerRole(updatedPlayer.role);
+        }
       }
 
       // Navigate to appropriate game screen
@@ -125,8 +161,12 @@ export function getSocket() {
 
       // Set current player's role
       const currentPlayer = useGameStore.getState().player;
-      if (currentPlayer && data.roles[currentPlayer.id]) {
-        useGameStore.getState().setPlayerRole(data.roles[currentPlayer.id]);
+      if (currentPlayer) {
+        // Find the player in the updated players list to get their role
+        const updatedPlayer = data.players.find(p => p.id === currentPlayer.id);
+        if (updatedPlayer && updatedPlayer.role) {
+          useGameStore.getState().setPlayerRole(updatedPlayer.role);
+        }
       }
 
       // Navigate to appropriate game screen
@@ -236,6 +276,26 @@ export function getSocket() {
       console.log('[WebSocket] Player joined:', data.player);
       useGameStore.getState().setPlayers(data.players);
     });
+
+    // Leave room events
+    socket.on('leave_room_success', (data: { roomId: string; playerId: string }) => {
+      console.log('[WebSocket] Leave room success:', data);
+      useGameStore.getState().setRoomId(null);
+      useGameStore.getState().setPlayers([]);
+      useGameStore.getState().setCurrentScreen('lobby');
+      useGameStore.getState().reset();
+      // Note: Navigation is now handled by the component itself for better UX
+    });
+
+    socket.on('leave_room_error', (data: { roomId: string; error: string }) => {
+      console.error('[WebSocket] Leave room error:', data.error);
+      useGameStore.getState().setError(data.error);
+    });
+
+    socket.on('player_left', (data: { roomId: string; playerId: string; players: any[] }) => {
+      console.log('[WebSocket] Player left:', data.playerId);
+      useGameStore.getState().setPlayers(data.players);
+    });
   }
   return socket;
 }
@@ -275,13 +335,31 @@ export function joinRoom(roomId: string, playerName: string = "Player") {
 }
 
 export function leaveRoom() {
+  console.log('[WebSocket] leaveRoom() called');
   const socket = getSocket();
-  socket.emit('room:leave');
+  const roomId = useGameStore.getState().roomId;
+  console.log('[WebSocket] Current roomId:', roomId);
+  console.log('[WebSocket] Socket connected:', socket?.connected);
+
+  if (!roomId) {
+    console.error('[WebSocket] No room ID found');
+    useGameStore.getState().setError('No room ID found');
+    return;
+  }
+
+  console.log('[WebSocket] Emitting room:leave with roomId:', roomId);
+  socket.emit('room:leave', { roomId });
+  console.log('[WebSocket] room:leave event emitted');
 }
 
 export function setPlayerReady(ready: boolean) {
   const socket = getSocket();
-  socket.emit('room:ready', { ready });
+  const roomId = useGameStore.getState().roomId;
+  if (!roomId) {
+    useGameStore.getState().setError('No room ID found');
+    return;
+  }
+  socket.emit('player_ready', { roomId, ready });
 }
 
 export function getAvailableRooms() {

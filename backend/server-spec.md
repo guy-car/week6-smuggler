@@ -100,9 +100,11 @@ backend/
 
 ### Room Management
 - `join_room` - Join a specific room
-  - **Data**: `{ roomId: string, playerId: string }`
-- `player_ready` - Mark player as ready
-  - **Data**: `{ roomId: string, playerId: string, ready: boolean }`
+  - **Data**: `{ roomId: string, playerName: string }`
+- `player_ready` - Mark player as ready/unready
+  - **Data**: `{ roomId: string, ready?: boolean }` (ready defaults to true)
+- `room:leave` - Leave a room voluntarily
+  - **Data**: `{ roomId: string }`
 - `list_rooms` - Get available rooms list
 - `check_room_availability` - Check if room exists and has space
   - **Data**: `{ roomId: string }`
@@ -111,9 +113,27 @@ backend/
 - `start_game` - Start a new game in a room
   - **Data**: `{ roomId: string }`
 - `send_message` - Send a message in the game
-  - **Data**: `{ roomId: string, content: string, senderId: string }`
+  - **Data**: `{ roomId: string, message: string }`
 - `player_guess` - Submit a word guess
-  - **Data**: `{ roomId: string, guess: string, playerId: string }`
+  - **Data**: `{ roomId: string, guess: string }`
+
+### Response Events
+- `join_room_success` - Successfully joined a room
+  - **Data**: `{ roomId: string, players: Player[], playerId: string }`
+- `join_room_error` - Failed to join a room
+  - **Data**: `{ roomId: string, error: string }`
+- `player_ready_success` - Successfully set ready status
+  - **Data**: `{ roomId: string, players: Player[] }`
+- `player_ready_error` - Failed to set ready status
+  - **Data**: `{ roomId: string, error: string }`
+- `room_ready` - Room is ready to start game
+  - **Data**: `{ roomId: string, players: Player[] }`
+- `leave_room_success` - Successfully left a room
+  - **Data**: `{ roomId: string, playerId: string }`
+- `leave_room_error` - Failed to leave a room
+  - **Data**: `{ roomId: string, error: string }`
+- `room_list` - Available rooms list
+  - **Data**: `{ rooms: RoomInfo[] }`
 
 ## Data Models
 
@@ -148,6 +168,16 @@ interface GameState {
   conversationHistory: Turn[];  // Game conversation
   currentTurn: 'encryptor' | 'ai' | 'decryptor';  // Whose turn
   gameStatus: 'waiting' | 'active' | 'ended';     // Game status
+}
+```
+
+### Room Info
+```typescript
+interface RoomInfo {
+  id: string;           // Room identifier
+  playerCount: number;  // Current number of players
+  maxPlayers: number;   // Maximum players allowed
+  createdAt: Date;      // Room creation timestamp
 }
 ```
 
@@ -201,16 +231,38 @@ interface InsiderTurn {
 - **OpenAI Module**: Integration with OpenAI API (separate module)
 - **Turn-based Analysis**: Structured conversation analysis using Turn types
 
+## Ready-Up Mechanic
+
+The game implements a ready-up system where both players must mark themselves as ready before the game can start. This ensures both players are prepared and prevents premature game starts.
+
+### Ready Status Management
+- Players can toggle their ready status using the `player_ready` event
+- The `ready` parameter is optional and defaults to `true`
+- Players can set themselves as not ready by sending `ready: false`
+- All players in the room are notified when a player's ready status changes
+
+### Room Ready State
+- A room is considered ready when all players have marked themselves as ready
+- When a room becomes ready, all players receive a `room_ready` event
+- The game can only be started when the room is in a ready state
+- If a player becomes unready, the room is no longer ready and game start is prevented
+
+### Automatic Game Start
+- When both players are ready, the first player to receive the `room_ready` event can start the game
+- This prevents duplicate game starts and ensures only one game instance is created
+- The game start process includes role assignment and word selection
+
 ## Game Flow
 
 1. **Room Creation**: Player creates room via REST API
 2. **Room Joining**: Players join via WebSocket
-3. **Player Ready**: Players mark themselves ready
-4. **Game Start**: When all players ready, game begins
-5. **Role Assignment**: Players assigned encryptor/decryptor roles
-6. **Word Selection**: Secret word chosen from word list
-7. **Turn-based Play**: Alternating turns between encryptor, AI, decryptor
-8. **Game End**: When decryptor guesses correctly or round limit reached
+3. **Player Ready**: Players mark themselves ready using the ready-up mechanic
+4. **Room Ready**: When all players ready, room becomes ready state
+5. **Game Start**: First player can start game when room is ready
+6. **Role Assignment**: Players assigned encryptor/decryptor roles
+7. **Word Selection**: Secret word chosen from word list
+8. **Turn-based Play**: Alternating turns between encryptor, AI, decryptor
+9. **Game End**: When decryptor guesses correctly or round limit reached
 
 ## Error Handling
 

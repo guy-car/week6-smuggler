@@ -158,9 +158,8 @@ export const useGameStore = create<GameState>((set) => ({
   setShowSecretModal: (show) => set({ showSecretModal: show }),
   setShowQuitConfirm: (show) => set({ showQuitConfirm: show }),
   setAvailableRooms: (rooms) => set({ availableRooms: rooms }),
-  reset: () => set({
-    connected: false,
-    socketId: null,
+  reset: () => set((state) => ({
+    // Do NOT reset connected or socketId
     player: null,
     playerRole: null,
     roomId: null,
@@ -181,5 +180,8 @@ export const useGameStore = create<GameState>((set) => ({
     showSecretModal: false,
     showQuitConfirm: false,
     availableRooms: [],
-  }),
+    // Keep connected and socketId as they are
+    connected: state.connected,
+    socketId: state.socketId,
+  })),
 })); 

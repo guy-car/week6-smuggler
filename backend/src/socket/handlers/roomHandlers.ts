@@ -1,12 +1,15 @@
 import { Socket } from 'socket.io';
 import { RoomManager } from '../../rooms/manager';
 import { Player } from '../../types';
+import { LobbyHandlers } from './lobbyHandlers';
 
 export class RoomHandlers {
     private roomManager: RoomManager;
+    private lobbyHandlers: LobbyHandlers;
 
-    constructor(roomManager: RoomManager) {
+    constructor(roomManager: RoomManager, lobbyHandlers: LobbyHandlers) {
         this.roomManager = roomManager;
+        this.lobbyHandlers = lobbyHandlers;
     }
 
     /**
@@ -92,22 +95,22 @@ export class RoomHandlers {
     /**
      * Handle player_ready event
      */
-    public handlePlayerReady = (socket: Socket, data: { roomId: string }) => {
+    public handlePlayerReady = (socket: Socket, data: { roomId: string; ready?: boolean }) => {
         try {
-            const { roomId } = data;
+            const { roomId, ready = true } = data;
 
             if (!roomId) {
                 socket.emit('error', { message: 'Room ID is required' });
                 return;
             }
 
-            // Set player as ready
-            const success = this.roomManager.setPlayerReady(roomId, socket.id);
+            // Set player ready status
+            const success = this.roomManager.setPlayerReadyStatus(roomId, socket.id, ready);
 
             if (!success) {
                 socket.emit('player_ready_error', {
                     roomId,
-                    error: 'Failed to set player ready'
+                    error: 'Failed to set player ready status'
                 });
                 return;
             }
@@ -145,7 +148,7 @@ export class RoomHandlers {
                 });
             }
 
-            console.log(`Player ${socket.id} is ready in room ${roomId}`);
+            console.log(`Player ${socket.id} ready status set to ${ready} in room ${roomId}`);
         } catch (error) {
             console.error('Error in handlePlayerReady:', error);
             socket.emit('error', { message: 'Internal server error' });
@@ -179,6 +182,74 @@ export class RoomHandlers {
             }
         } catch (error) {
             console.error('Error in handleDisconnect:', error);
+        }
+    };
+
+    /**
+     * Handle room:leave event - player leaves room voluntarily
+     */
+    public handleLeaveRoom = (socket: Socket, data: { roomId: string }) => {
+        console.log(`[Backend] handleLeaveRoom called for socket ${socket.id} with data:`, data);
+        try {
+            const { roomId } = data;
+
+            if (!roomId) {
+                socket.emit('error', { message: 'Room ID is required' });
+                return;
+            }
+
+            const room = this.roomManager.getRoom(roomId);
+            if (!room) {
+                socket.emit('leave_room_error', {
+                    roomId,
+                    error: 'Room not found'
+                });
+                return;
+            }
+
+            // Find the player in the room
+            const player = room.players.find(p => p.socketId === socket.id);
+            if (!player) {
+                socket.emit('leave_room_error', {
+                    roomId,
+                    error: 'Player not found in room'
+                });
+                return;
+            }
+
+            // Remove player from room
+            const success = this.roomManager.removePlayer(roomId, player.id);
+            if (!success) {
+                socket.emit('leave_room_error', {
+                    roomId,
+                    error: 'Failed to leave room'
+                });
+                return;
+            }
+
+            // Leave socket room
+            socket.leave(roomId);
+
+            // Automatically add player back to lobby
+            this.lobbyHandlers.handleEnterLobby(socket);
+
+            // Emit success to the leaving player
+            socket.emit('leave_room_success', {
+                roomId,
+                playerId: player.id
+            });
+
+            // Notify other players in the room
+            socket.to(roomId).emit('player_left', {
+                roomId,
+                playerId: player.id,
+                players: room.players.filter(p => p.id !== player.id)
+            });
+
+            console.log(`Player ${player.name} (${socket.id}) left room ${roomId} and returned to lobby`);
+        } catch (error) {
+            console.error('Error in handleLeaveRoom:', error);
+            socket.emit('error', { message: 'Internal server error' });
         }
     };
 

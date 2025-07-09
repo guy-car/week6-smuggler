@@ -19,8 +19,8 @@ const PORT = process.env['PORT'] || 3000;
 
 // Initialize room management
 const roomManager = new RoomManager();
-const roomHandlers = new RoomHandlers(roomManager);
 const lobbyHandlers = new LobbyHandlers(roomManager);
+const roomHandlers = new RoomHandlers(roomManager, lobbyHandlers);
 
 // Set up room change callback for lobby broadcasting
 roomManager.setRoomChangeCallback(() => {
@@ -92,6 +92,7 @@ io.on('connection', (socket) => {
     // Room management events
     socket.on('join_room', (data) => roomHandlers.handleJoinRoom(socket, data));
     socket.on('player_ready', (data) => roomHandlers.handlePlayerReady(socket, data));
+    socket.on('room:leave', (data) => roomHandlers.handleLeaveRoom(socket, data));
     socket.on('list_rooms', () => roomHandlers.handleListRooms(socket));
     socket.on('check_room_availability', (data) => roomHandlers.handleCheckRoomAvailability(socket, data));
 

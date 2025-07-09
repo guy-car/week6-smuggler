@@ -1,4 +1,3 @@
-import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
     Alert,
@@ -18,7 +17,6 @@ import GameStatusIndicator from '../components/GameStatusIndicator';
 import ScoreProgressBar from '../components/ScoreProgressBar';
 
 const EncryptorGameScreen = () => {
-    const router = useRouter();
     const {
         conversationHistory,
         currentTurn,
@@ -79,7 +77,11 @@ const EncryptorGameScreen = () => {
                     style: 'destructive',
                     onPress: () => {
                         leaveRoom();
-                        router.replace('../lobby');
+                        // Use state-based navigation to return to lobby
+                        useGameStore.getState().setCurrentScreen('lobby');
+                        useGameStore.getState().setRoomId(null);
+                        useGameStore.getState().setPlayers([]);
+                        useGameStore.getState().reset();
                     },
                 },
             ]

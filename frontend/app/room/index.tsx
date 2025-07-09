@@ -1,11 +1,9 @@
-import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Button, FlatList, StyleSheet, Text, View } from 'react-native';
 import { leaveRoom, setPlayerReady, startGame } from '../../services/websocket';
 import { useGameStore } from '../../store/gameStore';
 
 const RoomScreen = () => {
-    const router = useRouter();
     const roomId = useGameStore((s) => s.roomId);
     const players = useGameStore((s) => s.players);
     const player = useGameStore((s) => s.player);
@@ -57,21 +55,20 @@ const RoomScreen = () => {
     };
 
     const handleLeave = () => {
-        Alert.alert(
-            'Leave Room',
-            'Are you sure you want to leave this room?',
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Leave',
-                    style: 'destructive',
-                    onPress: () => {
-                        leaveRoom();
-                        router.replace('../lobby');
-                    }
-                }
-            ]
-        );
+        console.log('[Room] Leave button clicked - immediate leave');
+        try {
+            leaveRoom();
+            console.log('[Room] leaveRoom() called successfully');
+        } catch (error) {
+            console.error('[Room] Error calling leaveRoom():', error);
+        }
+        console.log('[Room] Setting currentScreen to lobby');
+        // Use state-based navigation to return to lobby
+        useGameStore.getState().setCurrentScreen('lobby');
+        useGameStore.getState().setRoomId(null);
+        useGameStore.getState().setPlayers([]);
+        useGameStore.getState().reset();
+        console.log('[Room] Navigation complete');
     };
 
     return (

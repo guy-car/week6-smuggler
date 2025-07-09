@@ -1,11 +1,9 @@
-import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Button, FlatList, Text, TextInput, View } from 'react-native';
 import { createRoom, getAvailableRooms, getSocket, joinRoom } from '../../services/websocket';
 import { useGameStore } from '../../store/gameStore';
 
 const LobbyScreen = () => {
-    const router = useRouter();
     const availableRooms = useGameStore((s) => s.availableRooms);
     const connected = useGameStore((s) => s.connected);
     const [playerName, setPlayerName] = useState('');
@@ -35,7 +33,7 @@ const LobbyScreen = () => {
         setError(null);
         try {
             await createRoom(playerName || `Player${Math.floor(Math.random() * 1000)}`);
-            router.push('../room');
+            // Navigation will be handled by WebSocket events when room is joined
         } catch (e: any) {
             setError(e.message);
         } finally {
@@ -50,7 +48,7 @@ const LobbyScreen = () => {
         }
         setError(null);
         joinRoom(roomIdInput, playerName || `Player${Math.floor(Math.random() * 1000)}`);
-        router.push('../room');
+        // Navigation will be handled by WebSocket events when room is joined
     };
 
     return (

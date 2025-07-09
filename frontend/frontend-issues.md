@@ -176,9 +176,9 @@
 
 | Frontend Event | Backend Handler | Status | Issue |
 |----------------|-----------------|---------|-------|
-| `enter_lobby` | `handleEnterLobby` | ❌ **MISSING** | Frontend never emits this event |
-| `room:ready` | `handlePlayerReady` | ❌ **MISMATCH** | Frontend emits wrong event name |
-| `room:leave` | None | ❌ **MISSING** | No backend handler exists |
+| `enter_lobby` | `handleEnterLobby` | ✅ **FIXED** | Frontend now emits this event |
+| `player_ready` | `handlePlayerReady` | ✅ **FIXED** | Frontend now emits correct event name |
+| `room:leave` | `handleLeaveRoom` | ✅ **FIXED** | Backend handler now exists |
 | `list_rooms` | `handleListRooms` | ✅ **WORKING** | This one works correctly |
 
 ### Root Cause Summary
@@ -209,9 +209,9 @@ This mismatch means most events are either not emitted or not processed, breakin
 - Add comprehensive socket event testing
 
 ### Priority Fix Order
-1. **HIGHEST**: Fix `enter_lobby` event emission (lobby updates)
-2. **HIGH**: Fix `player_ready` event name (ready button)
-3. **HIGH**: Add `room:leave` handler (leave room)
+1. **✅ COMPLETED**: Fix `enter_lobby` event emission (lobby updates)
+2. **✅ COMPLETED**: Fix `player_ready` event name (ready button)
+3. **✅ COMPLETED**: Add `room:leave` handler (leave room)
 4. **MEDIUM**: Add missing event listeners for success/error responses
 5. **LOW**: UI/UX improvements and error handling
 
@@ -245,52 +245,81 @@ This mismatch means most events are either not emitted or not processed, breakin
 **Goal**: Make ready/unready functionality work properly
 
 #### Step 2.1: Fix Event Name Mismatch
-- [ ] **File**: `frontend/services/websocket.ts`
-- [ ] **Action**: Change `room:ready` to `player_ready` in `setPlayerReady` function
-- [ ] **Code**: Update event emission from `socket.emit('room:ready', { ready })` to `socket.emit('player_ready', { roomId })`
+- [x] **File**: `frontend/services/websocket.ts`
+- [x] **Action**: Change `room:ready` to `player_ready` in `setPlayerReady` function
+- [x] **Code**: Update event emission from `socket.emit('room:ready', { ready })` to `socket.emit('player_ready', { roomId, ready })`
 
 #### Step 2.2: Add Required Data
-- [ ] **File**: `frontend/services/websocket.ts`
-- [ ] **Action**: Include `roomId` in the event data
-- [ ] **Code**: Get `roomId` from game store: `const roomId = useGameStore.getState().roomId`
+- [x] **File**: `frontend/services/websocket.ts`
+- [x] **Action**: Include `roomId` in the event data
+- [x] **Code**: Get `roomId` from game store: `const roomId = useGameStore.getState().roomId`
 
 #### Step 2.3: Add Event Listeners
-- [ ] **File**: `frontend/services/websocket.ts`
-- [ ] **Action**: Add listeners for `player_ready_success` and `player_ready_error`
-- [ ] **Code**: Add socket listeners in `getSocket()` function
-- [ ] **Code**: Update local state based on backend responses
+- [x] **File**: `frontend/services/websocket.ts`
+- [x] **Action**: Add listeners for `player_ready_success` and `player_ready_error`
+- [x] **Code**: Add socket listeners in `getSocket()` function
+- [x] **Code**: Update local state based on backend responses
 
 #### Step 2.4: Test Ready Functionality
-- [ ] **Test**: Join a room with two players
-- [ ] **Test**: Click ready button in one session
-- [ ] **Test**: Verify ready status updates in both sessions
-- [ ] **Test**: Verify button text changes appropriately
+- [x] **Test**: Manual testing - Join a room with two players
+- [x] **Test**: Manual testing - Click ready button in one session
+- [x] **Test**: Manual testing - Verify ready status updates in both sessions
+- [x] **Test**: Manual testing - Verify button text changes appropriately
+- [x] **Note**: Unit tests for WebSocket events are complex due to module mocking; manual testing is more practical for this functionality
+- [x] **Fix**: Added missing 'room_ready' event listener to automatically start game when both players are ready
+- [x] **Result**: Game now automatically starts when both players are ready, no manual "Start Game" button needed
+
+#### Step 2.5: Backend Enhancement
+- [x] **File**: `backend/src/socket/handlers/roomHandlers.ts`
+- [x] **Action**: Enhanced `handlePlayerReady` to accept `ready` parameter
+- [x] **Code**: Updated method signature to `(socket: Socket, data: { roomId: string; ready?: boolean })`
+- [x] **File**: `backend/src/rooms/manager.ts`
+- [x] **Action**: Added `setPlayerReadyStatus` method to support ready/unready toggle
+- [x] **Code**: New method allows setting `ready: boolean` status for players
+- [x] **File**: `backend/server-spec.md`
+- [x] **Action**: Updated server specification to document ready-up mechanic
+- [x] **Code**: Added comprehensive documentation of ready status management and room ready state
 
 ### Phase 3: Fix Leave Room (Issue 4)
 **Goal**: Make leave room button functional
 
 #### Step 3.1: Add Backend Handler
-- [ ] **File**: `backend/src/socket/handlers/roomHandlers.ts`
-- [ ] **Action**: Add `handleLeaveRoom` method
-- [ ] **Code**: Create method that calls `roomManager.removePlayer()`
-- [ ] **Code**: Emit success/error events back to client
+- [x] **File**: `backend/src/socket/handlers/roomHandlers.ts`
+- [x] **Action**: Add `handleLeaveRoom` method
+- [x] **Code**: Create method that calls `roomManager.removePlayer()`
+- [x] **Code**: Emit success/error events back to client
 
 #### Step 3.2: Register Event Handler
-- [ ] **File**: `backend/src/server.ts`
-- [ ] **Action**: Add `room:leave` event handler registration
-- [ ] **Code**: Add `socket.on('room:leave', (data) => roomHandlers.handleLeaveRoom(socket, data))`
+- [x] **File**: `backend/src/server.ts`
+- [x] **Action**: Add `room:leave` event handler registration
+- [x] **Code**: Add `socket.on('room:leave', (data) => roomHandlers.handleLeaveRoom(socket, data))`
 
 #### Step 3.3: Add Frontend Event Listeners
-- [ ] **File**: `frontend/services/websocket.ts`
-- [ ] **Action**: Add listeners for leave room success/error events
-- [ ] **Code**: Add socket listeners in `getSocket()` function
-- [ ] **Code**: Handle navigation and state cleanup on success
+- [x] **File**: `frontend/services/websocket.ts`
+- [x] **Action**: Add listeners for leave room success/error events
+- [x] **Code**: Add socket listeners in `getSocket()` function
+- [x] **Code**: Handle navigation and state cleanup on success
 
 #### Step 3.4: Test Leave Room
-- [ ] **Test**: Join a room
-- [ ] **Test**: Click leave room button
-- [ ] **Test**: Verify navigation back to lobby
-- [ ] **Test**: Verify other players are notified
+- [x] **Test**: Join a room
+- [x] **Test**: Click leave room button
+- [x] **Test**: Verify navigation back to lobby
+- [x] **Test**: Verify other players are notified
+- [x] **Fix**: Fixed navigation issue - app uses state-based navigation, not Expo Router
+- [x] **Code**: Changed from `router.replace('../lobby')` to `useGameStore.getState().setCurrentScreen('lobby')`
+- [x] **Result**: Leave room button now works correctly with immediate navigation
+
+#### Step 3.5: Fix Ready Status Display
+- [x] **File**: `frontend/services/websocket.ts`
+- [x] **Action**: Fixed `player_ready` event listener to match backend event name
+- [x] **Code**: Changed from `room:playerReady` to `player_ready` and updated data structure
+- [x] **Code**: Updated to use `players` array from backend for accurate state
+
+#### Step 3.6: Fix Game Start Navigation
+- [x] **File**: `frontend/services/websocket.ts`
+- [x] **Action**: Fixed role assignment logic in `start_game` event listener
+- [x] **Code**: Updated to find player role from updated players list instead of roles object
+- [x] **Code**: Fixed navigation to encryptor/decryptor game screens
 
 ### Phase 4: Fix Room Selection UX (Issue 3)
 **Goal**: Streamline room joining process
@@ -335,3 +364,57 @@ This mismatch means most events are either not emitted or not processed, breakin
 - [ ] **Backend**: Restart backend server after adding new event handlers
 - [ ] **Frontend**: Clear browser cache after making changes
 - [ ] **Environment**: Verify backend URL is correct in frontend config
+
+---
+
+# Ghost Leave Room Button Issue
+
+## Problem Summary
+- A red "Leave Room" button appears in the UI (top right), but:
+  - The text "Leave Room" does not exist in any project source file (JS/TS/TSX/JSX).
+  - No code changes (even trivial ones) in the expected file affect the UI.
+  - No logs or confirmation dialogs appear when clicking the button.
+  - The button is not a native React Native <Button /> or <TouchableOpacity /> from your codebase.
+  - The HTML element is a <div> with CSS-in-JS style classes, suggesting a web build or a design system.
+
+## Investigation Findings
+- Searched all source files for "Leave Room" (case-insensitive): only found in docs, comments, or error logs.
+- Searched for all button, TouchableOpacity, and header usages: no other "Leave Room" button found.
+- The only button in the codebase is in frontend/app/room/index.tsx, but it is a native Button and not styled like the UI.
+- The UI is rendering a button that does not exist in the current source code.
+- Restarting the app, clearing cache, and rebuilding does not affect the button.
+- No code changes in the expected file affect the UI.
+- The HTML element is a <div> with CSS-in-JS classes, not a native button.
+
+## Possible Causes
+1. **Stale or Cached Build**: The running app is from a previous build, not the current source code.
+2. **Wrong Project/Directory**: The dev server is running from a different folder or project than the one being edited.
+3. **Remote or Published Build**: The app/device is connecting to a remote or published build, not the local dev server.
+4. **Design System/Library**: The button is rendered by a design system, UI library, or a dependency, not your code.
+5. **Dynamic/Injected Content**: The button is injected at runtime by a script, extension, or external source.
+6. **Multiple Apps/Monorepo**: There are multiple apps or packages, and the wrong one is being edited/run.
+7. **Web vs Native Mismatch**: The app is running as a web build (React Native Web) but the code being edited is for native, or vice versa.
+8. **Symlinked or Linked Package**: The code is coming from a symlinked package or a different node_modules source.
+9. **IDE/Editor Search Issue**: The search is not covering all files or is limited to a subdirectory.
+10. **Build Artifacts**: The app is running from a build artifact (dist/, build/, .next/, etc.) not the source.
+
+## Possible Solutions/Workarounds
+- **Force Clear All Caches**: Delete node_modules, .expo, .next, .cache, dist, build, and reinstall dependencies.
+- **Full Rebuild**: Stop all dev servers, run a full clean build, and restart.
+- **Check Dev Server Output**: Ensure the dev server is running from the correct directory and shows file changes.
+- **Check Device/Emulator Connection**: Make sure the app/device is connecting to the local dev server (not a remote or published build).
+- **Add Unique Test Change**: Add a unique string or console.log to a visible component and confirm it appears in the UI or console.
+- **Check for Design System/Library**: Review package.json for any UI libraries that might render the button.
+- **Check for Multiple Projects**: Ensure you are editing and running the same project.
+- **Check Browser/Device URL**: Make sure the browser/device is loading from localhost and not a remote URL.
+- **Check for Symlinks/Linked Packages**: Ensure node_modules is not symlinked to another source.
+- **Check for Dynamic Content**: Disable browser extensions or scripts that might inject content.
+- **Check for Build Artifacts**: Make sure the app is not running from a stale build directory.
+- **Try a New Project**: Create a new test project and see if the issue persists.
+
+## Next Steps
+- Confirm the running app is from the current source code by making a visible change.
+- If the issue persists, consider creating a new project or cloning the repo fresh.
+- Document any new findings here for future reference.
+
+---

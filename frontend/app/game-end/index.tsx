@@ -1,4 +1,3 @@
-import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
@@ -11,7 +10,6 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import { useGameStore } from '../../store/gameStore';
 
 const GameEndScreen = () => {
-    const router = useRouter();
     const {
         score,
         round,
@@ -47,7 +45,8 @@ const GameEndScreen = () => {
     const handleReturnToLobby = () => {
         setIsNavigating(true);
         reset();
-        router.replace('../lobby');
+        // Use state-based navigation to return to lobby
+        useGameStore.getState().setCurrentScreen('lobby');
     };
 
     const handleReturnNow = () => {
