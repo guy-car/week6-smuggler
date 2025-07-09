@@ -29,7 +29,7 @@ roomManager.setRoomChangeCallback(() => {
 
 // CORS configuration for Expo client
 const corsOptions = {
-    origin: 'http://localhost:8081',
+    origin: process.env['BACKEND_CORS_ORIGIN'] || 'http://localhost:8081',
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
@@ -72,7 +72,7 @@ app.get('/api/health', (_req: express.Request, res: express.Response) => {
 // Socket.IO setup
 const io = new Server(server, {
     cors: {
-        origin: "http://localhost:8081",
+        origin: process.env['BACKEND_CORS_ORIGIN'] || "http://localhost:8081",
         methods: ["GET", "POST"],
         credentials: true
     }
@@ -118,7 +118,7 @@ if (require.main === module) {
     // Start server
     server.listen(PORT, () => {
         console.log(`🚀 Backend server running on http://localhost:${PORT}`);
-        console.log(`📱 Connect your React Native app to: http://localhost:${PORT}`);
+        console.log(`📱 Mobile app should connect to: ${process.env['EXPO_PUBLIC_BACKEND_URL'] || `http://localhost:${PORT}`}`);
         console.log(`🔌 Socket.IO server ready for WebSocket connections`);
         console.log(`🌍 Environment: ${process.env['NODE_ENV'] || 'development'}`);
     });

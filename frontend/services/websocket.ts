@@ -4,13 +4,19 @@ import { useGameStore } from '../store/gameStore';
 // You can use an environment variable or hardcode for now
 const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'http://localhost:3000';
 
+// Debug logging
+console.log('[WebSocket] Attempting to connect to:', BACKEND_URL);
+
 let socket: ReturnType<typeof io> | null = null;
 
 export function getSocket() {
   if (!socket) {
+    console.log('[WebSocket] Creating new socket connection to:', BACKEND_URL);
     socket = io(BACKEND_URL, {
       transports: ['websocket'],
       autoConnect: true,
+      timeout: 10000, // 10 second timeout
+      forceNew: true
     });
 
     // Connection events
@@ -28,6 +34,14 @@ export function getSocket() {
 
     socket.on('connect_error', (err: any) => {
       console.error('[WebSocket] Connection error:', err);
+      console.error('[WebSocket] Error details:', {
+        message: err.message,
+        description: err.description,
+        context: err.context,
+        type: err.type,
+        stack: err.stack
+      });
+      console.error('[WebSocket] Full error object:', JSON.stringify(err, null, 2));
       useGameStore.getState().setConnected(false);
       useGameStore.getState().setSocketId(null);
     });
