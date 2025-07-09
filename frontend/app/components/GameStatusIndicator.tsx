@@ -29,11 +29,11 @@ const GameStatusIndicator: React.FC<GameStatusIndicatorProps> = ({
                 return 'Waiting for players...';
             case 'active':
                 if (currentTurn === 'encryptor') {
-                    return playerRole === 'encryptor' ? 'Your turn - give a hint!' : 'Encryptor is thinking...';
+                    return playerRole === 'encryptor' ? 'Your turn - give a hint!' : 'Encryptor turn';
                 } else if (currentTurn === 'ai') {
-                    return 'AI is thinking...';
+                    return 'AI turn';
                 } else if (currentTurn === 'decryptor') {
-                    return playerRole === 'decryptor' ? 'Your turn - make a guess!' : 'Decryptor is thinking...';
+                    return playerRole === 'decryptor' ? 'Your turn - make a guess!' : 'Decryptor turn';
                 } else {
                     return 'Game in progress...';
                 }
