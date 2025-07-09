@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Button, FlatList, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Button, FlatList, ImageBackground, SafeAreaView, Text, TextInput, View } from 'react-native';
+import lobbyBackground from '../../assets/images/lobby.png'; // Adjust path as needed
 import { createRoom, getAvailableRooms, getSocket, joinRoom } from '../../services/websocket';
 import { useGameStore } from '../../store/gameStore';
 
@@ -52,40 +53,38 @@ const LobbyScreen = () => {
     };
 
     return (
-        <View style={{ flex: 1, padding: 24, backgroundColor: '#F2F2F7' }}>
-            <Text style={{ fontSize: 28, fontWeight: 'bold', marginBottom: 16 }}>Lobby</Text>
-            <TextInput
-                placeholder="Enter your name (optional)"
-                value={playerName}
-                onChangeText={setPlayerName}
-                style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 8, marginBottom: 12 }}
-            />
-            <Button title="Create Room" onPress={handleCreateRoom} disabled={loading || !connected} />
-            {/*
-            <Text style={{ marginVertical: 16, fontWeight: 'bold' }}>Or join a room:</Text>
-            <TextInput
-                placeholder="Room ID"
-                value={roomIdInput}
-                onChangeText={setRoomIdInput}
-                style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 8, marginBottom: 8 }}
-            />
-            <Button title="Join Room" onPress={handleJoinRoom} disabled={loading || !connected} />
-            */}
-            <Text style={{ marginVertical: 16, fontWeight: 'bold' }}>Available Rooms:</Text>
-            {loading && <ActivityIndicator />}
-            {error && <Text style={{ color: 'red' }}>{error}</Text>}
-            <FlatList
-                data={availableRooms}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
-                    <View style={{ padding: 8, borderBottomWidth: 1, borderColor: '#eee' }}>
-                        <Text>Room ID: {item.id} ({item.playerCount}/{item.maxPlayers})</Text>
-                        <Button title="Join Room" onPress={() => joinRoom(item.id, playerName || `Player${Math.floor(Math.random() * 1000)}`)} />
-                    </View>
-                )}
-                ListEmptyComponent={<Text>No rooms available.</Text>}
-            />
-        </View>
+        <ImageBackground
+            source={lobbyBackground}
+            style={{ flex: 1 }}
+            resizeMode="cover"
+        >
+            <SafeAreaView style={{ flex: 1, backgroundColor: 'rgba(242,242,247,0.5)' }}>
+                <View style={{ flex: 1, padding: 24 }}>
+                    <Text style={{ fontSize: 28, fontWeight: 'bold', marginBottom: 16 }}>Smuggler</Text>
+                    <TextInput
+                        placeholder="Enter your name (optional)"
+                        value={playerName}
+                        onChangeText={setPlayerName}
+                        style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 8, marginBottom: 12 }}
+                    />
+                    <Button title="Create Room" onPress={handleCreateRoom} disabled={loading || !connected} />
+                    <Text style={{ marginVertical: 16, fontWeight: 'bold' }}>Available Rooms:</Text>
+                    {loading && <ActivityIndicator />}
+                    {error && <Text style={{ color: 'red' }}>{error}</Text>}
+                    <FlatList
+                        data={availableRooms}
+                        keyExtractor={(item) => item.id}
+                        renderItem={({ item }) => (
+                            <View style={{ padding: 8, borderBottomWidth: 1, borderColor: '#eee' }}>
+                                <Text>Room ID: {item.id} ({item.playerCount}/{item.maxPlayers})</Text>
+                                <Button title="Join Room" onPress={() => joinRoom(item.id, playerName || `Player${Math.floor(Math.random() * 1000)}`)} />
+                            </View>
+                        )}
+                        ListEmptyComponent={<Text>No rooms available.</Text>}
+                    />
+                </View>
+            </SafeAreaView>
+        </ImageBackground>
     );
 };
 
