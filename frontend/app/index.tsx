@@ -1,0 +1,118 @@
+import React, { useEffect } from 'react';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { getSocket } from '../services/websocket';
+import { useGameStore } from '../store/gameStore';
+import DecryptorGameScreen from './decryptor-game';
+import EncryptorGameScreen from './encryptor-game';
+import GameEndScreen from './game-end';
+import LobbyScreen from './lobby';
+import RoomScreen from './room';
+
+const App = () => {
+    const {
+        currentScreen,
+        connected,
+        isLoading,
+        error,
+        setIsLoading,
+        setError,
+    } = useGameStore();
+
+    useEffect(() => {
+        // Initialize WebSocket connection
+        const initializeConnection = async () => {
+            setIsLoading(true);
+            setError(null);
+
+            try {
+                // Get socket instance (this will trigger connection)
+                getSocket();
+            } catch (err: any) {
+                setError(err.message || 'Failed to connect to server');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        initializeConnection();
+    }, []);
+
+    // Show loading screen while connecting
+    if (isLoading) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#007AFF" />
+                <Text style={styles.loadingText}>Connecting to server...</Text>
+            </View>
+        );
+    }
+
+    // Show error screen if connection failed
+    if (error && !connected) {
+        return (
+            <View style={styles.errorContainer}>
+                <Text style={styles.errorTitle}>Connection Error</Text>
+                <Text style={styles.errorText}>{error}</Text>
+                <Text style={styles.errorSubtext}>
+                    Please check your internet connection and try again.
+                </Text>
+            </View>
+        );
+    }
+
+    // Render appropriate screen based on current state
+    switch (currentScreen) {
+        case 'lobby':
+            return <LobbyScreen />;
+        case 'room':
+            return <RoomScreen />;
+        case 'encryptor-game':
+            return <EncryptorGameScreen />;
+        case 'decryptor-game':
+            return <DecryptorGameScreen />;
+        case 'game-end':
+            return <GameEndScreen />;
+        default:
+            return <LobbyScreen />;
+    }
+};
+
+const styles = StyleSheet.create({
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#F2F2F7',
+    },
+    loadingText: {
+        marginTop: 16,
+        fontSize: 16,
+        color: '#8E8E93',
+    },
+    errorContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#F2F2F7',
+        padding: 24,
+    },
+    errorTitle: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#FF3B30',
+        marginBottom: 16,
+    },
+    errorText: {
+        fontSize: 16,
+        color: '#000000',
+        textAlign: 'center',
+        marginBottom: 16,
+    },
+    errorSubtext: {
+        fontSize: 14,
+        color: '#8E8E93',
+        textAlign: 'center',
+    },
+});
+
+export default App; 

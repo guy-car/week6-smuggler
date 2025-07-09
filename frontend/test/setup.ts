@@ -23,6 +23,26 @@ jest.mock('socket.io-client', () => ({
     })),
 }));
 
+// Mock WebSocket service
+jest.mock('../services/websocket', () => ({
+    getSocket: jest.fn(),
+    disconnectSocket: jest.fn(),
+    createRoom: jest.fn(),
+    joinRoom: jest.fn(),
+    leaveRoom: jest.fn(),
+    setPlayerReady: jest.fn(),
+    getAvailableRooms: jest.fn(),
+    sendMessage: jest.fn(),
+    submitGuess: jest.fn(),
+    submitWord: jest.fn(),
+    startGame: jest.fn(),
+}));
+
+// Mock React Native Alert
+jest.mock('react-native/Libraries/Alert/Alert', () => ({
+    alert: jest.fn(),
+}));
+
 // Mock fetch for API calls
 global.fetch = jest.fn();
 

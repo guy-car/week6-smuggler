@@ -175,14 +175,14 @@ interface GameStore {
 ## 5. Phases & Tasks
 
 ### Phase 1: Project Setup & Core Infrastructure
-- [ ] Initialize Expo project with TypeScript
-- [ ] Install dependencies (Socket.IO client, Zustand, React Navigation)
-- [ ] Configure development environment and backend connections
-- [ ] Set up Zustand store with basic state structure
-- [ ] Create WebSocket service for backend communication
-- [ ] Implement basic error handling and connection management
-- [ ] Set up navigation structure and screen routing
-- [ ] Create basic UI components (buttons, inputs, cards)
+- [x] Initialize Expo project with TypeScript
+- [x] Install dependencies (Socket.IO client, Zustand, React Navigation)
+- [x] Configure development environment and backend connections
+- [x] Set up Zustand store with basic state structure
+- [x] Create WebSocket service for backend communication
+- [x] Implement basic error handling and connection management
+- [x] Set up navigation structure and screen routing
+- [x] Create basic UI components (buttons, inputs, cards)
 
 ### Phase 2: Lobby & Room Management (in progress)
 - [x] Create LobbyScreen with create/join room options
@@ -195,28 +195,28 @@ interface GameStore {
 - [x] Add auto-generated player names (Player 1, Player 2, etc.)
 
 ### Phase 3: Game State Management
-- [ ] Implement game state synchronization with backend
-- [ ] Create conversation history display component
-- [ ] Add real-time message updates via WebSocket
-- [ ] Implement turn-based game flow logic
-- [ ] Create role assignment and display
-- [ ] Add score progress bar with endpoints and indicator
-- [ ] Implement game start/end state management
-- [ ] Add game status indicators and loading states
+- [x] Implement game state synchronization with backend
+- [x] Create conversation history display component
+- [x] Add real-time message updates via WebSocket
+- [x] Implement turn-based game flow logic
+- [x] Create role assignment and display
+- [x] Add score progress bar with endpoints and indicator
+- [x] Implement game start/end state management
+- [x] Add game status indicators and loading states
 
 ### Phase 4: Encryptor Game Interface
-- [ ] Create EncryptorGameScreen component
-- [ ] Implement message input for encryptor hints
-- [ ] Add conversation history display for encryptor view
-- [ ] Add always-visible AI thinking/guess section
-- [ ] Add "Secret" button to reveal secret word (modal)
-- [ ] Add "Guesses" button to open previous guesses modal
-- [ ] Add placeholder avatar for decoder
-- [ ] Implement message sending functionality
-- [ ] Add input validation and error handling
-- [ ] Create mobile-optimized keyboard handling
-- [ ] Add encryptor-specific instructions and UI elements
-- [ ] Add quit confirmation dialog
+- [x] Create EncryptorGameScreen component
+- [x] Implement message input for encryptor hints
+- [x] Add conversation history display for encryptor view
+- [x] Add always-visible AI thinking/guess section
+- [x] Add "Secret" button to reveal secret word (modal)
+- [x] Add "Guesses" button to open previous guesses modal
+- [x] Add placeholder avatar for decoder
+- [x] Implement message sending functionality
+- [x] Add input validation and error handling
+- [x] Create mobile-optimized keyboard handling
+- [x] Add encryptor-specific instructions and UI elements
+- [x] Add quit confirmation dialog
 
 ### Phase 5: Decryptor Game Interface
 - [ ] Create DecryptorGameScreen component
