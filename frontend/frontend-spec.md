@@ -233,14 +233,14 @@ interface GameStore {
 - [x] Add quit confirmation dialog
 
 ### Phase 6: Game End & Polish
-- [ ] Create GameEndScreen with results display
-- [ ] Implement 5-second delay before returning to lobby
-- [ ] Add game end animations and visual feedback
-- [ ] Implement proper navigation flow between screens
-- [ ] Add connection error handling and reconnection logic
-- [ ] Create loading states and skeleton screens
-- [ ] Implement proper error boundaries and fallbacks
-- [ ] Add basic accessibility features and screen reader support
+- [x] Create GameEndScreen with results display
+- [x] Implement 5-second delay before returning to lobby
+- [x] Add game end animations and visual feedback
+- [x] Implement proper navigation flow between screens
+- [x] Add connection error handling and reconnection logic
+- [x] Create loading states and skeleton screens
+- [x] Implement proper error boundaries and fallbacks
+- [x] Add basic accessibility features and screen reader support
 
 ## 6. Testing Strategy
 

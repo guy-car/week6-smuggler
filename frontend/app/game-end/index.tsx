@@ -7,6 +7,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { useGameStore } from '../../store/gameStore';
 
 const GameEndScreen = () => {
@@ -83,9 +84,29 @@ const GameEndScreen = () => {
                 <Text style={styles.title}>Game Over</Text>
 
                 <View style={styles.resultContainer}>
-                    <Text style={[styles.resultText, { color: getResultColor() }]}>
+                    <Animated.Text
+                        entering={FadeIn.duration(1000)}
+                        style={[styles.resultText, { color: getResultColor() }]}
+                    >
                         {getResultText()}
-                    </Text>
+                    </Animated.Text>
+                </View>
+
+                {/* Confetti effect (simple animated circles) */}
+                <View style={styles.confettiContainer} pointerEvents="none">
+                    {[...Array(12)].map((_, i) => (
+                        <Animated.View
+                            key={i}
+                            entering={FadeIn.delay(i * 100).duration(800)}
+                            style={[
+                                styles.confetti,
+                                {
+                                    left: `${Math.random() * 90}%`,
+                                    backgroundColor: i % 2 === 0 ? '#34C759' : '#FF3B30',
+                                },
+                            ]}
+                        />
+                    ))}
                 </View>
 
                 <View style={styles.statsContainer}>
@@ -224,6 +245,22 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontSize: 16,
         fontWeight: '600',
+    },
+    confettiContainer: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        pointerEvents: 'none',
+    },
+    confetti: {
+        position: 'absolute',
+        width: 16,
+        height: 16,
+        borderRadius: 8,
+        opacity: 0.7,
+        top: 0,
     },
 });
 
