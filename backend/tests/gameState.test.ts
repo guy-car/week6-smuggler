@@ -193,7 +193,7 @@ describe('GameStateManager', () => {
     });
 
     describe('transformToAnalyzeRequest', () => {
-        it('should transform game state to analyze request format', () => {
+        it('should transform game state to analyze request format with gameId', () => {
             const gameState = gameStateManager.createGameState('TestWord', []);
             let newGameState = gameStateManager.addOutsiderTurn(gameState, 'First hint');
             newGameState = gameStateManager.addAITurn(newGameState, ['Thought 1', 'Thought 2', 'Thought 3', 'Thought 4'], 'guess1');
@@ -206,6 +206,19 @@ describe('GameStateManager', () => {
             expect(analyzeRequest.conversationHistory[0]?.type).toBe('outsider_hint');
             expect(analyzeRequest.conversationHistory[1]?.type).toBe('ai_analysis');
             expect(analyzeRequest.conversationHistory[2]?.type).toBe('insider_guess');
+        });
+
+        it('should transform game state to analyze request format without gameId', () => {
+            const gameState = gameStateManager.createGameState('TestWord', []);
+            let newGameState = gameStateManager.addOutsiderTurn(gameState, 'First hint');
+            newGameState = gameStateManager.addAITurn(newGameState, ['Thought 1', 'Thought 2', 'Thought 3', 'Thought 4'], 'guess1');
+
+            const analyzeRequest = gameStateManager.transformToAnalyzeRequest(newGameState);
+
+            expect(analyzeRequest.gameId).toBeUndefined();
+            expect(analyzeRequest.conversationHistory).toHaveLength(2);
+            expect(analyzeRequest.conversationHistory[0]?.type).toBe('outsider_hint');
+            expect(analyzeRequest.conversationHistory[1]?.type).toBe('ai_analysis');
         });
     });
 

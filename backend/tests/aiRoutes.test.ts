@@ -73,7 +73,7 @@ describe('AI Routes', () => {
             expect(response.body.error).toContain('must be an array');
         });
 
-        it('should return 400 when gameId is missing', async () => {
+        it('should handle request without gameId', async () => {
             const conversationHistory: Turn[] = [
                 {
                     type: 'outsider_hint',
@@ -89,10 +89,11 @@ describe('AI Routes', () => {
             const response = await request(app)
                 .post('/api/ai/analyze')
                 .send(requestBody)
-                .expect(400);
+                .expect(200);
 
-            expect(response.body.success).toBe(false);
-            expect(response.body.error).toContain('gameId is required');
+            expect(response.body.success).toBe(true);
+            expect(response.body.data).toHaveProperty('thinking');
+            expect(response.body.data).toHaveProperty('guess');
         });
 
         it('should validate turn structure correctly', async () => {

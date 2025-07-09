@@ -236,9 +236,9 @@ export class GameStateManager {
     /**
      * Transform conversation history to AnalyzeRequest format
      */
-    public transformToAnalyzeRequest(gameState: GameState, gameId: string): AnalyzeRequest {
+    public transformToAnalyzeRequest(gameState: GameState, gameId?: string): AnalyzeRequest {
         return {
-            gameId,
+            ...(gameId && { gameId }),
             conversationHistory: gameState.conversationHistory
         };
     }

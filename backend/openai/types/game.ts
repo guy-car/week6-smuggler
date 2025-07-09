@@ -89,7 +89,7 @@ export type Turn = z.infer<typeof TurnSchema>;
  */
 export const AnalyzeRequestSchema = z.object({
   /** Room/session identifier */
-  gameId: z.string(),
+  gameId: z.string().optional(),
 
   /** Chronological sequence of turns */
   conversationHistory: z.array(TurnSchema)
