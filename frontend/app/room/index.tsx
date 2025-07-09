@@ -2,9 +2,11 @@ import { ResizeMode, Video } from 'expo-av';
 import { BlurView } from 'expo-blur';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
-import { SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { leaveRoom, setPlayerReady } from '../../services/websocket';
 import { useGameStore } from '../../store/gameStore';
+import ScrollArea from '../components/ScrollArea';
 
 const RoomScreen = () => {
     const roomId = useGameStore((s) => s.roomId);
@@ -13,6 +15,7 @@ const RoomScreen = () => {
     const isReady = useGameStore((s) => s.isReady);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const insets = useSafeAreaInsets();
 
     // Assign encoder and decoder based on join order
     const encoder = players[0];
@@ -49,22 +52,24 @@ const RoomScreen = () => {
                 shouldPlay
                 isMuted
             />
-            <SafeAreaView style={{ flex: 1 }}>
-                <View style={[styles.overlay, { flex: 1 }]}> {/* Overlay for readability */}
-                    {/* Header */}
-                    <BlurView intensity={40} tint="dark" style={styles.headerBlur}>
-                        <View style={styles.header}>
-                            <TouchableOpacity onPress={handleLeave} style={styles.backButton}>
-                                <Text style={styles.backButtonText}>BACK</Text>
-                            </TouchableOpacity>
-                            <View style={styles.roomIdContainer}>
-                                <Text style={styles.roomIdLabel}>ROOM ID</Text>
-                                <Text style={styles.roomId}>{roomId?.slice(0, 8).toUpperCase()}</Text>
-                            </View>
-                            <View style={{ width: 60 }} /> {/* Spacer for symmetry */}
+            <View style={[styles.overlay, { flex: 1 }]}> {/* Overlay for readability */}
+                {/* Header - absolutely positioned, full-bleed */}
+                <BlurView intensity={40} tint="dark" style={[styles.headerBlur, { position: 'absolute', top: 0, left: 0, right: 0, paddingTop: insets.top }]}> 
+                    <View style={styles.header}>
+                        <TouchableOpacity onPress={handleLeave} style={styles.backButton}>
+                            <Text style={styles.backButtonText}>BACK</Text>
+                        </TouchableOpacity>
+                        <View style={styles.roomIdContainer}>
+                            <Text style={styles.roomIdLabel}>ROOM ID</Text>
+                            <Text style={styles.roomId}>{roomId?.slice(0, 8).toUpperCase()}</Text>
                         </View>
-                    </BlurView>
-
+                        <View style={{ width: 60 }} /> {/* Spacer for symmetry */}
+                    </View>
+                </BlurView>
+                {/* Scroll Area overlayed near the top */}
+                <ScrollArea />
+                {/* Main content, with safe area padding at the bottom only */}
+                <View style={{ flex: 1, justifyContent: 'flex-end', paddingTop: styles.header.height + insets.top, paddingBottom: insets.bottom }}>
                     {/* Footer: Pills stacked above Ready button */}
                     <View style={styles.footerStack}>
                         <View style={styles.pillsRow}>
@@ -100,7 +105,7 @@ const RoomScreen = () => {
                         </BlurView>
                     </View>
                 </View>
-            </SafeAreaView>
+            </View>
         </View>
     );
 };
@@ -115,10 +120,9 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingTop: 32,
+        height: 80, // fixed height for header
         paddingHorizontal: 16,
         marginBottom: 8,
-        backgroundColor: 'rgba(20,20,20,.5)',
         padding: 16,
     },
     backButton: {
@@ -250,7 +254,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
     },
     headerBlur: {
-        borderRadius: 16,
         overflow: 'hidden',
     },
 });
