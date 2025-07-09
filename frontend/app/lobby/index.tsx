@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Button, FlatList, Text, TextInput, View } from 'react-native';
-import { createRoom, getAvailableRooms, joinRoom } from '../../services/websocket';
+import { createRoom, getAvailableRooms, getSocket, joinRoom } from '../../services/websocket';
 import { useGameStore } from '../../store/gameStore';
 
 const LobbyScreen = () => {
@@ -14,7 +14,20 @@ const LobbyScreen = () => {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        if (connected) getAvailableRooms();
+        if (connected) {
+            // Enter lobby to receive real-time updates
+            getSocket().emit('enter_lobby');
+            getAvailableRooms();
+        }
+    }, [connected]);
+
+    // Cleanup effect to leave lobby when component unmounts
+    useEffect(() => {
+        return () => {
+            if (connected) {
+                getSocket().emit('leave_lobby');
+            }
+        };
     }, [connected]);
 
     const handleCreateRoom = async () => {
