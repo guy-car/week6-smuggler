@@ -58,69 +58,69 @@ const ScoreProgressBar: React.FC<ScoreProgressBarProps> = ({
 
 const styles = StyleSheet.create({
     container: {
-        padding: 16,
+        padding: 6, // reduced from 16
         backgroundColor: '#FFFFFF',
-        borderRadius: 12,
-        marginHorizontal: 16,
-        marginVertical: 8,
+        borderRadius: 8, // reduced from 12
+        marginHorizontal: 8, // reduced from 16
+        marginVertical: 4, // reduced from 8
         shadowColor: '#000',
         shadowOffset: {
             width: 0,
-            height: 2,
+            height: 1, // reduced from 2
         },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
+        shadowOpacity: 0.08, // reduced
+        shadowRadius: 2, // reduced from 4
+        elevation: 1, // reduced from 3
     },
     endpointsContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginBottom: 8,
+        marginBottom: 2, // reduced from 8
     },
     endpointLabel: {
-        fontSize: 14,
+        fontSize: 11, // reduced from 14
         fontWeight: '600',
         color: '#007AFF',
     },
     progressBarContainer: {
         position: 'relative',
-        height: 40,
-        marginBottom: 8,
+        height: 18, // reduced from 40
+        marginBottom: 2, // reduced from 8
     },
     progressBar: {
         flex: 1,
         backgroundColor: '#F2F2F7',
-        borderRadius: 20,
+        borderRadius: 9, // reduced from 20
         position: 'relative',
         overflow: 'hidden',
     },
     scoreIndicator: {
         position: 'absolute',
-        top: 8,
-        width: 24,
-        height: 24,
-        borderRadius: 12,
+        top: 2, // reduced from 8
+        width: 12, // reduced from 24
+        height: 12, // reduced from 24
+        borderRadius: 6, // reduced from 12
         backgroundColor: '#FF3B30',
-        borderWidth: 3,
+        borderWidth: 2, // reduced from 3
         borderColor: '#FFFFFF',
         shadowColor: '#000',
         shadowOffset: {
             width: 0,
-            height: 2,
+            height: 1, // reduced from 2
         },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-        elevation: 4,
-        transform: [{ translateX: -12 }], // Center the dot
+        shadowOpacity: 0.15, // reduced
+        shadowRadius: 2, // reduced from 4
+        elevation: 1, // reduced from 4
+        transform: [{ translateX: -6 }], // Center the dot
     },
     centerLine: {
         position: 'absolute',
         top: 0,
         bottom: 0,
         left: '50%',
-        width: 2,
+        width: 1, // reduced from 2
         backgroundColor: '#007AFF',
-        transform: [{ translateX: -1 }],
+        transform: [{ translateX: -0.5 }],
     },
     scoreLabels: {
         position: 'absolute',
@@ -131,26 +131,24 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingHorizontal: 8,
+        paddingHorizontal: 4, // reduced from 8
     },
     scoreLabel: {
-        fontSize: 12,
+        fontSize: 10, // reduced from 12
         fontWeight: '500',
         color: '#8E8E93',
     },
     currentScoreContainer: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
+        display: 'none', // hide current score
     },
     currentScoreLabel: {
-        fontSize: 14,
+        fontSize: 12, // reduced from 14
         fontWeight: '500',
         color: '#8E8E93',
-        marginRight: 8,
+        marginRight: 4, // reduced from 8
     },
     currentScoreValue: {
-        fontSize: 18,
+        fontSize: 14, // reduced from 18
         fontWeight: 'bold',
         color: '#007AFF',
     },

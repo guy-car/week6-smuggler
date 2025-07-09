@@ -15,7 +15,6 @@ import { leaveRoom, submitGuess } from '../../services/websocket';
 import { useGameStore } from '../../store/gameStore';
 import AISectionComponent from '../components/AISectionComponent';
 import ConversationHistory from '../components/ConversationHistory';
-import GameStatusIndicator from '../components/GameStatusIndicator';
 import ScoreProgressBar from '../components/ScoreProgressBar';
 
 const DecryptorGameScreen = () => {
@@ -92,11 +91,28 @@ const DecryptorGameScreen = () => {
             style={styles.container}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-            <View style={styles.header}>
-                <Text style={styles.title}>Decryptor Game</Text>
+            {/* Score bar and quit button in a row at the very top */}
+            <View style={styles.topRow}>
+                <View style={{ flex: 1 }}>
+                    <ScoreProgressBar
+                        score={score}
+                        maxScore={10}
+                        aiWinsScore={0}
+                        humansWinScore={10}
+                    />
+                </View>
                 <TouchableOpacity style={styles.quitButton} onPress={handleQuit}>
                     <Text style={styles.quitButtonText}>Quit</Text>
                 </TouchableOpacity>
+            </View>
+
+            {/* Avatar below the score bar and quit button */}
+            <View style={styles.avatarRow}>
+                <View style={styles.avatarContainerUnified}>
+                    <View style={styles.avatarCircleUnified}>
+                        <Text style={styles.avatarLabelUnified}>Decoder</Text>
+                    </View>
+                </View>
             </View>
 
             <ScrollView
@@ -105,45 +121,14 @@ const DecryptorGameScreen = () => {
                 ref={scrollViewRef}
                 keyboardShouldPersistTaps="handled"
             >
-                {/* Encoder Avatar Placeholder */}
-                <View style={styles.avatarContainer}>
-                    <View style={styles.avatarCircle}>
-                        <Text style={styles.avatarLabel}>Encoder</Text>
-                    </View>
-                </View>
-                {/* Decryptor Instructions */}
-                <View style={styles.instructionsContainer}>
-                    <Text style={styles.instructionsText}>
-                        Your role: <Text style={{ fontWeight: 'bold' }}>Decryptor</Text>. Use the hints to guess the secret word. You win if you guess before the AI does!
-                    </Text>
-                </View>
-                <GameStatusIndicator
-                    gameStatus={gameStatus}
-                    currentTurn={currentTurn}
-                    playerRole={playerRole}
-                    round={round}
-                    maxRounds={maxRounds}
-                />
-
-                <ScoreProgressBar
-                    score={score}
-                    maxScore={10}
-                    aiWinsScore={0}
-                    humansWinScore={10}
-                />
-
-
-
                 <AISectionComponent
                     currentTurn={currentTurn}
                     conversationHistory={conversationHistory}
                 />
-
                 <ConversationHistory
                     conversation={conversationHistory}
                     currentPlayerId={player?.id}
                 />
-
             </ScrollView>
 
             <View style={styles.inputContainer}>
@@ -182,8 +167,6 @@ const DecryptorGameScreen = () => {
                     </Text>
                 </TouchableOpacity>
             </View>
-
-
         </KeyboardAvoidingView>
     );
 };
@@ -359,81 +342,34 @@ const styles = StyleSheet.create({
         fontStyle: 'italic',
         paddingVertical: 20,
     },
-    avatarContainer: {
+    avatarRow: {
         alignItems: 'center',
-        marginTop: 16,
-        marginBottom: 8,
+        paddingVertical: 8,
     },
-    avatarCircle: {
-        width: 72,
-        height: 72,
-        borderRadius: 36,
+    avatarContainerUnified: {
+        alignItems: 'center',
+    },
+    avatarCircleUnified: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
         backgroundColor: '#E5E5EA',
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 4,
+        borderWidth: 2,
+        borderColor: '#C7C7CC',
     },
-    avatarLabel: {
-        fontSize: 16,
+    avatarLabelUnified: {
+        fontSize: 12,
         fontWeight: '600',
-        color: '#5856D6',
-    },
-    instructionsContainer: {
-        marginHorizontal: 16,
-        marginBottom: 8,
-        padding: 12,
-        backgroundColor: '#FFF3E0',
-        borderRadius: 8,
-        borderLeftWidth: 4,
-        borderLeftColor: '#F57C00',
-    },
-    instructionsText: {
-        color: '#F57C00',
-        fontSize: 15,
-        lineHeight: 20,
-    },
-    guessHistoryContainer: {
-        marginHorizontal: 16,
-        marginTop: 12,
-        marginBottom: 16,
-        backgroundColor: '#F2F2F7',
-        borderRadius: 8,
-        padding: 12,
-        borderWidth: 1,
-        borderColor: '#E5E5EA',
-    },
-    guessHistoryTitle: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        marginBottom: 8,
-        color: '#007AFF',
-    },
-    guessHistoryItem: {
-        marginBottom: 8,
-        paddingBottom: 8,
-        borderBottomWidth: 1,
-        borderBottomColor: '#E5E5EA',
-    },
-    guessHistoryGuess: {
-        fontSize: 15,
-        fontWeight: '500',
-        color: '#000',
-    },
-    guessHistoryFeedback: {
-        fontSize: 13,
-        color: '#F57C00',
-        marginTop: 2,
-    },
-    guessHistoryTime: {
-        fontSize: 11,
         color: '#8E8E93',
-        marginTop: 2,
     },
-    noGuessesText: {
-        textAlign: 'center',
-        color: '#8E8E93',
-        fontStyle: 'italic',
-        paddingVertical: 20,
+    topRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        marginBottom: 8,
     },
 });
 
