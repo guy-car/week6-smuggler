@@ -1,6 +1,8 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Turn } from '../../store/gameStore';
+import AIGuessSection from './AIGuessSection';
+import AIThinkingSection from './AIThinkingSection';
 
 interface AISectionProps {
     currentTurn: 'encryptor' | 'ai' | 'decryptor' | null;
@@ -49,20 +51,8 @@ const AISectionComponent: React.FC<AISectionProps> = ({
 
             {aiAnalysis && (
                 <View style={styles.latestAnalysisContainer}>
-
-                    {aiAnalysis.thinking && (
-                        <View style={styles.thinkingSection}>
-                            <Text style={styles.sectionLabel}>Thinking:</Text>
-                            <Text style={styles.thinkingContent}>{aiAnalysis.thinking}</Text>
-                        </View>
-                    )}
-
-                    {aiAnalysis.guess && (
-                        <View style={styles.guessSection}>
-                            <Text style={styles.sectionLabel}>Guess:</Text>
-                            <Text style={styles.guessContent}>{aiAnalysis.guess}</Text>
-                        </View>
-                    )}
+                    {aiAnalysis.thinking && <AIThinkingSection thinking={aiAnalysis.thinking} />}
+                    {aiAnalysis.guess && <AIGuessSection guess={aiAnalysis.guess} />}
                 </View>
             )}
 
