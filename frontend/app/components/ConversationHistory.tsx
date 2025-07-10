@@ -21,7 +21,7 @@ const ConversationHistory: React.FC<ConversationHistoryProps> = ({
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Unmonitored Human Chat</Text>
+            <Text style={styles.title}>"Unmonitored" Human Chat</Text>
             <FlatList
                 data={displayConversation}
                 keyExtractor={(item) => item.id}
@@ -44,7 +44,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         padding: 16,
-        width: '90%',
+        width: '100%',
         maxWidth: 500,
         height: '100%',
         backgroundColor: 'rgba(0,0,0,0.5)',
@@ -57,6 +57,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.7,
         shadowRadius: 16,
         elevation: 8,
+        marginTop: 16,
     },
     title: {
         fontSize: 18,

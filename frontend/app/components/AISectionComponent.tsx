@@ -3,15 +3,18 @@ import { StyleSheet, Text, View } from 'react-native';
 import { Turn } from '../../store/gameStore';
 import AIGuessSection from './AIGuessSection';
 import AIThinkingSection from './AIThinkingSection';
+import ConversationHistory from './ConversationHistory';
 
 interface AISectionProps {
     currentTurn: 'encryptor' | 'ai' | 'decryptor' | null;
     conversationHistory: Turn[];
+    currentPlayerId?: string;
 }
 
 const AISectionComponent: React.FC<AISectionProps> = ({
     currentTurn,
     conversationHistory,
+    currentPlayerId,
 }) => {
     // Get the latest AI turn from conversation history
     const latestAITurn = conversationHistory
@@ -55,6 +58,9 @@ const AISectionComponent: React.FC<AISectionProps> = ({
                     {aiAnalysis.guess && <AIGuessSection guess={aiAnalysis.guess} />}
                 </View>
             )}
+
+            {/* Conversation history inside AI section */}
+            <ConversationHistory conversation={conversationHistory} currentPlayerId={currentPlayerId} />
 
             {!aiAnalysis && !isAITurn && (
                 <View style={styles.noAnalysisContainer}>

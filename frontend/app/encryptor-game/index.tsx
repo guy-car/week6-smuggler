@@ -15,7 +15,6 @@ import encoderBg from '../../assets/images/encoder.png';
 import { leaveRoom, sendMessage } from '../../services/websocket';
 import { useGameStore } from '../../store/gameStore';
 import AISectionComponent from '../components/AISectionComponent';
-import ConversationHistory from '../components/ConversationHistory';
 import ScoreProgressBar from '../components/ScoreProgressBar';
 import SecretWordContainer from './SecretWordContainer';
 
@@ -98,10 +97,6 @@ const EncryptorGameScreen = () => {
                     <AISectionComponent
                         currentTurn={currentTurn}
                         conversationHistory={conversationHistory}
-                    />
-
-                    <ConversationHistory
-                        conversation={conversationHistory}
                         currentPlayerId={player?.id}
                     />
                 </ScrollView>
