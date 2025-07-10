@@ -413,6 +413,10 @@ export function getSocket() {
     // Round end event
     socket.on('round_end', (data: any) => {
       console.log('[WebSocket] Round end:', data);
+      
+      // Clear conversation history for new round
+      useGameStore.getState().setConversationHistory([]);
+      
       useGameStore.getState().setRound(data.round || 1);
       if (data.score !== undefined) {
         useGameStore.getState().setScore(data.score);
