@@ -328,6 +328,8 @@ export class GameHandlers {
                         roles: newRoles // Include new roles in round_end event
                     };
 
+
+
                     socket.to(roomId).emit('round_end', roundEndData);
                     socket.emit('round_end', roundEndData);
                 }
@@ -594,6 +596,8 @@ export class GameHandlers {
                         newSecretWord,
                         roles: newRoles // Include new roles in round_end event
                     };
+
+
 
                     this.io.to(roomId).emit('round_end', roundEndData);
                 }
