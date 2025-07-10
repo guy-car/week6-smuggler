@@ -1,29 +1,25 @@
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Button, FlatList, StyleSheet, Text, View } from 'react-native';
-import { leaveRoom, setPlayerReady, startGame } from '../../services/websocket';
+import { ResizeMode, Video } from 'expo-av';
+import { BlurView } from 'expo-blur';
+import { StatusBar } from 'expo-status-bar';
+import React, { useState } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { leaveRoom, setPlayerReady } from '../../services/websocket';
 import { useGameStore } from '../../store/gameStore';
+import ScrollArea from '../components/ScrollArea';
 
 const RoomScreen = () => {
     const roomId = useGameStore((s) => s.roomId);
     const players = useGameStore((s) => s.players);
     const player = useGameStore((s) => s.player);
     const isReady = useGameStore((s) => s.isReady);
-    const gameStatus = useGameStore((s) => s.gameStatus);
-    const currentScreen = useGameStore((s) => s.currentScreen);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const insets = useSafeAreaInsets();
 
-    // Check if all players are ready
-    const allPlayersReady = players.length >= 2 && players.every(p => p.ready);
-    const canStartGame = allPlayersReady && player?.ready;
-
-    // Navigate to appropriate screen when game starts
-    useEffect(() => {
-        if (gameStatus === 'active' && currentScreen !== 'room') {
-            // Game has started, navigation will be handled by WebSocket events
-            return;
-        }
-    }, [gameStatus, currentScreen]);
+    // Assign encoder and decoder based on join order
+    const encoder = players[0];
+    const decoder = players[1];
 
     const handleReadyToggle = () => {
         setLoading(true);
@@ -37,228 +33,229 @@ const RoomScreen = () => {
         }
     };
 
-    const handleStartGame = () => {
-        if (!canStartGame) {
-            Alert.alert('Cannot Start Game', 'All players must be ready to start the game.');
-            return;
-        }
-
-        setLoading(true);
-        setError(null);
-        try {
-            startGame();
-        } catch (e: any) {
-            setError(e.message);
-        } finally {
-            setLoading(false);
-        }
-    };
-
     const handleLeave = () => {
-        console.log('[Room] Leave button clicked - immediate leave');
-        try {
-            leaveRoom();
-            console.log('[Room] leaveRoom() called successfully');
-        } catch (error) {
-            console.error('[Room] Error calling leaveRoom():', error);
-        }
-        console.log('[Room] Setting currentScreen to lobby');
-        // Use state-based navigation to return to lobby
+        leaveRoom();
         useGameStore.getState().setCurrentScreen('lobby');
         useGameStore.getState().setRoomId(null);
         useGameStore.getState().setPlayers([]);
         useGameStore.getState().reset();
-        console.log('[Room] Navigation complete');
     };
 
     return (
-        <View style={styles.container}>
-            <View style={styles.header}>
-                <Text style={styles.roomTitle}>Room: {roomId}</Text>
-                <Button title="Leave Room" onPress={handleLeave} color="#FF3B30" />
-            </View>
-
-            <View style={styles.statusSection}>
-                <Text style={styles.sectionTitle}>Game Status</Text>
-                <View style={styles.statusCard}>
-                    <Text style={styles.statusText}>
-                        {allPlayersReady ? 'Ready to start!' : 'Waiting for players...'}
-                    </Text>
-                    <Text style={styles.playerCount}>
-                        {players.length}/2 players
-                    </Text>
+        <View style={{ flex: 1 }}>
+            <StatusBar style="light" translucent backgroundColor="transparent" />
+            <Video
+                source={require('../../assets/videos/sequence.mp4')}
+                style={StyleSheet.absoluteFill}
+                resizeMode={ResizeMode.COVER}
+                isLooping
+                shouldPlay
+                isMuted
+            />
+            <View style={[styles.overlay, { flex: 1 }]}> {/* Overlay for readability */}
+                {/* Header - absolutely positioned, full-bleed */}
+                <BlurView intensity={40} tint="dark" style={[styles.headerBlur, { position: 'absolute', top: 0, left: 0, right: 0, paddingTop: insets.top }]}> 
+                    <View style={styles.header}>
+                        <TouchableOpacity onPress={handleLeave} style={styles.backButton}>
+                            <Text style={styles.backButtonText}>BACK</Text>
+                        </TouchableOpacity>
+                        <View style={styles.roomIdContainer}>
+                            <Text style={styles.roomIdLabel}>ROOM ID</Text>
+                            <Text style={styles.roomId}>{roomId?.slice(0, 8).toUpperCase()}</Text>
+                        </View>
+                        <View style={{ width: 60 }} /> {/* Spacer for symmetry */}
+                    </View>
+                </BlurView>
+                {/* Scroll Area overlayed near the top */}
+                <ScrollArea />
+                {/* Main content, with safe area padding at the bottom only */}
+                <View style={{ flex: 1, justifyContent: 'flex-end', paddingTop: styles.header.height + insets.top, paddingBottom: insets.bottom }}>
+                    {/* Footer: Pills stacked above Ready button */}
+                    <View style={styles.footerStack}>
+                        <View style={styles.pillsRow}>
+                            <View style={styles.pillContainer}>
+                                <BlurView intensity={40} tint="dark" style={styles.pillBlur}>
+                                    <View style={styles.pillContent}>
+                                        <Text style={styles.pillRole}>ENCODER</Text>
+                                        <View style={[styles.pillStatus, { backgroundColor: encoder?.ready ? '#34C759' : '#FF3B30' }]}> 
+                                            <Text style={styles.pillStatusText}>{encoder?.ready ? 'READY' : 'NOT READY'}</Text>
+                                        </View>
+                                    </View>
+                                </BlurView>
+                            </View>
+                            <View style={styles.pillContainer}>
+                                <BlurView intensity={40} tint="dark" style={styles.pillBlur}>
+                                    <View style={styles.pillContent}>
+                                        <Text style={styles.pillRole}>DECODER</Text>
+                                        <View style={[styles.pillStatus, { backgroundColor: decoder?.ready ? '#34C759' : '#FF3B30' }]}> 
+                                            <Text style={styles.pillStatusText}>{decoder?.ready ? 'READY' : 'NOT READY'}</Text>
+                                        </View>
+                                    </View>
+                                </BlurView>
+                            </View>
+                        </View>
+                        <BlurView intensity={40} tint="dark" style={styles.readyButtonBlur}>
+                            <TouchableOpacity
+                                style={[styles.readyButton, isReady && styles.readyButtonActive]}
+                                onPress={handleReadyToggle}
+                                disabled={loading}
+                            >
+                                <Text style={styles.readyButtonText}>{isReady ? 'UNREADY' : 'READY'}</Text>
+                            </TouchableOpacity>
+                        </BlurView>
+                    </View>
                 </View>
-            </View>
-
-            <View style={styles.playersSection}>
-                <Text style={styles.sectionTitle}>Players</Text>
-                {loading && <ActivityIndicator style={styles.loading} />}
-                {error && <Text style={styles.errorText}>{error}</Text>}
-
-                <FlatList
-                    data={players}
-                    keyExtractor={(item) => item.id}
-                    renderItem={({ item }) => (
-                        <View style={styles.playerItem}>
-                            <View style={styles.playerInfo}>
-                                <Text style={styles.playerName}>
-                                    {item.name} {item.id === player?.id ? '(You)' : ''}
-                                </Text>
-                                <Text style={styles.playerRole}>
-                                    {item.role ? item.role.charAt(0).toUpperCase() + item.role.slice(1) : 'Unknown'}
-                                </Text>
-                            </View>
-                            <View style={[
-                                styles.readyIndicator,
-                                { backgroundColor: item.ready ? '#34C759' : '#FF3B30' }
-                            ]}>
-                                <Text style={styles.readyText}>
-                                    {item.ready ? 'Ready' : 'Not Ready'}
-                                </Text>
-                            </View>
-                        </View>
-                    )}
-                    ListEmptyComponent={
-                        <View style={styles.emptyContainer}>
-                            <Text style={styles.emptyText}>No players in room.</Text>
-                        </View>
-                    }
-                />
-            </View>
-
-            <View style={styles.actionsSection}>
-                <Button
-                    title={isReady ? 'Unready' : 'Ready'}
-                    onPress={handleReadyToggle}
-                    color={isReady ? '#FF3B30' : '#34C759'}
-                    disabled={loading}
-                />
-
-                {canStartGame && (
-                    <Button
-                        title="Start Game"
-                        onPress={handleStartGame}
-                        color="#007AFF"
-                        disabled={loading}
-                    />
-                )}
             </View>
         </View>
     );
 };
 
 const styles = StyleSheet.create({
-    container: {
+    overlay: {
+        backgroundColor: 'rgba(20,20,20,0.5)',
         flex: 1,
-        backgroundColor: '#F2F2F7',
-        padding: 16,
+        justifyContent: 'space-between',
     },
     header: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 24,
+        justifyContent: 'space-between',
+        height: 80, // fixed height for header
+        paddingHorizontal: 16,
+        marginBottom: 8,
+        padding: 16,
     },
-    roomTitle: {
+    backButton: {
+        width: 60,
+        justifyContent: 'center',
+        alignItems: 'flex-start',
+    },
+    backButtonText: {
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: 18,
+        fontFamily: 'monospace',
+    },
+    roomIdContainer: {
+        alignItems: 'center',
+    },
+    roomIdLabel: {
+        color: '#fff',
+        fontSize: 12,
+        fontWeight: 'bold',
+        letterSpacing: 1,
+    },
+    roomId: {
+        color: '#fff',
         fontSize: 24,
         fontWeight: 'bold',
-        color: '#000000',
+        letterSpacing: 2,
+        marginTop: 2,
     },
-    statusSection: {
+    introContainer: {
+        backgroundColor: 'rgba(30,30,30,0.8)',
+        marginHorizontal: 24,
+        marginTop: 8,
         marginBottom: 24,
+        borderRadius: 8,
+        minHeight: 220,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
-    sectionTitle: {
-        fontSize: 18,
-        fontWeight: '600',
-        marginBottom: 12,
-        color: '#000000',
-    },
-    statusCard: {
-        backgroundColor: '#FFFFFF',
-        padding: 16,
-        borderRadius: 12,
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
-    },
-    statusText: {
-        fontSize: 16,
-        fontWeight: '500',
-        color: '#000000',
-        marginBottom: 4,
-    },
-    playerCount: {
-        fontSize: 14,
-        color: '#8E8E93',
-    },
-    playersSection: {
-        flex: 1,
-        marginBottom: 24,
-    },
-    loading: {
-        marginVertical: 16,
-    },
-    errorText: {
-        color: '#FF3B30',
-        marginBottom: 16,
+    introText: {
+        color: '#fff',
+        fontSize: 28,
+        fontWeight: 'bold',
         textAlign: 'center',
+        fontFamily: 'monospace',
     },
-    playerItem: {
+    pillsRow: {
+        flexDirection: 'column',
+        justifyContent: 'space-evenly',
+        alignItems: 'center',
+    },
+    pill: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
         alignItems: 'center',
-        backgroundColor: '#FFFFFF',
-        padding: 16,
+        borderRadius: 30,
+        marginHorizontal: 8,
+        padding: 12,
+    },
+    pillRole: {
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: 16,
+        marginRight: 12,
+        fontFamily: 'monospace',
+    },
+    pillStatus: {
         borderRadius: 12,
-        marginBottom: 8,
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 1,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-        elevation: 2,
-    },
-    playerInfo: {
-        flex: 1,
-    },
-    playerName: {
-        fontSize: 16,
-        fontWeight: '500',
-        color: '#000000',
-        marginBottom: 4,
-    },
-    playerRole: {
-        fontSize: 14,
-        color: '#8E8E93',
-    },
-    readyIndicator: {
         paddingHorizontal: 12,
-        paddingVertical: 6,
+        paddingVertical: 4,
+    },
+    pillStatusText: {
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: 13,
+        fontFamily: 'monospace',
+    },
+    footer: {
+        alignItems: 'center',
+        marginBottom: 32,
+    },
+    readyButton: {
+        backgroundColor: 'rgba(255,255,255,0.15)',
         borderRadius: 16,
+        paddingHorizontal: 50,
+        paddingVertical: 18,
+        alignItems: 'center',
+        borderWidth: 2,
+        borderColor: '#00FFB2',
+        shadowColor: '#00FFB2',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.5,
+        shadowRadius: 8,
     },
-    readyText: {
-        fontSize: 12,
-        fontWeight: '600',
-        color: '#FFFFFF',
+    readyButtonActive: {
+        backgroundColor: 'rgba(0,255,178,0.15)',
+        borderColor: '#fff',
     },
-    emptyContainer: {
-        padding: 32,
+    readyButtonText: {
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: 28,
+        fontFamily: 'monospace',
+        letterSpacing: 2,
+    },
+    pillContainer: {
+        marginVertical: 8,
+        alignSelf: 'stretch',
         alignItems: 'center',
     },
-    emptyText: {
-        fontSize: 16,
-        color: '#8E8E93',
+    pillBlur: {
+        borderRadius: 30,
+        overflow: 'hidden',
+        alignSelf: 'center',
     },
-    actionsSection: {
-        gap: 12,
+    pillContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderRadius: 30,
+        padding: 12,
+    },
+    readyButtonBlur: {
+        borderRadius: 16,
+        overflow: 'hidden',
+    },
+    footerStack: {
+        flexDirection: 'column',
+        justifyContent: 'flex-end',
+        marginBottom: 32,
+        paddingHorizontal: 20,
+    },
+    headerBlur: {
+        overflow: 'hidden',
     },
 });
-
 export default RoomScreen; 
+

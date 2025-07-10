@@ -11,31 +11,6 @@ const openai = new OpenAI({
   apiKey: process.env['OPENAI_API_KEY']
 });
 
-// Modern structured output tool definition with strict validation
-const ANALYZE_CONVERSATION_TOOL = {
-  type: "function" as const,
-  function: {
-    name: 'analyze_conversation',
-    description: 'Analyze the conversation and provide thinking steps and a guess for the secret word',
-    parameters: {
-      type: 'object',
-      properties: {
-        thinking: {
-          type: 'array',
-          items: { type: 'string' },
-          description: 'Exactly 4 sentences of AI thinking, max 12 words each'
-        },
-        guess: {
-          type: 'string',
-          description: 'Single lowercase word 3-12 characters, must be a regular everyday word'
-        }
-      },
-      required: ['thinking', 'guess'],
-      additionalProperties: false
-    },
-    strict: true
-  }
-};
 
 // System prompt for setting context
 const SYSTEM_PROMPT = `**SYSTEM PROMPT:**
@@ -57,11 +32,63 @@ CRITICAL: Exploit codes are always regular everyday words, 3-12 characters long,
 Standard procedure: Generate one potential exploit code guess per analysis cycle, regardless of threat assessment level. Each guess must be unique and derived from newly observed communication elements. Remember: guesses must be lowercase everyday words, 3-12 characters.`;
 
 export class OpenAIService {
+  extractPreviousGuesses(turns: Turn[]): string[] {
+    const guesses: string[] = [];
+    
+    for (const turn of turns) {
+      if (turn.type === 'ai_analysis' && turn.guess) {
+        guesses.push(turn.guess);
+      } else if (turn.type === 'insider_guess' && turn.guess) {
+        guesses.push(turn.guess);
+      }
+    }
+    
+    return [...new Set(guesses)];
+  }
+
   /**
    * Analyzes conversation history and returns AI's assessment
    */
   async analyzeConversation(turns: Turn[]): Promise<AIResponse> {
     try {
+      // Extract previous guesses
+      const previousGuesses = this.extractPreviousGuesses(turns);
+      console.log('[DEBUG🙈🙈🙈🙈] Previous guesses extracted:', previousGuesses);
+
+      // Create tool with avoidance text
+      const avoidanceText = previousGuesses.length > 0 
+        ? ` CRITICAL: Must NOT be any of these previously guessed words: ${previousGuesses.join(', ')}`
+        : '';
+
+      const ANALYZE_CONVERSATION_TOOL = {
+        type: "function" as const,
+        function: {
+          name: 'analyze_conversation',
+          description: 'Analyze the conversation and provide thinking steps and a guess for the secret word',
+          parameters: {
+            type: 'object',
+            properties: {
+              thinking: {
+                type: 'array',
+                items: { type: 'string' },
+                description: 'Exactly 4 sentences of AI thinking, max 12 words each'
+              },
+              guess: {
+                type: 'string',
+                description: `CRITICAL CONSTRAINTS:
+1. MUST be a single lowercase word
+2. MUST be between 3-12 characters (STRICTLY enforced)
+3. MUST be a regular everyday word
+4. MUST NOT be technical terms or special characters${avoidanceText}`
+              }
+            },
+            required: ['thinking', 'guess'],
+            additionalProperties: false
+          },
+          strict: true
+        }
+      };
+
       // Format conversation history as a single context block
       const conversationHistory = turns.map(turn => {
         switch (turn.type) {
@@ -76,7 +103,7 @@ export class OpenAIService {
 
       // Make OpenAI API call using modern structured outputs
       const completion = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4o',
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
           { role: 'user', content: conversationHistory }

@@ -22,5 +22,9 @@
         "@testing-library/react-native": "^13.2.0",
         "@types/jest": "^30.0.0",
         "concurrently": "^8.2.2"
+    },
+    "dependencies": {
+        "openai": "^5.8.3",
+        "react-native-video": "^6.16.1"
     }
 }
