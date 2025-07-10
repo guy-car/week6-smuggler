@@ -1,6 +1,7 @@
 import React from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { Turn } from '../../store/gameStore';
+import ConversationMessage from './ConversationMessage';
 
 interface ConversationHistoryProps {
     conversation: Turn[];
@@ -15,51 +16,12 @@ const ConversationHistory: React.FC<ConversationHistoryProps> = ({
     const displayConversation = conversation.filter(turn => turn.type !== 'ai');
 
     const renderTurn = ({ item }: { item: Turn }) => {
-        const isCurrentPlayer = item.playerId === currentPlayerId;
-        // Only handle encryptor and decryptor messages now
-        const isEncryptor = item.type === 'encryptor';
-        const isDecryptor = item.type === 'decryptor';
-
-        let backgroundColor = '#F2F2F7';
-        let textColor = '#000000';
-        let borderColor = '#E5E5EA';
-
-        if (isEncryptor) {
-            backgroundColor = '#E8F5E8';
-            textColor = '#2E7D32';
-            borderColor = '#C8E6C9';
-        } else if (isDecryptor) {
-            backgroundColor = '#FFF3E0';
-            textColor = '#F57C00';
-            borderColor = '#FFCC02';
-        }
-
-        const alignSelf = isCurrentPlayer ? 'flex-end' : 'flex-start';
-        const maxWidth = '80%';
-
-        return (
-            <View style={[
-                styles.turnContainer,
-                { alignSelf, maxWidth, backgroundColor, borderColor }
-            ]}>
-                <View style={styles.turnHeader}>
-                    <Text style={[styles.turnType, { color: textColor }]}>
-                        {isEncryptor ? 'Encoder' : 'Decoder'}
-                    </Text>
-                    <Text style={[styles.timestamp, { color: textColor }]}>
-                        {new Date(item.timestamp).toLocaleTimeString()}
-                    </Text>
-                </View>
-                <Text style={[styles.turnContent, { color: textColor }]}>
-                    {item.content}
-                </Text>
-            </View>
-        );
+        return <ConversationMessage item={item} currentPlayerId={currentPlayerId} />;
     };
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Conversation History</Text>
+            <Text style={styles.title}>"Private" Human Chat</Text>
             <FlatList
                 data={displayConversation}
                 keyExtractor={(item) => item.id}
@@ -70,7 +32,7 @@ const ConversationHistory: React.FC<ConversationHistoryProps> = ({
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
                         <Text style={styles.emptyText}>No messages yet</Text>
-                        <Text style={styles.emptySubtext}>Start the conversation!</Text>
+                        <Text style={styles.emptySubtext}>Hello human, send a clue to start.</Text>
                     </View>
                 }
             />
@@ -81,14 +43,29 @@ const ConversationHistory: React.FC<ConversationHistoryProps> = ({
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#FFFFFF',
+        padding: 16,
+        width: '100%',
+        maxWidth: 500,
+        height: '100%',
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        borderRadius: 12,
+        marginHorizontal: 'auto',
+        borderWidth: 4,
+        borderColor: 'blue',
+        shadowColor: 'blue',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.7,
+        shadowRadius: 16,
+        elevation: 8,
+        marginTop: 16,
     },
     title: {
         fontSize: 18,
         fontWeight: 'bold',
         marginBottom: 12,
         paddingHorizontal: 16,
-        color: '#000000',
+        color: '#fff',
+        textAlign: 'center',
     },
     list: {
         flex: 1,

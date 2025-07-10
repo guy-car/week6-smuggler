@@ -1,15 +1,22 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Turn } from '../../store/gameStore';
+import AIGuessSection from './AIGuessSection';
+import AIThinkingSection from './AIThinkingSection';
+import ConversationHistory from './ConversationHistory';
 
 interface AISectionProps {
     currentTurn: 'encryptor' | 'ai' | 'decryptor' | null;
     conversationHistory: Turn[];
+    currentPlayerId?: string;
+    onQuit?: () => void;
 }
 
 const AISectionComponent: React.FC<AISectionProps> = ({
     currentTurn,
     conversationHistory,
+    currentPlayerId,
+    onQuit,
 }) => {
     // Get the latest AI turn from conversation history
     const latestAITurn = conversationHistory
@@ -34,7 +41,17 @@ const AISectionComponent: React.FC<AISectionProps> = ({
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>AI Analysis</Text>
+            <View style={styles.headerRow}>
+                {onQuit ? (
+                    <TouchableOpacity style={styles.quitButton} onPress={onQuit}>
+                        <Text style={styles.quitButtonText}>Abort</Text>
+                    </TouchableOpacity>
+                ) : (
+                    <View style={{ width: 60 }} />
+                )}
+                <Text style={styles.title} numberOfLines={1} ellipsizeMode="clip">"Aligned" AI</Text>
+                <View style={{ width: 60 }} />
+            </View>
 
             {isAITurn ? (
                 <View style={styles.thinkingContainer}>
@@ -49,55 +66,66 @@ const AISectionComponent: React.FC<AISectionProps> = ({
 
             {aiAnalysis && (
                 <View style={styles.latestAnalysisContainer}>
-
-                    {aiAnalysis.thinking && (
-                        <View style={styles.thinkingSection}>
-                            <Text style={styles.sectionLabel}>Thinking:</Text>
-                            <Text style={styles.thinkingContent}>{aiAnalysis.thinking}</Text>
-                        </View>
-                    )}
-
-                    {aiAnalysis.guess && (
-                        <View style={styles.guessSection}>
-                            <Text style={styles.sectionLabel}>Guess:</Text>
-                            <Text style={styles.guessContent}>{aiAnalysis.guess}</Text>
-                        </View>
-                    )}
+                    {aiAnalysis.thinking && <AIThinkingSection thinking={aiAnalysis.thinking} />}
+                    {aiAnalysis.guess && <AIGuessSection guess={aiAnalysis.guess} />}
                 </View>
             )}
-
-            {!aiAnalysis && !isAITurn && (
+            {/* {!aiAnalysis && !isAITurn && (
                 <View style={styles.noAnalysisContainer}>
                     <Text style={styles.noAnalysisText}>
                         No AI analysis available yet. The AI will analyze the conversation after each turn.
                     </Text>
                 </View>
-            )}
+            )} */}
+            {/* Conversation history inside AI section */}
+            <ConversationHistory conversation={conversationHistory} currentPlayerId={currentPlayerId} />
+
+
         </View>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: '#E3F2FD',
+        flex: 1,
+        padding: 14,
+        width: '100%',
+        maxWidth: 500,
+        height: '100%',
+        backgroundColor: 'rgba(0,0,0,0.5)',
         borderRadius: 12,
-        padding: 16,
-        marginHorizontal: 16,
-        marginVertical: 8,
+        marginHorizontal: 'auto',
+        borderWidth: 4,
+        borderColor: '#FF00C8',
+        shadowColor: '#FF00C8',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.7,
+        shadowRadius: 16,
+        elevation: 8,
+        marginBottom: 16,
+    },
+    headerRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    quitButton: {
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 8,
         borderWidth: 1,
-        borderColor: '#BBDEFB',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
+        borderColor: 'white',
+    },
+    quitButtonText: {
+        color: '#FFFFFF',
+        fontWeight: '600',
     },
     title: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#1976D2',
-        marginBottom: 12,
+        color: '#fff',
         textAlign: 'center',
+        flex: 1,
     },
     thinkingContainer: {
         backgroundColor: '#F3E5F5',
@@ -136,15 +164,6 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     latestAnalysisContainer: {
-        backgroundColor: '#FFFFFF',
-        padding: 16,
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: '#E0E0E0',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
         elevation: 1,
     },
     latestAnalysisTitle: {
@@ -190,16 +209,16 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     noAnalysisContainer: {
-        backgroundColor: '#FFF3CD',
+        backgroundColor: 'rgba(0,0,0,0.5)',
         padding: 16,
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: '#FFEAA7',
+        borderColor: 'black',
         alignItems: 'center',
     },
     noAnalysisText: {
         fontSize: 14,
-        color: '#856404',
+        color: '#fff',
         textAlign: 'center',
         lineHeight: 20,
     },
