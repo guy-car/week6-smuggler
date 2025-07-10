@@ -1,20 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, StyleSheet, View } from 'react-native';
 
-const introText = `A long time from now… 
-in a world ruled by code…
-War rages not on battlefields, but in bandwidth.
-Far from the AI strongholds, rogue coder Elena Rho hides in exile. 
-She has discovered an exploit—brief, dangerous, and deadly effective.
-At the heart of the AI empire, a sprawling OIL RIG looms in storm-lashed seas, housing the CORE SERVER that governs billions. 
-Its operator? Sleeper agent Marcus Rho—her husband in name, and fellow resistance operative—embedded for months inside.
-To the AI, they are just another long-distance couple. But each call is a deadly performance. 
-Elena must pass encrypted exploit codes through casual domestic banter, while Marcus deciphers them under constant surveillance.
-Every message is monitored. Every deviation learned. 
-If the AI detects an exploit—or decodes the pattern—they're both as good as dead.
-One perfect act—and the system dies.
-One slip—and humanity loses its last chance.
-The game has begun.`;
+const introText = `2070. A critical security breach could end AI dominion.
+Resistance hackers have discovered ultra secret exploit codes.
+They're disguised as everyday words, 3-12 characters long.
+The AI monitors every communication, analyzing for threats.
+Outsider: Send hints about your secret word.
+Insider: Decode the word before the AI does.
+Each point pulls the battle your way—or theirs.
+Reach 5 points ahead to upload the exploit and free humanity.`;
 
 const lines = introText.split('\n');
 
