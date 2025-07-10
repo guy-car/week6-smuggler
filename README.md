@@ -175,6 +175,7 @@ The React Native app uses Expo Router for navigation and connects to the backend
 
 ### Root `.env` File (Shared)
 Create a `.env` file in the root directory with all environment variables:
+Create a symbolic link `.env` file in /frontend (Expo Go needs that)
 
 ```bash
 # Mobile Development Configuration
