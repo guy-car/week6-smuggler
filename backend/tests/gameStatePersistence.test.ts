@@ -17,6 +17,7 @@ describe('Game State Persistence', () => {
                 conversationHistory: [
                     { type: 'outsider_hint', content: 'Hello', turnNumber: 1 }
                 ],
+                previousRoundsAnalysis: [],
                 currentTurn: 'decryptor',
                 gameStatus: 'active'
             };

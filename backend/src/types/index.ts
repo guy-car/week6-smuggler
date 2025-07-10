@@ -28,6 +28,7 @@ export interface Room {
     id: string;
     players: Player[];
     gameState: GameState | null;
+    roles: RoleAssignment | null; // Add this for role switching
     createdAt: Date;
     lastActivity: Date;
 }
