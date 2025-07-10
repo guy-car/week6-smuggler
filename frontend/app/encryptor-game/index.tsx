@@ -8,11 +8,12 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
-    View
+    View,
 } from 'react-native';
 import encoderBg from '../../assets/images/encoder.png';
 import { leaveRoom, sendMessage } from '../../services/websocket';
 import { useGameStore } from '../../store/gameStore';
+import { isMessageTooSimilar } from '../../utils/stringValidation';
 import AISectionComponent from '../components/AISectionComponent';
 import RoundModal from '../components/RoundModal';
 import ScoreProgressBar from '../components/ScoreProgressBar';
@@ -27,9 +28,9 @@ const EncryptorGameScreen = () => {
         round,
         maxRounds,
         score,
-        secretWord,
         player,
         roomId,
+        secretWord,
     } = useGameStore();
 
     const [messageInput, setMessageInput] = useState('');
@@ -40,6 +41,16 @@ const EncryptorGameScreen = () => {
 
     const handleSendMessage = async () => {
         if (!messageInput.trim() || !canSendMessage || isSubmitting) {
+            return;
+        }
+
+        // Validate that the message doesn't contain the secret word or similar variations
+        if (secretWord && isMessageTooSimilar(messageInput.trim(), secretWord)) {
+            Alert.alert(
+                'Do Better', 
+                'Are you trying to get us killed? Be more creative with your hints!',
+                [{ text: 'OK' }]
+            );
             return;
         }
 
