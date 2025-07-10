@@ -1,6 +1,7 @@
 import React from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { Turn } from '../../store/gameStore';
+import ConversationMessage from './ConversationMessage';
 
 interface ConversationHistoryProps {
     conversation: Turn[];
@@ -15,46 +16,7 @@ const ConversationHistory: React.FC<ConversationHistoryProps> = ({
     const displayConversation = conversation.filter(turn => turn.type !== 'ai');
 
     const renderTurn = ({ item }: { item: Turn }) => {
-        const isCurrentPlayer = item.playerId === currentPlayerId;
-        // Only handle encryptor and decryptor messages now
-        const isEncryptor = item.type === 'encryptor';
-        const isDecryptor = item.type === 'decryptor';
-
-        let backgroundColor = '#F2F2F7';
-        let textColor = '#000000';
-        let borderColor = '#E5E5EA';
-
-        if (isEncryptor) {
-            backgroundColor = '#E8F5E8';
-            textColor = '#2E7D32';
-            borderColor = '#C8E6C9';
-        } else if (isDecryptor) {
-            backgroundColor = '#FFF3E0';
-            textColor = '#F57C00';
-            borderColor = '#FFCC02';
-        }
-
-        const alignSelf = isCurrentPlayer ? 'flex-end' : 'flex-start';
-        const maxWidth = '80%';
-
-        return (
-            <View style={[
-                styles.turnContainer,
-                { alignSelf, maxWidth, backgroundColor, borderColor }
-            ]}>
-                <View style={styles.turnHeader}>
-                    <Text style={[styles.turnType, { color: textColor }]}>
-                        {isEncryptor ? 'Encryptor' : 'Decryptor'}
-                    </Text>
-                    <Text style={[styles.timestamp, { color: textColor }]}>
-                        {new Date(item.timestamp).toLocaleTimeString()}
-                    </Text>
-                </View>
-                <Text style={[styles.turnContent, { color: textColor }]}>
-                    {item.content}
-                </Text>
-            </View>
-        );
+        return <ConversationMessage item={item} currentPlayerId={currentPlayerId} />;
     };
 
     return (

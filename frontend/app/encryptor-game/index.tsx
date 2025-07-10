@@ -98,9 +98,7 @@ const EncryptorGameScreen = () => {
                         currentTurn={currentTurn}
                         conversationHistory={conversationHistory}
                     />
-                    <TouchableOpacity style={styles.quitButton} onPress={handleQuit}>
-                        <Text style={styles.quitButtonText}>Quit</Text>
-                    </TouchableOpacity>
+
                     <ConversationHistory
                         conversation={conversationHistory}
                         currentPlayerId={player?.id}
@@ -112,7 +110,9 @@ const EncryptorGameScreen = () => {
                     <Text style={styles.secretWordTitleUnified}>Secret Word:</Text>
                     <Text style={styles.secretWordTextUnified}>{secretWord || 'Loading...'}</Text>
                 </View>
-
+                <TouchableOpacity style={styles.quitButton} onPress={handleQuit}>
+                        <Text style={styles.quitButtonText}>Quit</Text>
+                    </TouchableOpacity>
                 <View style={styles.inputContainer}>
                     <TextInput
                         style={[
