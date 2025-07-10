@@ -1,31 +1,65 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Modal, StyleSheet, Text, View } from 'react-native';
+import { useGameStore } from '../../store/gameStore';
 
 interface RoundModalProps {
-    visible: boolean;
-    winner: 'ai' | 'humans';
-    onDismiss: () => void;
+    visible?: boolean;
+    winner?: 'ai' | 'humans';
+    onDismiss?: () => void;
 }
 
-const RoundModal: React.FC<RoundModalProps> = ({ visible, winner, onDismiss }) => {
+const RoundModal: React.FC<RoundModalProps> = ({ visible: propVisible, winner: propWinner, onDismiss: propOnDismiss }) => {
+    const { score, setShowGuessesModal } = useGameStore();
+    const [visible, setVisible] = useState(false);
+    const [winner, setWinner] = useState<'ai' | 'humans' | null>(null);
+    const [previousScore, setPreviousScore] = useState(score);
+
+    // Detect score changes and determine winner
     useEffect(() => {
-        if (visible) {
-            const timer = setTimeout(onDismiss, 3000);
+        if (score !== previousScore) {
+            // Determine who won based on score change
+            let roundWinner: 'ai' | 'humans';
+            
+            if (score > previousScore) {
+                // Score increased - humans won
+                roundWinner = 'humans';
+            } else {
+                // Score decreased - AI won
+                roundWinner = 'ai';
+            }
+            
+            setWinner(roundWinner);
+            setVisible(true);
+            setPreviousScore(score);
+        }
+    }, [score, previousScore]);
+
+    // Use props if provided, otherwise use internal state
+    const isVisible = propVisible !== undefined ? propVisible : visible;
+    const roundWinner = propWinner || winner || 'humans';
+    const handleDismiss = propOnDismiss || (() => {
+        setVisible(false);
+        setShowGuessesModal(false);
+    });
+
+    useEffect(() => {
+        if (isVisible) {
+            const timer = setTimeout(handleDismiss, 3000);
             return () => clearTimeout(timer);
         }
-    }, [visible, onDismiss]);
+    }, [isVisible, handleDismiss]);
 
-    const isAI = winner === 'ai';
+    const isAI = roundWinner === 'ai';
     const bgColor = isAI ? 'rgba(255, 59, 48, 0.95)' : 'rgba(76, 217, 100, 0.95)';
     const textColor = '#fff';
     const message = isAI ? 'AI WINS THE ROUND' : 'HUMANS WIN THE ROUND';
 
     return (
         <Modal
-            visible={visible}
+            visible={isVisible}
             transparent
             animationType="fade"
-            onRequestClose={onDismiss}
+            onRequestClose={handleDismiss}
         >
             <View style={styles.overlay}>
                 <View style={[styles.modalBox, { backgroundColor: bgColor }]}> 

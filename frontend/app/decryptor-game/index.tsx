@@ -15,6 +15,7 @@ import decoderBg from '../../assets/images/decoder.png';
 import { leaveRoom, submitGuess } from '../../services/websocket';
 import { useGameStore } from '../../store/gameStore';
 import AISectionComponent from '../components/AISectionComponent';
+import RoundModal from '../components/RoundModal';
 import ScoreProgressBar from '../components/ScoreProgressBar';
 
 const DecryptorGameScreen = () => {
@@ -126,6 +127,8 @@ const DecryptorGameScreen = () => {
                     </TouchableOpacity>
                 </View>
             </KeyboardAvoidingView>
+            
+            <RoundModal />
         </ImageBackground>
     );
 };
