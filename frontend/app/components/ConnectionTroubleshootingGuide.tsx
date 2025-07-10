@@ -26,7 +26,7 @@ const ConnectionTroubleshootingGuide: React.FC<ConnectionTroubleshootingGuidePro
                 'Make sure the backend server is started with: npm run dev:backend',
                 'Check that the server is listening on the correct port (usually 3000)',
                 'Look for server startup messages in the terminal',
-                'Try accessing the server in a web browser: http://localhost:3000/api/health'
+                `Try accessing the server in a web browser: ${process.env.EXPO_PUBLIC_BACKEND_URL || 'http://localhost:3000'}/api/health`
             ]
         },
         {
@@ -54,8 +54,8 @@ const ConnectionTroubleshootingGuide: React.FC<ConnectionTroubleshootingGuidePro
             title: '4. Verify environment configuration',
             content: [
                 'Check that EXPO_PUBLIC_BACKEND_URL is set correctly in your .env file',
-                'The format should be: http://YOUR_IP_ADDRESS:3000',
-                'Example: http://192.168.1.100:3000',
+                `The format should be: ${process.env.EXPO_PUBLIC_BACKEND_URL || 'http://YOUR_IP_ADDRESS:3000'}`,
+                `Example: ${process.env.EXPO_PUBLIC_BACKEND_URL || 'http://192.168.1.100:3000'}`,
                 'Make sure there are no extra spaces or characters'
             ]
         },
@@ -63,7 +63,7 @@ const ConnectionTroubleshootingGuide: React.FC<ConnectionTroubleshootingGuidePro
             id: 'testing',
             title: '5. Test connectivity',
             content: [
-                'On your phone, open a browser and try: http://YOUR_IP:3000/api/health',
+                `On your phone, open a browser and try: ${process.env.EXPO_PUBLIC_BACKEND_URL || 'http://YOUR_IP:3000'}/api/health`,
                 'If this doesn\'t work, it\'s a network issue, not a code issue',
                 'Try pinging your computer\'s IP from another device',
                 'Check if your router has any restrictions'
