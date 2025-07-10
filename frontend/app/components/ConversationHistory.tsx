@@ -44,7 +44,7 @@ const ConversationHistory: React.FC<ConversationHistoryProps> = ({
             ]}>
                 <View style={styles.turnHeader}>
                     <Text style={[styles.turnType, { color: textColor }]}>
-                        {isEncryptor ? 'Encryptor' : 'Decryptor'}
+                        {isEncryptor ? 'Encoder' : 'Decoder'}
                     </Text>
                     <Text style={[styles.timestamp, { color: textColor }]}>
                         {new Date(item.timestamp).toLocaleTimeString()}
