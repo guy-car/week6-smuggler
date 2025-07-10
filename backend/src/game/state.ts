@@ -126,15 +126,21 @@ export class GameStateManager {
     }
 
     /**
-     * Advance to next round
+     * Advance to next round and switch roles
      */
-    public advanceRound(gameState: GameState): GameState {
-        return {
+    public advanceRound(gameState: GameState, roles: RoleAssignment): {
+        newGameState: GameState;
+        newRoles: RoleAssignment;
+    } {
+        const newRoles = this.switchRoles([], roles);
+        const newGameState = {
             ...gameState,
             currentRound: gameState.currentRound + 1,
             conversationHistory: [],
-            currentTurn: 'encryptor'
+            currentTurn: 'encryptor' as const
         };
+
+        return { newGameState, newRoles };
     }
 
     /**

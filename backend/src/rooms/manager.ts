@@ -241,6 +241,7 @@ export class RoomManager {
             id: roomId,
             players: [],
             gameState: null,
+            roles: null, // Will be set when game starts
             createdAt: new Date(),
             lastActivity: new Date()
         };

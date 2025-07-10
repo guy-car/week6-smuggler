@@ -60,8 +60,9 @@ export class GameHandlers {
             // Create game state
             const gameState = this.gameStateManager.createGameState(secretWord, room.players);
 
-            // Update room with game state
+            // Update room with game state and roles
             room.gameState = gameState;
+            room.roles = roles;
 
             // Update player roles in the room
             room.players.forEach(player => {
@@ -296,26 +297,38 @@ export class GameHandlers {
                     socket.to(roomId).emit('game_end', gameEndData);
                     socket.emit('game_end', gameEndData);
                 } else {
-                    // Advance to next round
-                    const nextRoundState = this.gameStateManager.advanceRound(updatedGameState);
+                    // Advance to next round with role switching
+                    const { newGameState, newRoles } = this.gameStateManager.advanceRound(updatedGameState, room.roles!);
 
-                    // Keep fixed roles - no role switching
+                    // Update player roles in room
+                    room.players.forEach(player => {
+                        if (newRoles.encryptor === player.id) {
+                            player.role = 'encryptor';
+                        } else if (newRoles.decryptor === player.id) {
+                            player.role = 'decryptor';
+                        }
+                    });
+
+                    // Update room state with new roles
+                    room.gameState = newGameState;
+                    room.roles = newRoles;
 
                     // Select new secret word
                     const newSecretWord = this.wordManager.selectRandomWord();
-                    nextRoundState.secretWord = newSecretWord;
+                    newGameState.secretWord = newSecretWord;
 
-                    room.gameState = nextRoundState;
-
-                    // Emit round end event
+                    // Emit round end event with new roles
                     const roundEndData = {
                         roomId,
                         correct: isCorrect,
-                        score: nextRoundState.score,
+                        score: newGameState.score,
                         gameEnded: false,
                         newSecretWord,
-                        currentTurn: nextRoundState.currentTurn
+                        currentTurn: newGameState.currentTurn,
+                        roles: newRoles // Include new roles in round_end event
                     };
+
+
 
                     socket.to(roomId).emit('round_end', roundEndData);
                     socket.emit('round_end', roundEndData);
@@ -507,7 +520,7 @@ export class GameHandlers {
             });
             console.log(`[DEBUG] Previous Round Analyses:`, room.gameState.previousRoundsAnalysis);
             console.log(`[DEBUG] ==================================`);
-            
+
             const aiResponse = await this.aiService.analyzeConversation(
                 room.gameState.conversationHistory,
                 room.gameState.previousRoundsAnalysis
@@ -538,13 +551,13 @@ export class GameHandlers {
                     // Non-blocking - continue with game flow
                 }
 
-                // AI wins the round - update score and advance to next round
+                // AI wins the round - update score and advance to next round with role switching
                 const scoreUpdated = this.gameStateManager.updateScore(updatedGameState, false); // false = AI wins
-                const nextRound = this.gameStateManager.advanceRound(scoreUpdated);
+                const { newGameState, newRoles } = this.gameStateManager.advanceRound(scoreUpdated, room.roles!);
 
                 // Check if game ended
-                if (this.gameStateManager.isGameEnded(nextRound)) {
-                    const gameEnded = this.gameStateManager.endGame(nextRound);
+                if (this.gameStateManager.isGameEnded(newGameState)) {
+                    const gameEnded = this.gameStateManager.endGame(newGameState);
                     room.gameState = gameEnded;
 
                     // Emit game end event
@@ -557,19 +570,34 @@ export class GameHandlers {
 
                     this.io.to(roomId).emit('game_end', gameEndData);
                 } else {
+                    // Update player roles in room
+                    room.players.forEach(player => {
+                        if (newRoles.encryptor === player.id) {
+                            player.role = 'encryptor';
+                        } else if (newRoles.decryptor === player.id) {
+                            player.role = 'decryptor';
+                        }
+                    });
+
+                    // Update room state with new roles
+                    room.gameState = newGameState;
+                    room.roles = newRoles;
+
                     // Select new secret word
                     const newSecretWord = this.wordManager.selectRandomWord();
-                    nextRound.secretWord = newSecretWord;
-                    room.gameState = nextRound;
+                    newGameState.secretWord = newSecretWord;
 
-                    // Emit round end event
+                    // Emit round end event with new roles
                     const roundEndData = {
                         roomId,
                         correct: true,
-                        score: nextRound.score,
+                        score: newGameState.score,
                         gameEnded: false,
-                        newSecretWord
+                        newSecretWord,
+                        roles: newRoles // Include new roles in round_end event
                     };
+
+
 
                     this.io.to(roomId).emit('round_end', roundEndData);
                 }
@@ -586,7 +614,7 @@ export class GameHandlers {
                     thinking: aiResponse.thinking,
                     guess: aiResponse.guess
                 },
-                currentTurn: room.gameState.currentTurn
+                currentTurn: room.gameState!.currentTurn
             };
 
             // Emit to all players in the room
@@ -655,13 +683,13 @@ export class GameHandlers {
             const isCorrect = this.gameStateManager.validateGuess(guess, room.gameState.secretWord);
 
             if (isCorrect) {
-                // AI wins the round - update score and advance to next round
+                // AI wins the round - update score and advance to next round with role switching
                 const scoreUpdated = this.gameStateManager.updateScore(updatedGameState, false); // false = AI wins
-                const nextRound = this.gameStateManager.advanceRound(scoreUpdated);
+                const { newGameState, newRoles } = this.gameStateManager.advanceRound(scoreUpdated, room.roles!);
 
                 // Check if game ended
-                if (this.gameStateManager.isGameEnded(nextRound)) {
-                    const gameEnded = this.gameStateManager.endGame(nextRound);
+                if (this.gameStateManager.isGameEnded(newGameState)) {
+                    const gameEnded = this.gameStateManager.endGame(newGameState);
                     room.gameState = gameEnded;
 
                     // Emit game end event
@@ -674,19 +702,32 @@ export class GameHandlers {
 
                     this.io.to(roomId).emit('game_end', gameEndData);
                 } else {
+                    // Update player roles in room
+                    room.players.forEach(player => {
+                        if (newRoles.encryptor === player.id) {
+                            player.role = 'encryptor';
+                        } else if (newRoles.decryptor === player.id) {
+                            player.role = 'decryptor';
+                        }
+                    });
+
+                    // Update room state with new roles
+                    room.gameState = newGameState;
+                    room.roles = newRoles;
+
                     // Select new secret word
                     const newSecretWord = this.wordManager.selectRandomWord();
-                    nextRound.secretWord = newSecretWord;
-                    room.gameState = nextRound;
+                    newGameState.secretWord = newSecretWord;
 
-                    // Emit round end event
+                    // Emit round end event with new roles
                     const roundEndData = {
                         roomId,
                         correct: true,
-                        score: nextRound.score,
+                        score: newGameState.score,
                         gameEnded: false,
                         newSecretWord,
-                        currentTurn: nextRound.currentTurn
+                        currentTurn: newGameState.currentTurn,
+                        roles: newRoles // Include new roles in round_end event
                     };
 
                     this.io.to(roomId).emit('round_end', roundEndData);
