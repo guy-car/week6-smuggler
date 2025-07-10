@@ -10,8 +10,7 @@ interface RoundModalProps {
 }
 
 const RoundModal: React.FC<RoundModalProps> = ({ visible: propVisible, winner: propWinner, onDismiss: propOnDismiss }) => {
-    const { score, setShowGuessesModal, conversationHistory } = useGameStore();
-    const lastAIGuess = (useGameStore.getState() as any).lastAIGuess as string | undefined;
+    const { score, setShowGuessesModal, conversationHistory, lastAIGuess } = useGameStore();
     const [visible, setVisible] = useState(false);
     const [winner, setWinner] = useState<'ai' | 'humans' | null>(null);
     const [previousScore, setPreviousScore] = useState(score);
@@ -157,7 +156,7 @@ const styles = StyleSheet.create({
         width: '100%',    },
     // Add new styles for the header
     progressBarHeader: {
-        width: '119%',
+        width: '120%',
         alignSelf: 'center',
         marginHorizontal: -32,
         marginTop: -48,

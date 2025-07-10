@@ -365,6 +365,8 @@ export function getSocket() {
       };
       // Add to conversation history (will be filtered out in display)
       useGameStore.getState().addTurn(turn);
+      // Store the AI guess for the modal
+      useGameStore.getState().setLastAIGuess(data.turn.guess);
       useGameStore.getState().setCurrentTurn(data.currentTurn as 'encryptor' | 'ai' | 'decryptor' | null);
     });
 
@@ -416,6 +418,9 @@ export function getSocket() {
       
       // Clear conversation history for new round
       useGameStore.getState().setConversationHistory([]);
+      
+      // Clear AI analysis for new round
+      useGameStore.getState().setLastAIGuess(null);
       
       useGameStore.getState().setRound(data.round || 1);
       if (data.score !== undefined) {
