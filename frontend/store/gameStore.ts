@@ -116,7 +116,7 @@ export const useGameStore = create<GameState>((set) => ({
   conversationHistory: [],
   currentTurn: null,
   secretWord: null,
-  score: 0,
+  score: 5,
   round: 1,
   maxRounds: 5,
 
