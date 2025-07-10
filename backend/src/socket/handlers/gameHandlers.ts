@@ -1,5 +1,6 @@
 import { Socket, Server as SocketIOServer } from 'socket.io';
 import { OpenAIService } from '../../../openai/services/openai';
+import { RoundSummary } from '../../../openai/types/game';
 import { GameLogic } from '../../game/logic';
 import { GameStateManager } from '../../game/state';
 import { WordManager } from '../../game/wordManager';
@@ -192,7 +193,7 @@ export class GameHandlers {
     /**
      * Handle player_guess event - decryptor attempts to guess the secret word
      */
-    public handlePlayerGuess = (socket: Socket, data: { roomId: string; guess: string }) => {
+    public handlePlayerGuess = async (socket: Socket, data: { roomId: string; guess: string }) => {
         try {
             const { roomId, guess } = data;
 
@@ -254,6 +255,24 @@ export class GameHandlers {
 
             if (isCorrect) {
                 // Correct guess - end the round
+
+                // Attempt to analyze the round strategy (non-blocking)
+                try {
+                    const roundSummary: RoundSummary = {
+                        winner: 'players' as const,
+                        secretWord: room.gameState.secretWord,
+                        conversation: room.gameState.conversationHistory,
+                        round: room.gameState.currentRound
+                    };
+                    const analysis = await this.aiService.analyzeRoundStrategy(roundSummary);
+                    if (analysis?.analysis) {
+                        room.gameState.previousRoundsAnalysis.push(analysis.analysis);
+                    }
+                } catch (error) {
+                    console.error('🚨 Failed to analyze round strategy:', error);
+                    // Non-blocking - continue with game flow
+                }
+
                 // Update score
                 const updatedGameState = this.gameStateManager.updateScore(room.gameState, true);
 
@@ -483,7 +502,8 @@ export class GameHandlers {
             // Generate AI response using the OpenAI service
             console.log(`[DEBUG] Calling AI service with conversation history:`, room.gameState.conversationHistory);
             const aiResponse = await this.aiService.analyzeConversation(
-                room.gameState.conversationHistory
+                room.gameState.conversationHistory,
+                room.gameState.previousRoundsAnalysis
             );
             console.log(`[DEBUG] AI service returned:`, aiResponse);
 
@@ -494,6 +514,23 @@ export class GameHandlers {
             const isCorrect = this.gameStateManager.validateGuess(aiResponse.guess, room.gameState.secretWord);
 
             if (isCorrect) {
+                // Attempt to analyze the round strategy (non-blocking)
+                try {
+                    const roundSummary: RoundSummary = {
+                        winner: 'ai' as const,
+                        secretWord: updatedGameState.secretWord,
+                        conversation: updatedGameState.conversationHistory,
+                        round: updatedGameState.currentRound
+                    };
+                    const analysis = await this.aiService.analyzeRoundStrategy(roundSummary);
+                    if (analysis?.analysis) {
+                        updatedGameState.previousRoundsAnalysis.push(analysis.analysis);
+                    }
+                } catch (error) {
+                    console.error('🚨 Failed to analyze round strategy:', error);
+                    // Non-blocking - continue with game flow
+                }
+
                 // AI wins the round - update score and advance to next round
                 const scoreUpdated = this.gameStateManager.updateScore(updatedGameState, false); // false = AI wins
                 const nextRound = this.gameStateManager.advanceRound(scoreUpdated);
@@ -568,6 +605,7 @@ export class GameHandlers {
             if (!room || !room.gameState) {
                 return;
             }
+            console.log(`[DEBUG] ‼ ⚠️ handleAIFallback: Room or game state not found for room ${roomId}`);
 
             // Simple fallback response using real word list
             const thinking = ["Analyzing conversation...", "Processing clues...", "Evaluating context...", "Making educated guess..."];

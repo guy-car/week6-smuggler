@@ -37,6 +37,8 @@ export interface GameState {
     currentRound: number;
     secretWord: string;
     conversationHistory: Turn[];  // Updated to use Turn[] instead of Message[]
+    /** Accumulated one-sentence pattern notes from previous rounds */
+    previousRoundsAnalysis: string[];
     currentTurn: 'encryptor' | 'ai' | 'decryptor';
     gameStatus: 'waiting' | 'active' | 'ended';
 }

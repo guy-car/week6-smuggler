@@ -17,6 +17,7 @@ export class GameStateManager {
             currentRound: 1,
             secretWord: secretWord.toLowerCase(),
             conversationHistory: [], // Now uses Turn[] instead of Message[]
+            previousRoundsAnalysis: [], // Initialize empty array for round analysis
             currentTurn: 'encryptor',
             gameStatus: 'active'
         };
