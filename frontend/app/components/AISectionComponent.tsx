@@ -10,6 +10,7 @@ interface AISectionProps {
     conversationHistory: Turn[];
     currentPlayerId?: string;
     onQuit?: () => void;
+    conversationHistoryProps?: Record<string, any>;
 }
 
 const AISectionComponent: React.FC<AISectionProps> = ({
@@ -17,6 +18,7 @@ const AISectionComponent: React.FC<AISectionProps> = ({
     conversationHistory,
     currentPlayerId,
     onQuit,
+    conversationHistoryProps,
 }) => {
     // Get the latest AI turn from conversation history
     const latestAITurn = conversationHistory
@@ -49,7 +51,7 @@ const AISectionComponent: React.FC<AISectionProps> = ({
                 ) : (
                     <View style={{ width: 60 }} />
                 )}
-                <Text style={styles.title} numberOfLines={1} ellipsizeMode="clip">"Aligned" AI</Text>
+                <Text style={styles.title} numberOfLines={1} ellipsizeMode="clip">AI is Listening</Text>
                 <View style={{ width: 60 }} />
             </View>
 
@@ -78,7 +80,7 @@ const AISectionComponent: React.FC<AISectionProps> = ({
                 </View>
             )} */}
             {/* Conversation history inside AI section */}
-            <ConversationHistory conversation={conversationHistory} currentPlayerId={currentPlayerId} />
+            <ConversationHistory conversation={conversationHistory} currentPlayerId={currentPlayerId} {...(conversationHistoryProps || {})} />
 
 
         </View>
