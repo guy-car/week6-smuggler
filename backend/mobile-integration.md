@@ -114,14 +114,15 @@ BACKEND_CORS_ORIGIN=http://192.168.1.100:8081
 - Simple environment variable test created
 
 ### Phase 2: Error Handling & User Experience
-- [ ] Create clear connection error UI components
-- [ ] Add helpful error messages for common issues (wrong IP, server down)
-- [ ] Implement simple retry button for connection failures
-- [ ] Add connection status indicators in mobile app
-- [ ] Create connection troubleshooting guide
-- [ ] Add helpful console logging for debugging
-- [ ] Implement graceful error display without blocking app
-- [ ] Add "Check Connection" button in settings/error screens
+- [x] Create clear connection error UI components
+- [x] Add helpful error messages for common issues (wrong IP, server down)
+- [x] Implement simple retry button for connection failures
+- [x] Add connection status indicators in mobile app
+- [x] Create connection troubleshooting guide
+- [x] Add helpful console logging for debugging
+- [x] Implement graceful error display without blocking app
+- [x] Add "Check Connection" button in settings/error screens
+- [x] **Debug and resolve TransportError: 'Failed to connect to /192.168.1.248:3000' (see Section 10 for troubleshooting steps)**
 
 ### Phase 3: Developer Experience & Documentation
 - [ ] Create setup guide in README.md
@@ -216,3 +217,51 @@ BACKEND_CORS_ORIGIN=http://192.168.1.100:8081
 - [ ] WebSocket connection stability >99%
 - [ ] Environment validation completes in <1 second
 - [ ] No performance impact on existing functionality
+
+## 10. Real-World Mobile Connection Challenges
+
+### Example Error (from Android Expo Go)
+
+```
+[WebSocket] Full error object: {
+  "description": {
+    "isTrusted": false,
+    "message": "Failed to connect to /192.168.1.248:3000"
+  },
+  "type": "TransportError"
+}
+```
+
+#### Call Stack (abbreviated)
+- _construct
+- Wrapper
+- _callSuper
+- SyntheticError
+- reactConsoleErrorHandler
+- anonymous
+
+### What This Means
+- The mobile device attempted to connect to the backend at the correct IP and port, but the connection failed at the network level.
+- This is a **TransportError**: the device could not reach the server at all (not a CORS or code bug).
+
+### Common Causes
+- Backend server is not running or not listening on the correct IP/port
+- Firewall on the development machine is blocking incoming connections
+- Mobile device is not on the same WiFi network as the development machine
+- The IP address in `.env` is incorrect or has changed (e.g., after reconnecting to WiFi)
+- VPNs or network isolation features are interfering
+
+### Troubleshooting Steps
+1. **Verify Backend is Running**: Ensure `npm run dev:backend` is active and listening on the correct port.
+2. **Check IP Address**: Double-check your local IP with `ifconfig`/`ipconfig` and update `.env` if needed.
+3. **Firewall Settings**: Temporarily disable your firewall or allow incoming connections on port 3000.
+4. **Same Network**: Make sure both your computer and phone are on the same WiFi network (not guest or isolated networks).
+5. **Test with Browser**: On your phone, open a browser and try to visit `http://192.168.1.248:3000/api/health`.
+   - If it doesn't load, the issue is network/firewall, not your code.
+6. **Restart Everything**: Restart backend, frontend, and Expo Go app after any changes.
+
+### Note
+Even with correct environment variables and CORS, real-world network issues can block mobile connections. Always test connectivity from the device itself, not just from your computer.
+
+#### UI/UX Note
+- Connection test results are now shown inline in the error and troubleshooting screens, instead of using pop-up alerts. This improves reliability and testability.

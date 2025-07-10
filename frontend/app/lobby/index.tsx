@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Button, FlatList, Text, TextInput, View } from 'react-native';
 import { createRoom, getAvailableRooms, getSocket, joinRoom } from '../../services/websocket';
 import { useGameStore } from '../../store/gameStore';
+import ConnectionStatusIndicator from '../components/ConnectionStatusIndicator';
 
 const LobbyScreen = () => {
     const availableRooms = useGameStore((s) => s.availableRooms);
@@ -53,7 +54,11 @@ const LobbyScreen = () => {
 
     return (
         <View style={{ flex: 1, padding: 24, backgroundColor: '#F2F2F7' }}>
-            <Text style={{ fontSize: 28, fontWeight: 'bold', marginBottom: 16 }}>Lobby</Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <Text style={{ fontSize: 28, fontWeight: 'bold' }}>Lobby</Text>
+                <ConnectionStatusIndicator compact showDetails />
+            </View>
+
             <TextInput
                 placeholder="Enter your name (optional)"
                 value={playerName}

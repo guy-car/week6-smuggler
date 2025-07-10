@@ -8,6 +8,9 @@ const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'http://localhost:300
 console.log('[WebSocket] Attempting to connect to:', BACKEND_URL);
 
 let socket: ReturnType<typeof io> | null = null;
+let retryCount = 0;
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 2000; // 2 seconds
 
 export function getSocket() {
   if (!socket) {
@@ -16,20 +19,36 @@ export function getSocket() {
       transports: ['websocket'],
       autoConnect: true,
       timeout: 10000, // 10 second timeout
-      forceNew: true
+      forceNew: true,
+      reconnection: true,
+      reconnectionAttempts: MAX_RETRIES,
+      reconnectionDelay: RETRY_DELAY,
     });
 
     // Connection events
     socket.on('connect', () => {
       console.log('[WebSocket] Connected:', socket?.id);
+      retryCount = 0; // Reset retry count on successful connection
       useGameStore.getState().setConnected(true);
       useGameStore.getState().setSocketId(socket?.id || null);
+      useGameStore.getState().setError(null);
     });
 
     socket.on('disconnect', (reason: any) => {
       console.log('[WebSocket] Disconnected:', reason);
       useGameStore.getState().setConnected(false);
       useGameStore.getState().setSocketId(null);
+
+      // Set appropriate error message based on disconnect reason
+      if (reason === 'io server disconnect') {
+        useGameStore.getState().setError('Server disconnected. Please try reconnecting.');
+      } else if (reason === 'io client disconnect') {
+        useGameStore.getState().setError('Connection was closed by the client.');
+      } else if (reason === 'transport close') {
+        useGameStore.getState().setError('Network connection was lost. Check your internet connection.');
+      } else {
+        useGameStore.getState().setError(`Connection lost: ${reason}`);
+      }
     });
 
     socket.on('connect_error', (err: any) => {
@@ -42,8 +61,53 @@ export function getSocket() {
         stack: err.stack
       });
       console.error('[WebSocket] Full error object:', JSON.stringify(err, null, 2));
+
+      retryCount++;
       useGameStore.getState().setConnected(false);
       useGameStore.getState().setSocketId(null);
+
+      // Provide more specific error messages for mobile connection issues
+      let errorMessage = 'Failed to connect to server';
+
+      if (err.message?.includes('Failed to connect to')) {
+        errorMessage = `Cannot reach server at ${BACKEND_URL}. Check if the server is running and your device is on the same network.`;
+      } else if (err.message?.includes('timeout')) {
+        errorMessage = 'Connection timed out. The server may be overloaded or unreachable.';
+      } else if (err.message?.includes('CORS') || err.message?.includes('cors')) {
+        errorMessage = 'CORS policy error. The server rejected the connection due to security restrictions.';
+      } else if (err.type === 'TransportError') {
+        errorMessage = `Network transport error: ${err.message || 'Cannot establish connection to server'}`;
+      } else if (retryCount >= MAX_RETRIES) {
+        errorMessage = `Connection failed after ${MAX_RETRIES} attempts. Please check your network and try again.`;
+      } else {
+        errorMessage = `Connection error: ${err.message || 'Unknown error occurred'}`;
+      }
+
+      useGameStore.getState().setError(errorMessage);
+
+      // Log retry information
+      if (retryCount < MAX_RETRIES) {
+        console.log(`[WebSocket] Retry attempt ${retryCount}/${MAX_RETRIES} in ${RETRY_DELAY}ms`);
+      } else {
+        console.log('[WebSocket] Max retries reached, giving up');
+      }
+    });
+
+    socket.on('reconnect_attempt', (attemptNumber: number) => {
+      console.log(`[WebSocket] Reconnection attempt ${attemptNumber}`);
+      useGameStore.getState().setError(`Reconnecting... (attempt ${attemptNumber}/${MAX_RETRIES})`);
+    });
+
+    socket.on('reconnect_failed', () => {
+      console.log('[WebSocket] Reconnection failed');
+      useGameStore.getState().setError('Failed to reconnect after multiple attempts. Please check your connection and try again.');
+    });
+
+    socket.on('reconnect', (attemptNumber: number) => {
+      console.log(`[WebSocket] Reconnected after ${attemptNumber} attempts`);
+      retryCount = 0;
+      useGameStore.getState().setConnected(true);
+      useGameStore.getState().setError(null);
     });
 
     // Room events
