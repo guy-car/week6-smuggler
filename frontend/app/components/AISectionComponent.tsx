@@ -58,17 +58,17 @@ const AISectionComponent: React.FC<AISectionProps> = ({
                     {aiAnalysis.guess && <AIGuessSection guess={aiAnalysis.guess} />}
                 </View>
             )}
-
-            {/* Conversation history inside AI section */}
-            <ConversationHistory conversation={conversationHistory} currentPlayerId={currentPlayerId} />
-
-            {!aiAnalysis && !isAITurn && (
+            {/* {!aiAnalysis && !isAITurn && (
                 <View style={styles.noAnalysisContainer}>
                     <Text style={styles.noAnalysisText}>
                         No AI analysis available yet. The AI will analyze the conversation after each turn.
                     </Text>
                 </View>
-            )}
+            )} */}
+            {/* Conversation history inside AI section */}
+            <ConversationHistory conversation={conversationHistory} currentPlayerId={currentPlayerId} />
+
+
         </View>
     );
 };

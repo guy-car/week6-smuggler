@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 const AIThinkingSection: React.FC<{ thinking: string }> = ({ thinking }) => (
     <View style={styles.thinkingSection}>
-        <Text style={styles.sectionLabel}>Thinking:</Text>
+        <Text style={styles.sectionLabel}>AI Thinking:</Text>
         <Text style={styles.thinkingContent}>{thinking}</Text>
     </View>
 );

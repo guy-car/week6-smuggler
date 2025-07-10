@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 const AIGuessSection: React.FC<{ guess: string }> = ({ guess }) => (
     <View style={styles.guessSection}>
-        <Text style={styles.sectionLabel}>Guess:</Text>
+        <Text style={styles.sectionLabel}>AI Guess:</Text>
         <Text style={styles.guessContent}>{guess}</Text>
     </View>
 );

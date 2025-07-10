@@ -32,7 +32,7 @@ const ConversationHistory: React.FC<ConversationHistoryProps> = ({
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
                         <Text style={styles.emptyText}>No messages yet</Text>
-                        <Text style={styles.emptySubtext}>Send a clue to start</Text>
+                        <Text style={styles.emptySubtext}>Hello human, send a clue to start.</Text>
                     </View>
                 }
             />

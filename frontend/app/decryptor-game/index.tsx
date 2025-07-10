@@ -14,7 +14,6 @@ import {
 import { leaveRoom, submitGuess } from '../../services/websocket';
 import { useGameStore } from '../../store/gameStore';
 import AISectionComponent from '../components/AISectionComponent';
-import ConversationHistory from '../components/ConversationHistory';
 import ScoreProgressBar from '../components/ScoreProgressBar';
 
 const DecryptorGameScreen = () => {
@@ -106,15 +105,6 @@ const DecryptorGameScreen = () => {
                 </TouchableOpacity>
             </View>
 
-            {/* Avatar below the score bar and quit button */}
-            <View style={styles.avatarRow}>
-                <View style={styles.avatarContainerUnified}>
-                    <View style={styles.avatarCircleUnified}>
-                        <Text style={styles.avatarLabelUnified}>Decoder</Text>
-                    </View>
-                </View>
-            </View>
-
             <ScrollView
                 style={styles.content}
                 showsVerticalScrollIndicator={false}
@@ -124,10 +114,6 @@ const DecryptorGameScreen = () => {
                 <AISectionComponent
                     currentTurn={currentTurn}
                     conversationHistory={conversationHistory}
-                />
-                <ConversationHistory
-                    conversation={conversationHistory}
-                    currentPlayerId={player?.id}
                 />
             </ScrollView>
 
