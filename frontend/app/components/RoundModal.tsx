@@ -10,8 +10,7 @@ interface RoundModalProps {
 }
 
 const RoundModal: React.FC<RoundModalProps> = ({ visible: propVisible, winner: propWinner, onDismiss: propOnDismiss }) => {
-    const { score, setShowGuessesModal, conversationHistory } = useGameStore();
-    const lastAIGuess = (useGameStore.getState() as any).lastAIGuess as string | undefined;
+    const { score, setShowGuessesModal, conversationHistory, lastAIGuess } = useGameStore();
     const [visible, setVisible] = useState(false);
     const [winner, setWinner] = useState<'ai' | 'humans' | null>(null);
     const [previousScore, setPreviousScore] = useState(score);
@@ -79,19 +78,16 @@ const RoundModal: React.FC<RoundModalProps> = ({ visible: propVisible, winner: p
         >
             <View style={styles.overlay}>
                 <View style={[styles.modalBox, { backgroundColor: bgColor }]}> 
-                    {/* Score Progress Bar Header */}
-                    <View style={styles.progressBarHeader}>
-                        <View style={styles.progressBarHeaderBg} />
-                        <View style={styles.progressBarHeaderContent}>
-                            <ScoreProgressBar
-                                score={score}
-                                maxScore={10}
-                                aiWinsScore={0}
-                                humansWinScore={10}
-                            />
-                        </View>
+                    {/* Score Progress Bar */}
+                    <View style={styles.scoreBarContainer}>
+                        <ScoreProgressBar
+                            score={score}
+                            maxScore={10}
+                            aiWinsScore={0}
+                            humansWinScore={10}
+                            isInModal={true}
+                        />
                     </View>
-                    {/* End Score Progress Bar Header */}
 
                     <Text style={[styles.modalText, { color: textColor }]}>{message}</Text>
                     
@@ -139,7 +135,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         letterSpacing: 1.5,
         marginBottom: 16,
-        marginTop: -50,
+        marginTop: 0,
     },
     guessText: {
         fontSize: 20,
@@ -153,34 +149,14 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         marginBottom: 24,
     },
-    progressBarContainer: {
-        width: '100%',    },
-    // Add new styles for the header
-    progressBarHeader: {
-        width: '119%',
-        alignSelf: 'center',
-        marginHorizontal: -32,
-        marginTop: -48,
-        height: 160,
-        justifyContent: 'center',
-        alignItems: 'center',
-        position: 'relative',
-    },
-    progressBarHeaderBg: {
-        ...StyleSheet.absoluteFillObject,
+    scoreBarContainer: {
         backgroundColor: 'rgba(0,0,0,0.5)',
-        borderTopLeftRadius: 24,
-        borderTopRightRadius: 24,
-        zIndex: 0,
-        height: 80,
-
-    },
-    progressBarHeaderContent: {
-        zIndex: 1,
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 4,
         width: '100%',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginTop: -120,
+        top: -30,
+        height: 100,
     },
     nextRoundButton: {
         paddingHorizontal: 32,

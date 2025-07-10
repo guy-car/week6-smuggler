@@ -57,6 +57,7 @@ interface GameState {
   score: number;
   round: number;
   maxRounds: number;
+  lastAIGuess: string | null;
 
   // UI state
   currentScreen: GameScreen;
@@ -94,6 +95,7 @@ interface GameState {
   setShowSecretModal: (show: boolean) => void;
   setShowQuitConfirm: (show: boolean) => void;
   setAvailableRooms: (rooms: Room[]) => void;
+  setLastAIGuess: (guess: string | null) => void;
   reset: () => void;
 }
 
@@ -119,6 +121,7 @@ export const useGameStore = create<GameState>((set) => ({
   score: 5,
   round: 1,
   maxRounds: 5,
+  lastAIGuess: null,
 
   // UI state
   currentScreen: 'lobby',
@@ -158,6 +161,7 @@ export const useGameStore = create<GameState>((set) => ({
   setShowSecretModal: (show) => set({ showSecretModal: show }),
   setShowQuitConfirm: (show) => set({ showQuitConfirm: show }),
   setAvailableRooms: (rooms) => set({ availableRooms: rooms }),
+  setLastAIGuess: (guess) => set({ lastAIGuess: guess }),
   reset: () => set((state) => ({
     // Do NOT reset connected or socketId
     player: null,
@@ -172,6 +176,7 @@ export const useGameStore = create<GameState>((set) => ({
     score: 0,
     round: 1,
     maxRounds: 5,
+    lastAIGuess: null,
     currentScreen: 'lobby',
     isLoading: false,
     error: null,

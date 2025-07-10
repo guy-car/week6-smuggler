@@ -80,7 +80,7 @@ const EncryptorGameScreen = () => {
             >
                 {/* Score bar and quit button in a row at the very top */}
                 <View style={styles.topRow}>
-                    <View style={{ flex: 1 }}>
+                    <View style={{ flex: 1, marginTop: 30 }}>
                         <ScoreProgressBar
                             score={score}
                             maxScore={10}
@@ -161,6 +161,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#FFFFFF',
         borderBottomWidth: 1,
         borderBottomColor: '#E5E5EA',
+        marginTop: 10,
     },
     title: {
         fontSize: 20,

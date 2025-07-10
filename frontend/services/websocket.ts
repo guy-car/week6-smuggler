@@ -365,6 +365,8 @@ export function getSocket() {
       };
       // Add to conversation history (will be filtered out in display)
       useGameStore.getState().addTurn(turn);
+      // Store the AI guess for the modal
+      useGameStore.getState().setLastAIGuess(data.turn.guess);
       useGameStore.getState().setCurrentTurn(data.currentTurn as 'encryptor' | 'ai' | 'decryptor' | null);
     });
 
@@ -413,35 +415,24 @@ export function getSocket() {
     // Round end event
     socket.on('round_end', (data: any) => {
       console.log('[WebSocket] Round end:', data);
-
+      
       // Clear conversation history for new round
       useGameStore.getState().setConversationHistory([]);
-
+      
+      // Clear AI analysis for new round
+      useGameStore.getState().setLastAIGuess(null);
+      
       useGameStore.getState().setRound(data.round || 1);
       if (data.score !== undefined) {
         useGameStore.getState().setScore(data.score);
       }
+      // Update current turn for next round
       if (data.currentTurn) {
         useGameStore.getState().setCurrentTurn(data.currentTurn);
       }
+      // Optionally update secret word for next round
       if (data.newSecretWord) {
         useGameStore.getState().setSecretWord(data.newSecretWord);
-      }
-
-      // Handle role changes if included
-      if (data.roles) {
-        const currentPlayer = useGameStore.getState().player;
-        if (currentPlayer) {
-          const newRole = data.roles.encryptor === currentPlayer.id ? 'encryptor' : 'decryptor';
-          useGameStore.getState().setPlayerRole(newRole);
-
-          // Switch to the appropriate game screen based on new role
-          if (newRole === 'encryptor') {
-            useGameStore.getState().setCurrentScreen('encryptor-game');
-          } else if (newRole === 'decryptor') {
-            useGameStore.getState().setCurrentScreen('decryptor-game');
-          }
-        }
       }
     });
 
