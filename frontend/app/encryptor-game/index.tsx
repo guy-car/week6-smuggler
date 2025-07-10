@@ -15,6 +15,7 @@ import encoderBg from '../../assets/images/encoder.png';
 import { leaveRoom, sendMessage } from '../../services/websocket';
 import { useGameStore } from '../../store/gameStore';
 import AISectionComponent from '../components/AISectionComponent';
+import RoundModal from '../components/RoundModal';
 import ScoreProgressBar from '../components/ScoreProgressBar';
 import SecretWordContainer from './SecretWordContainer';
 
@@ -53,8 +54,6 @@ const EncryptorGameScreen = () => {
             setIsSubmitting(false);
         }
     };
-
-
 
     const handleQuit = () => {
         leaveRoom();
@@ -115,7 +114,7 @@ const EncryptorGameScreen = () => {
                         onChangeText={setMessageInput}
                         placeholder={
                             canSendMessage
-                                ? "Help the decryptor guess the word..."
+                                ? "Help the decoder guess the word..."
                                 : "Waiting for your turn..."
                         }
                         multiline
@@ -138,6 +137,8 @@ const EncryptorGameScreen = () => {
                     </TouchableOpacity>
                 </View>
             </KeyboardAvoidingView>
+            
+            <RoundModal />
         </ImageBackground>
     );
 };

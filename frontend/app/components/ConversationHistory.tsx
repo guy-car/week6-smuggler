@@ -6,11 +6,13 @@ import ConversationMessage from './ConversationMessage';
 interface ConversationHistoryProps {
     conversation: Turn[];
     currentPlayerId?: string;
+    emptySubtext?: string;
 }
 
 const ConversationHistory: React.FC<ConversationHistoryProps> = ({
     conversation,
-    currentPlayerId
+    currentPlayerId,
+    emptySubtext,
 }) => {
     // Filter out AI messages from display (but keep them in data for backend)
     const displayConversation = conversation.filter(turn => turn.type !== 'ai');
@@ -21,7 +23,7 @@ const ConversationHistory: React.FC<ConversationHistoryProps> = ({
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>"Private" Human Chat</Text>
+            <Text style={styles.title}>Human Chat</Text>
             <FlatList
                 data={displayConversation}
                 keyExtractor={(item) => item.id}
@@ -32,7 +34,7 @@ const ConversationHistory: React.FC<ConversationHistoryProps> = ({
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
                         <Text style={styles.emptyText}>No messages yet</Text>
-                        <Text style={styles.emptySubtext}>Hello human, send a clue to start.</Text>
+                        <Text style={styles.emptySubtext}>{emptySubtext || 'Hello human, send a clue to start.'}</Text>
                     </View>
                 }
             />
