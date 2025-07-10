@@ -98,14 +98,13 @@ const EncryptorGameScreen = () => {
                         currentTurn={currentTurn}
                         conversationHistory={conversationHistory}
                         currentPlayerId={player?.id}
+                        onQuit={handleQuit}
                     />
                 </ScrollView>
 
                 {/* Secret word above input field */}
                 <SecretWordContainer secretWord={secretWord || undefined} />
-                <TouchableOpacity style={styles.quitButton} onPress={handleQuit}>
-                        <Text style={styles.quitButtonText}>Quit</Text>
-                    </TouchableOpacity>
+
                 <View style={styles.inputContainer}>
                     <TextInput
                         style={[
@@ -116,12 +115,13 @@ const EncryptorGameScreen = () => {
                         onChangeText={setMessageInput}
                         placeholder={
                             canSendMessage
-                                ? "Give a hint to help the decryptor guess the word..."
+                                ? "Help the decryptor guess the word..."
                                 : "Waiting for your turn..."
                         }
                         multiline
                         maxLength={200}
                         editable={canSendMessage}
+                        placeholderTextColor="#CCCCCC"
                     />
                     <TouchableOpacity
                         style={[
@@ -167,6 +167,9 @@ const styles = StyleSheet.create({
         color: '#000000',
     },
     quitButton: {
+        position: 'absolute',
+        top: 16,
+        left: 16,
         paddingHorizontal: 16,
         paddingVertical: 8,
         backgroundColor: '#FF3B30',
@@ -222,19 +225,18 @@ const styles = StyleSheet.create({
     inputContainer: {
         flexDirection: 'row',
         padding: 16,
-        backgroundColor: '#FFFFFF',
-        borderTopWidth: 1,
-        borderTopColor: '#E5E5EA',
         gap: 8,
     },
     messageInput: {
         flex: 1,
-        borderWidth: 1,
-        borderColor: '#007AFF',
+        borderWidth: 4,
+        borderColor: '#fff',
         borderRadius: 8,
         padding: 12,
         fontSize: 16,
         maxHeight: 100,
+        color: '#fff',
+        backgroundColor: 'rgba(0,0,0,0.5)',
     },
     messageInputDisabled: {
         borderColor: '#C7C7CC',
@@ -242,17 +244,18 @@ const styles = StyleSheet.create({
         color: '#8E8E93',
     },
     sendButton: {
-        backgroundColor: '#007AFF',
+        borderWidth: 4,
+        borderColor: 'blue',
         paddingHorizontal: 20,
         paddingVertical: 12,
         borderRadius: 8,
         justifyContent: 'center',
+        backgroundColor: 'rgba(0, 16, 186, 0.8)',
     },
     sendButtonDisabled: {
-        backgroundColor: '#C7C7CC',
     },
     sendButtonText: {
-        color: '#FFFFFF',
+        color: '#fff',
         fontWeight: '600',
     },
     modalOverlay: {
@@ -349,53 +352,12 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#007AFF',
     },
-    avatarContainer: {
-        alignItems: 'center',
-        marginVertical: 8,
-    },
-    avatarCircle: {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
-        backgroundColor: '#E5E5EA',
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 2,
-        borderColor: '#C7C7CC',
-    },
-    avatarLabel: {
-        fontSize: 12,
-        fontWeight: '600',
-        color: '#8E8E93',
-    },
-    avatarRow: {
-        alignItems: 'center',
-        paddingVertical: 8,
-    },
-    avatarContainerUnified: {
-        alignItems: 'center',
-    },
-    avatarCircleUnified: {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
-        backgroundColor: '#E5E5EA',
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 2,
-        borderColor: '#C7C7CC',
-    },
-    avatarLabelUnified: {
-        fontSize: 12,
-        fontWeight: '600',
-        color: '#8E8E93',
-    },
     topRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: 16, // match decoder
-        paddingVertical: 8,    // match decoder
+        paddingVertical: 16,    // match decoder
     },
     secretWordContainerUnified: {
         backgroundColor: '#FFFFFF',

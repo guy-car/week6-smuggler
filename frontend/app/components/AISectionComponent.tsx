@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Turn } from '../../store/gameStore';
 import AIGuessSection from './AIGuessSection';
 import AIThinkingSection from './AIThinkingSection';
@@ -9,12 +9,14 @@ interface AISectionProps {
     currentTurn: 'encryptor' | 'ai' | 'decryptor' | null;
     conversationHistory: Turn[];
     currentPlayerId?: string;
+    onQuit?: () => void;
 }
 
 const AISectionComponent: React.FC<AISectionProps> = ({
     currentTurn,
     conversationHistory,
     currentPlayerId,
+    onQuit,
 }) => {
     // Get the latest AI turn from conversation history
     const latestAITurn = conversationHistory
@@ -39,7 +41,17 @@ const AISectionComponent: React.FC<AISectionProps> = ({
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>AI Listener</Text>
+            <View style={styles.headerRow}>
+                {onQuit ? (
+                    <TouchableOpacity style={styles.quitButton} onPress={onQuit}>
+                        <Text style={styles.quitButtonText}>Abort</Text>
+                    </TouchableOpacity>
+                ) : (
+                    <View style={{ width: 60 }} />
+                )}
+                <Text style={styles.title} numberOfLines={1} ellipsizeMode="clip">"Aligned" AI</Text>
+                <View style={{ width: 60 }} />
+            </View>
 
             {isAITurn ? (
                 <View style={styles.thinkingContainer}>
@@ -76,8 +88,8 @@ const AISectionComponent: React.FC<AISectionProps> = ({
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        padding: 16,
-        width: '90%',
+        padding: 14,
+        width: '100%',
         maxWidth: 500,
         height: '100%',
         backgroundColor: 'rgba(0,0,0,0.5)',
@@ -92,12 +104,28 @@ const styles = StyleSheet.create({
         elevation: 8,
         marginBottom: 16,
     },
+    headerRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    quitButton: {
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: 'white',
+    },
+    quitButtonText: {
+        color: '#FFFFFF',
+        fontWeight: '600',
+    },
     title: {
         fontSize: 18,
         fontWeight: 'bold',
         color: '#fff',
-        marginBottom: 12,
         textAlign: 'center',
+        flex: 1,
     },
     thinkingContainer: {
         backgroundColor: '#F3E5F5',

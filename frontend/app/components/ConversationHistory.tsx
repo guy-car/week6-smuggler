@@ -21,7 +21,7 @@ const ConversationHistory: React.FC<ConversationHistoryProps> = ({
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>"Unmonitored" Human Chat</Text>
+            <Text style={styles.title}>"Private" Human Chat</Text>
             <FlatList
                 data={displayConversation}
                 keyExtractor={(item) => item.id}

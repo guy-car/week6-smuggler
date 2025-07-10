@@ -15,19 +15,18 @@ const SecretWordContainer: React.FC<SecretWordContainerProps> = ({ secretWord })
 const styles = StyleSheet.create({
     secretWordContainerUnified: {
         padding: 16,
-        width: '90%',
+        width: '95%',
         maxWidth: 500,
         backgroundColor: 'rgba(0,0,0,0.5)',
         borderRadius: 12,
         marginHorizontal: 'auto',
         borderWidth: 4,
-        borderColor: '#FF00C8',
-        shadowColor: '#FF00C8',
+        borderColor: 'blue',
+        shadowColor: '#blue',
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 0.7,
         shadowRadius: 16,
         elevation: 8,
-        marginBottom: 16,
     },
     secretWordTitleUnified: {
         fontSize: 14,
