@@ -500,7 +500,14 @@ export class GameHandlers {
             }
 
             // Generate AI response using the OpenAI service
-            console.log(`[DEBUG] Calling AI service with conversation history:`, room.gameState.conversationHistory);
+            console.log(`[DEBUG] ========= AI TURN CONTEXT =========`);
+            console.log(`[DEBUG] Conversation History:`);
+            room.gameState.conversationHistory.forEach((turn, index) => {
+                console.log(`[DEBUG] Turn ${index + 1}:`, turn);
+            });
+            console.log(`[DEBUG] Previous Round Analyses:`, room.gameState.previousRoundsAnalysis);
+            console.log(`[DEBUG] ==================================`);
+            
             const aiResponse = await this.aiService.analyzeConversation(
                 room.gameState.conversationHistory,
                 room.gameState.previousRoundsAnalysis
