@@ -4,12 +4,11 @@ import {
     ImageBackground,
     KeyboardAvoidingView,
     Platform,
-    ScrollView,
     StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
-    View,
+    View
 } from 'react-native';
 import encoderBg from '../../assets/images/encoder.png';
 import { leaveRoom, sendMessage } from '../../services/websocket';
@@ -92,14 +91,15 @@ const EncryptorGameScreen = () => {
 
                 </View>
 
-                <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+                {/* Remove ScrollView, use View instead */}
+                <View style={styles.content}>
                     <AISectionComponent
                         currentTurn={currentTurn}
                         conversationHistory={conversationHistory}
                         currentPlayerId={player?.id}
                         onQuit={handleQuit}
                     />
-                </ScrollView>
+                </View>
 
                 {/* Secret word above input field */}
                 <SecretWordContainer secretWord={secretWord || undefined} />

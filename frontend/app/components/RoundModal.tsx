@@ -79,6 +79,20 @@ const RoundModal: React.FC<RoundModalProps> = ({ visible: propVisible, winner: p
         >
             <View style={styles.overlay}>
                 <View style={[styles.modalBox, { backgroundColor: bgColor }]}> 
+                    {/* Score Progress Bar Header */}
+                    <View style={styles.progressBarHeader}>
+                        <View style={styles.progressBarHeaderBg} />
+                        <View style={styles.progressBarHeaderContent}>
+                            <ScoreProgressBar
+                                score={score}
+                                maxScore={10}
+                                aiWinsScore={0}
+                                humansWinScore={10}
+                            />
+                        </View>
+                    </View>
+                    {/* End Score Progress Bar Header */}
+
                     <Text style={[styles.modalText, { color: textColor }]}>{message}</Text>
                     
                     {correctGuess && (
@@ -86,16 +100,6 @@ const RoundModal: React.FC<RoundModalProps> = ({ visible: propVisible, winner: p
                     )}
                     
                     <Text style={[styles.pointsText, { color: textColor }]}>Points: {pointsText}</Text>
-
-                    {/* Score Progress Bar */}
-                    <View style={styles.progressBarContainer}>
-                        <ScoreProgressBar
-                            score={score}
-                            maxScore={10}
-                            aiWinsScore={0}
-                            humansWinScore={10}
-                        />
-                    </View>
 
                     <TouchableOpacity
                         style={[styles.nextRoundButton, { backgroundColor: textColor }]}
@@ -135,6 +139,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         letterSpacing: 1.5,
         marginBottom: 16,
+        marginTop: -50,
     },
     guessText: {
         fontSize: 20,
@@ -149,8 +154,33 @@ const styles = StyleSheet.create({
         marginBottom: 24,
     },
     progressBarContainer: {
+        width: '100%',    },
+    // Add new styles for the header
+    progressBarHeader: {
+        width: '119%',
+        alignSelf: 'center',
+        marginHorizontal: -32,
+        marginTop: -48,
+        height: 160,
+        justifyContent: 'center',
+        alignItems: 'center',
+        position: 'relative',
+    },
+    progressBarHeaderBg: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        zIndex: 0,
+        height: 80,
+
+    },
+    progressBarHeaderContent: {
+        zIndex: 1,
         width: '100%',
-        marginBottom: 24,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: -120,
     },
     nextRoundButton: {
         paddingHorizontal: 32,

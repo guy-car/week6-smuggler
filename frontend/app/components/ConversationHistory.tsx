@@ -1,5 +1,5 @@
 import React from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Turn } from '../../store/gameStore';
 import ConversationMessage from './ConversationMessage';
 
@@ -17,27 +17,26 @@ const ConversationHistory: React.FC<ConversationHistoryProps> = ({
     // Filter out AI messages from display (but keep them in data for backend)
     const displayConversation = conversation.filter(turn => turn.type !== 'ai');
 
-    const renderTurn = ({ item }: { item: Turn }) => {
-        return <ConversationMessage item={item} currentPlayerId={currentPlayerId} />;
-    };
+    if (displayConversation.length === 0) {
+        return (
+            <View style={styles.container}>
+                <Text style={styles.title}>Human Chat</Text>
+                <View style={styles.emptyContainer}>
+                    <Text style={styles.emptyText}>No messages yet</Text>
+                    <Text style={styles.emptySubtext}>{emptySubtext || 'Hello human, send a clue to start.'}</Text>
+                </View>
+            </View>
+        );
+    }
 
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Human Chat</Text>
-            <FlatList
-                data={displayConversation}
-                keyExtractor={(item) => item.id}
-                renderItem={renderTurn}
-                style={styles.list}
-                contentContainerStyle={styles.listContent}
-                showsVerticalScrollIndicator={false}
-                ListEmptyComponent={
-                    <View style={styles.emptyContainer}>
-                        <Text style={styles.emptyText}>No messages yet</Text>
-                        <Text style={styles.emptySubtext}>{emptySubtext || 'Hello human, send a clue to start.'}</Text>
-                    </View>
-                }
-            />
+            <View style={styles.listContent}>
+                {displayConversation.map((item) => (
+                    <ConversationMessage key={item.id} item={item} currentPlayerId={currentPlayerId} />
+                ))}
+            </View>
         </View>
     );
 };
@@ -54,7 +53,6 @@ const styles = StyleSheet.create({
         marginHorizontal: 'auto',
         borderWidth: 4,
         borderColor: 'blue',
-        shadowColor: 'blue',
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 0.7,
         shadowRadius: 16,
@@ -69,45 +67,9 @@ const styles = StyleSheet.create({
         color: '#fff',
         textAlign: 'center',
     },
-    list: {
-        flex: 1,
-    },
     listContent: {
         paddingHorizontal: 16,
         paddingBottom: 16,
-    },
-    turnContainer: {
-        marginVertical: 4,
-        padding: 12,
-        borderRadius: 12,
-        borderWidth: 1,
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 1,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-        elevation: 2,
-    },
-    turnHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 4,
-    },
-    turnType: {
-        fontSize: 12,
-        fontWeight: '600',
-        textTransform: 'uppercase',
-    },
-    timestamp: {
-        fontSize: 10,
-        opacity: 0.7,
-    },
-    turnContent: {
-        fontSize: 14,
-        lineHeight: 20,
     },
     emptyContainer: {
         flex: 1,
