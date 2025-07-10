@@ -185,6 +185,7 @@ const styles = StyleSheet.create({
     },
     content: {
         flex: 1,
+        paddingTop: 16,
     },
     controlsContainer: {
         flexDirection: 'row',
@@ -206,7 +207,7 @@ const styles = StyleSheet.create({
     },
     aiSection: {
         paddingHorizontal: 16,
-        marginVertical: 8,
+        marginVertical: 16,
     },
     aiSectionTitle: {
         fontSize: 16,
@@ -216,7 +217,7 @@ const styles = StyleSheet.create({
     },
     aiThinkingBox: {
         backgroundColor: '#E3F2FD',
-        padding: 12,
+        padding: 16,
         borderRadius: 8,
         borderLeftWidth: 4,
         borderLeftColor: '#1976D2',

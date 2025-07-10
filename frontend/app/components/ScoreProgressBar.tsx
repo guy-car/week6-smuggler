@@ -76,11 +76,11 @@ const ScoreProgressBar: React.FC<ScoreProgressBarProps> = ({
 
 const styles = StyleSheet.create({
     container: {
-        paddingVertical: 16,
+        paddingTop: 10,
         paddingHorizontal: 8,
         backgroundColor: 'transparent',
         alignItems: 'stretch',
-        marginTop: 32,
+        marginTop: 46,
     },
     labelsRow: {
         flexDirection: 'row',
