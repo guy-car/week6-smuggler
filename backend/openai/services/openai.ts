@@ -117,6 +117,12 @@ export class OpenAIService {
         ? `\nPreviously observed player strategies:\n${previousAnalyses.join('\n')}\nBe on the lookout for similar approaches.`
         : '';
 
+      console.log(`[DEBUG] ========= FORMATTED AI PROMPT =========`);
+      console.log(`[DEBUG] System Prompt:`, SYSTEM_PROMPT);
+      console.log(`[DEBUG] Conversation History:`, conversationHistory);
+      console.log(`[DEBUG] Previous Analyses Context:`, previousAnalysesContext);
+      console.log(`[DEBUG] =====================================`);
+
       // Make OpenAI API call using modern structured outputs
       const completion = await openai.chat.completions.create({
         model: 'gpt-4o',
