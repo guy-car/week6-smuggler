@@ -40,7 +40,7 @@ const RoomScreen = () => {
         useGameStore.getState().setPlayers([]);
         useGameStore.getState().reset();
     };
-
+    console.log('roomId:', roomId, typeof roomId);
     return (
         <View style={{ flex: 1 }}>
             <StatusBar style="light" translucent backgroundColor="transparent" />
@@ -61,7 +61,9 @@ const RoomScreen = () => {
                         </TouchableOpacity>
                         <View style={styles.roomIdContainer}>
                             <Text style={styles.roomIdLabel}>ROOM ID</Text>
-                            <Text style={styles.roomId}>{roomId?.slice(0, 8).toUpperCase()}</Text>
+                            <Text style={styles.roomId}>
+                                {typeof roomId === 'string' ? roomId.slice(0, 8).toUpperCase() : ''}
+                            </Text>
                         </View>
                         <View style={{ width: 60 }} /> {/* Spacer for symmetry */}
                     </View>
@@ -106,6 +108,7 @@ const RoomScreen = () => {
                     </View>
                 </View>
             </View>
+            
         </View>
     );
 };
