@@ -109,3 +109,27 @@ export const AIResponseSchema = z.object({
     .min(3).max(12)
 });
 export type AIResponse = z.infer<typeof AIResponseSchema>; 
+
+export interface RoundSummary {
+    winner: 'players' | 'ai';
+    secretWord: string;
+    conversation: Turn[];
+    round: number;
+}
+
+export interface RoundAnalysis {
+    analysis: string;
+    comment: string;  // Not optional anymore
+}
+
+export const RoundSummarySchema = z.object({
+    winner: z.enum(['players', 'ai']),
+    secretWord: z.string(),
+    conversation: z.array(TurnSchema),
+    round: z.number()
+});
+
+export const RoundAnalysisSchema = z.object({
+    analysis: z.string(),
+    comment: z.string()
+}); 
