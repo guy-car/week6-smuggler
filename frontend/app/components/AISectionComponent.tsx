@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Turn } from '../../store/gameStore';
 import AIGuessSection from './AIGuessSection';
@@ -20,6 +20,22 @@ const AISectionComponent: React.FC<AISectionProps> = ({
     onQuit,
     conversationHistoryProps,
 }) => {
+    const [countdown, setCountdown] = useState(30);
+
+    // Countdown timer effect
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setCountdown((prevCount) => {
+                if (prevCount <= 1) {
+                    return 30; // Reset to 30 when it reaches 0
+                }
+                return prevCount - 1;
+            });
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, []);
+
     // Get the latest AI turn from conversation history
     const latestAITurn = conversationHistory
         .filter(turn => turn.type === 'ai')
@@ -52,7 +68,9 @@ const AISectionComponent: React.FC<AISectionProps> = ({
                     <View style={{ width: 60 }} />
                 )}
                 <Text style={styles.title} numberOfLines={1} ellipsizeMode="clip">AI is Listening</Text>
-                <View style={{ width: 60 }} />
+                <View style={styles.timerContainer}>
+                    <Text style={styles.timerText}>{countdown}s</Text>
+                </View>
             </View>
 
             {isAITurn ? (
@@ -128,6 +146,18 @@ const styles = StyleSheet.create({
         color: '#fff',
         textAlign: 'center',
         flex: 1,
+    },
+    timerContainer: {
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        backgroundColor: 'red',
+        borderRadius: 8,
+        marginLeft: 10,
+    },
+    timerText: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: 'bold',
     },
     thinkingContainer: {
         backgroundColor: '#F3E5F5',
