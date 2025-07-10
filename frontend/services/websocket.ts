@@ -211,6 +211,9 @@ export function getSocket() {
       useGameStore.getState().setGameStatus('active');
       useGameStore.getState().setPlayers(data.players);
       useGameStore.getState().setSecretWord(data.secretWord);
+      
+      // Set initial score to 5 (neutral) - matches backend INITIAL_SCORE
+      useGameStore.getState().setScore(5);
 
       // Set current player's actual role from backend
       const currentPlayer = useGameStore.getState().player;
@@ -239,6 +242,9 @@ export function getSocket() {
       useGameStore.getState().setGameStatus('active');
       useGameStore.getState().setPlayers(data.players);
       useGameStore.getState().setSecretWord(data.secretWord);
+      
+      // Set initial score to 5 (neutral) - matches backend INITIAL_SCORE
+      useGameStore.getState().setScore(5);
 
       // Set current player's role
       const currentPlayer = useGameStore.getState().player;
