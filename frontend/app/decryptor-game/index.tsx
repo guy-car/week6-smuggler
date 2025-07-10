@@ -12,7 +12,7 @@ import {
     View,
 } from 'react-native';
 import decoderBg from '../../assets/images/decoder.png';
-import { leaveRoom, sendMessage } from '../../services/websocket';
+import { leaveRoom, submitGuess } from '../../services/websocket';
 import { useGameStore } from '../../store/gameStore';
 import AISectionComponent from '../components/AISectionComponent';
 import ScoreProgressBar from '../components/ScoreProgressBar';
@@ -30,23 +30,23 @@ const DecryptorGameScreen = () => {
         roomId,
     } = useGameStore();
 
-    const [messageInput, setMessageInput] = useState('');
+    const [guessInput, setGuessInput] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const canSendMessage = currentTurn === 'decryptor' && gameStatus === 'active';
+    const canSubmitGuess = currentTurn === 'decryptor' && gameStatus === 'active';
     const isMyTurn = currentTurn === playerRole;
 
-    const handleSendMessage = async () => {
-        if (!messageInput.trim() || !canSendMessage || isSubmitting) {
+    const handleSubmitGuess = async () => {
+        if (!guessInput.trim() || !canSubmitGuess || isSubmitting) {
             return;
         }
 
         setIsSubmitting(true);
         try {
-            await sendMessage(messageInput.trim());
-            setMessageInput('');
+            await submitGuess(guessInput.trim());
+            setGuessInput('');
         } catch (error: any) {
-            Alert.alert('Error', error.message || 'Failed to send message');
+            Alert.alert('Error', error.message || 'Failed to submit guess');
         } finally {
             setIsSubmitting(false);
         }
@@ -96,32 +96,32 @@ const DecryptorGameScreen = () => {
                 <View style={styles.inputContainer}>
                     <TextInput
                         style={[
-                            styles.messageInput,
-                            !canSendMessage && styles.messageInputDisabled,
+                            styles.guessInput,
+                            !canSubmitGuess && styles.guessInputDisabled,
                         ]}
-                        value={messageInput}
-                        onChangeText={setMessageInput}
+                        value={guessInput}
+                        onChangeText={setGuessInput}
                         placeholder={
-                            canSendMessage
-                                ? "Help the encryptor guess the word..."
+                            canSubmitGuess
+                                ? "Enter your guess for the secret word..."
                                 : "Waiting for your turn..."
                         }
                         multiline
-                        maxLength={200}
-                        editable={canSendMessage}
+                        maxLength={50}
+                        editable={canSubmitGuess}
                         placeholderTextColor="#CCCCCC"
                     />
                     <TouchableOpacity
                         style={[
-                            styles.sendButton,
-                            (!canSendMessage || !messageInput.trim() || isSubmitting) &&
-                            styles.sendButtonDisabled,
+                            styles.submitButton,
+                            (!canSubmitGuess || !guessInput.trim() || isSubmitting) &&
+                            styles.submitButtonDisabled,
                         ]}
-                        onPress={handleSendMessage}
-                        disabled={!canSendMessage || !messageInput.trim() || isSubmitting}
+                        onPress={handleSubmitGuess}
+                        disabled={!canSubmitGuess || !guessInput.trim() || isSubmitting}
                     >
-                        <Text style={styles.sendButtonText}>
-                            {isSubmitting ? 'Sending...' : 'Send'}
+                        <Text style={styles.submitButtonText}>
+                            {isSubmitting ? 'Submitting...' : 'Guess'}
                         </Text>
                     </TouchableOpacity>
                 </View>
@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
         padding: 16,
         gap: 8,
     },
-    messageInput: {
+    guessInput: {
         flex: 1,
         borderWidth: 4,
         borderColor: '#FFD600',
@@ -167,12 +167,12 @@ const styles = StyleSheet.create({
         color: '#fff',
         backgroundColor: 'rgba(0,0,0,0.5)',
     },
-    messageInputDisabled: {
+    guessInputDisabled: {
         borderColor: '#C7C7CC',
         backgroundColor: '#F2F2F7',
         color: '#8E8E93',
     },
-    sendButton: {
+    submitButton: {
         borderWidth: 4,
         borderColor: '#FFD600',
         backgroundColor: 'rgba(222, 192, 0, 0.8)',
@@ -186,10 +186,10 @@ const styles = StyleSheet.create({
         shadowRadius: 16,
         elevation: 8,
     },
-    sendButtonDisabled: {
+    submitButtonDisabled: {
         opacity: 0.5,
     },
-    sendButtonText: {
+    submitButtonText: {
         color: '#000',
         fontWeight: '600',
     },
