@@ -21,7 +21,7 @@ const ConversationHistory: React.FC<ConversationHistoryProps> = ({
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Conversation History</Text>
+            <Text style={styles.title}>Unmonitored Human Chat</Text>
             <FlatList
                 data={displayConversation}
                 keyExtractor={(item) => item.id}
@@ -32,7 +32,7 @@ const ConversationHistory: React.FC<ConversationHistoryProps> = ({
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
                         <Text style={styles.emptyText}>No messages yet</Text>
-                        <Text style={styles.emptySubtext}>Start the conversation!</Text>
+                        <Text style={styles.emptySubtext}>Send a clue to start</Text>
                     </View>
                 }
             />
@@ -43,14 +43,28 @@ const ConversationHistory: React.FC<ConversationHistoryProps> = ({
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#FFFFFF',
+        padding: 16,
+        width: '90%',
+        maxWidth: 500,
+        height: '100%',
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        borderRadius: 12,
+        marginHorizontal: 'auto',
+        borderWidth: 4,
+        borderColor: 'blue',
+        shadowColor: 'blue',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.7,
+        shadowRadius: 16,
+        elevation: 8,
     },
     title: {
         fontSize: 18,
         fontWeight: 'bold',
         marginBottom: 12,
         paddingHorizontal: 16,
-        color: '#000000',
+        color: '#fff',
+        textAlign: 'center',
     },
     list: {
         flex: 1,

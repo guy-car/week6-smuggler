@@ -69,11 +69,14 @@ const AISectionComponent: React.FC<AISectionProps> = ({
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: 'rgba(10,10,20,0.85)',
-        borderRadius: 24,
+        flex: 1,
         padding: 16,
-        marginHorizontal: 16,
-        marginVertical: 8,
+        width: '90%',
+        maxWidth: 500,
+        height: '100%',
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        borderRadius: 12,
+        marginHorizontal: 'auto',
         borderWidth: 4,
         borderColor: '#FF00C8',
         shadowColor: '#FF00C8',
@@ -81,6 +84,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.7,
         shadowRadius: 16,
         elevation: 8,
+        marginBottom: 16,
     },
     title: {
         fontSize: 18,
