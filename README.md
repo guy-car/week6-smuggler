@@ -47,6 +47,79 @@ npm run dev:backend
 npm run dev:frontend
 ```
 
+## Mobile Development Setup
+
+### Prerequisites
+- Both devices (development machine and mobile device) on the same WiFi network
+- Expo Go app installed on mobile device
+
+### 1. Find Your Local IP Address
+```bash
+# On Mac/Linux
+ifconfig
+
+# On Windows
+ipconfig
+```
+
+Look for your local IP (usually starts with `192.168.x.x` or `10.0.x.x`)
+
+### 2. Configure Environment Variables
+Create a `.env` file in the root directory:
+
+```bash
+# Mobile Development Configuration
+EXPO_PUBLIC_BACKEND_URL=http://YOUR_IP_ADDRESS:3000
+BACKEND_CORS_ORIGIN=http://YOUR_IP_ADDRESS:8081
+
+# Server configuration
+PORT=3000
+NODE_ENV=development
+
+# OpenAI API
+OPENAI_API_KEY=your_openai_api_key_here
+```
+
+**Replace `YOUR_IP_ADDRESS` with your actual local IP address.**
+
+### 3. Set Up Shared Environment Variables
+The frontend needs access to the root `.env` file. Create a symlink:
+
+```bash
+cd frontend
+ln -sf ../.env .env
+```
+
+This allows both frontend and backend to use the same environment variables.
+
+### 4. Start the Servers
+```bash
+# Terminal 1: Start backend
+npm run dev:backend
+
+# Terminal 2: Start frontend
+npm run dev:frontend
+```
+
+### 5. Connect Mobile Device
+- Open Expo Go on your mobile device
+- Scan the QR code from the Expo development server
+- The app should connect to your backend automatically
+
+### Troubleshooting Mobile Connection
+
+**If connection fails:**
+1. Verify both devices are on the same WiFi network
+2. Check your IP address is correct in `.env`
+3. Ensure backend server is running and accessible
+4. Check firewall settings on your development machine
+5. Restart Expo development server after changing environment variables
+
+**Common Issues:**
+- `localhost` won't work from mobile devices - must use IP address
+- CORS errors indicate wrong `BACKEND_CORS_ORIGIN` configuration
+- Connection timeouts suggest network/firewall issues
+
 ## Backend API
 
 The Express/Socket.IO server provides:
@@ -81,10 +154,10 @@ The Express/Socket.IO server provides:
 ### Technical Features
 - **Real-time Communication**: WebSocket-based with Socket.IO
 - **Fuzzy Matching**: Levenshtein distance for guess validation
-- `player_guess` - Decryptor attempts to guess
 - **Room Management**: Automatic cleanup and player tracking
 - **Game State Persistence**: Handles disconnections gracefully
 - **Comprehensive Testing**: 231 passing tests
+- **Mobile Integration**: Full support for mobile devices via IP-based connection
 
 ## Frontend
 
@@ -96,15 +169,34 @@ The React Native app uses Expo Router for navigation and connects to the backend
 - **Frontend**: React Native with Expo Router
 - **Communication**: WebSocket for real-time game events, HTTP for API calls
 - **Testing**: Jest with comprehensive test suite
+- **Mobile**: Expo Go for mobile testing and development
 
 ## Environment Variables
 
-Create `.env` files in both `frontend/` and `backend/` directories as needed.
+### Root `.env` File (Shared)
+Create a `.env` file in the root directory with all environment variables:
 
-### Backend Environment Variables
-- `PORT` - Server port (default: 3000)
+```bash
+# Mobile Development Configuration
+EXPO_PUBLIC_BACKEND_URL=http://YOUR_IP_ADDRESS:3000
+BACKEND_CORS_ORIGIN=http://YOUR_IP_ADDRESS:8081
+
+# Server configuration
+PORT=3000
+NODE_ENV=development
+
+# OpenAI API
+OPENAI_API_KEY=your_openai_api_key_here
+```
+
+### Environment Variable Details
+- `EXPO_PUBLIC_BACKEND_URL` - Backend server URL for mobile app (must start with `EXPO_PUBLIC_`)
+- `BACKEND_CORS_ORIGIN` - CORS origin for Expo development server
+- `PORT` - Backend server port (default: 3000)
 - `NODE_ENV` - Environment mode (default: development)
-- `MAX_LEVENSHTEIN_DISTANCE` - Fuzzy matching threshold (default: 2)
+- `OPENAI_API_KEY` - OpenAI API key for AI features
+
+**Note**: Only variables starting with `EXPO_PUBLIC_` are included in the mobile app bundle. API keys and other sensitive data remain on the server.
 
 ## Scripts
 
@@ -120,3 +212,4 @@ Create `.env` files in both `frontend/` and `backend/` directories as needed.
 - **Backend Tests**: 231 passing tests
 - **Coverage**: Comprehensive coverage of all core functionality
 - **Test Categories**: Socket.IO events, room management, game logic, AI integration, word management, error handling, integration, performance
+- **Mobile Testing**: Full mobile integration with WebSocket connection validation

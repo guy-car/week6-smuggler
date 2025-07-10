@@ -4,6 +4,7 @@ import { ActivityIndicator, ImageBackground, SafeAreaView, StyleSheet, Text, Tou
 import lobbyBackground from '../../assets/images/lobby.png';
 import { createRoom, getAvailableRooms, getSocket, joinRoom } from '../../services/websocket';
 import { useGameStore } from '../../store/gameStore';
+import ConnectionStatusIndicator from '../components/ConnectionStatusIndicator';
 
 const LobbyScreen = () => {
     const availableRooms = useGameStore((s) => s.availableRooms);
@@ -42,32 +43,28 @@ const LobbyScreen = () => {
         joinRoom(roomId);
     };
 
-    return (
-        <ImageBackground
-            source={lobbyBackground}
-            style={{ flex: 1 }}
-            resizeMode="cover"
-        >
+return (
+        <ImageBackground source={lobbyBackground} style={{ flex: 1 }} resizeMode="cover">
             <SafeAreaView style={{ flex: 1 }}>
                 <View style={styles.container}>
-                    {/* Title and Subheader */}
-                    <Text style={styles.title}>SMUGGLER</Text>
+                    {/* Top bar: Title and Connection Status */}
+                    <View style={{ width: '100%', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Text style={styles.title}>SMUGGLER</Text>
+                        <ConnectionStatusIndicator compact showDetails />
+                    </View>
                     <Text style={styles.subheader}>PASS A SECRET TO SAVE THE WORLD</Text>
 
-                    {/* New Game Button with Blur */}
+                    {/* New Game Button */}
                     <BlurView intensity={40} tint="dark" style={styles.blurButtonBg}>
                         <TouchableOpacity style={styles.newGameButton} onPress={handleCreateRoom} disabled={loading || !connected}>
                             <Text style={styles.newGameButtonText}>NEW GAME</Text>
                         </TouchableOpacity>
                     </BlurView>
 
-                    {/* Divider */}
                     <View style={styles.divider} />
 
-                    {/* Join Game Header */}
                     <Text style={styles.joinHeader}>JOIN GAME</Text>
 
-                    {/* Room Buttons with Blur */}
                     <View style={styles.roomsList}>
                         {loading && <ActivityIndicator style={{ marginVertical: 16 }} />}
                         {error && <Text style={styles.errorText}>{error}</Text>}

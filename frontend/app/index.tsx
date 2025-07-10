@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { getSocket } from '../services/websocket';
 import { useGameStore } from '../store/gameStore';
+import ConnectionErrorScreen from './components/ConnectionErrorScreen';
 import DecryptorGameScreen from './decryptor-game';
 import EncryptorGameScreen from './encryptor-game';
 import GameEndScreen from './game-end';
@@ -49,15 +50,7 @@ const App = () => {
 
     // Show error screen if connection failed
     if (error && !connected) {
-        return (
-            <View style={styles.errorContainer}>
-                <Text style={styles.errorTitle}>Connection Error</Text>
-                <Text style={styles.errorText}>{error}</Text>
-                <Text style={styles.errorSubtext}>
-                    Please check your internet connection and try again.
-                </Text>
-            </View>
-        );
+        return <ConnectionErrorScreen />;
     }
 
     // Render appropriate screen based on current state
