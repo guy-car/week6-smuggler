@@ -17,6 +17,7 @@ import { useGameStore } from '../../store/gameStore';
 import AISectionComponent from '../components/AISectionComponent';
 import ConversationHistory from '../components/ConversationHistory';
 import ScoreProgressBar from '../components/ScoreProgressBar';
+import SecretWordContainer from './SecretWordContainer';
 
 const EncryptorGameScreen = () => {
     const {
@@ -105,11 +106,8 @@ const EncryptorGameScreen = () => {
                     />
                 </ScrollView>
 
-                {/* Secret word above input field, no extra margin above */}
-                <View style={[styles.secretWordContainerUnified, { marginTop: 0 }]}>
-                    <Text style={styles.secretWordTitleUnified}>Secret Word:</Text>
-                    <Text style={styles.secretWordTextUnified}>{secretWord || 'Loading...'}</Text>
-                </View>
+                {/* Secret word above input field */}
+                <SecretWordContainer secretWord={secretWord || undefined} />
                 <TouchableOpacity style={styles.quitButton} onPress={handleQuit}>
                         <Text style={styles.quitButtonText}>Quit</Text>
                     </TouchableOpacity>
