@@ -481,7 +481,7 @@ export function disconnectSocket() {
 // Helper functions for emitting events
 export async function createRoom(playerName: string = "Player") {
   // Call REST API to create a room
-  const response = await fetch('http://localhost:3000/api/rooms', {
+  const response = await fetch(`${BACKEND_URL}/api/rooms`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({})
