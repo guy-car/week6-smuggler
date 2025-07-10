@@ -130,15 +130,6 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     latestAnalysisContainer: {
-        backgroundColor: '#FFFFFF',
-        padding: 16,
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: '#E0E0E0',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
         elevation: 1,
     },
     latestAnalysisTitle: {

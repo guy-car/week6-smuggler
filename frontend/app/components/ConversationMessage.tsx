@@ -41,9 +41,6 @@ const ConversationMessage: React.FC<ConversationMessageProps> = ({ item, current
                 <Text style={[styles.turnType, { color: textColor }]}> 
                     {isEncryptor ? 'Encryptor' : 'Decryptor'}
                 </Text>
-                <Text style={[styles.timestamp, { color: textColor }]}> 
-                    {new Date(item.timestamp).toLocaleTimeString()}
-                </Text>
             </View>
             <Text style={[styles.turnContent, { color: textColor }]}> 
                 {item.content}
