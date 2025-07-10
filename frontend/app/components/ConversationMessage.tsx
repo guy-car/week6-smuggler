@@ -11,8 +11,6 @@ const ConversationMessage: React.FC<ConversationMessageProps> = ({ item, current
     const isCurrentPlayer = item.playerId === currentPlayerId;
     const isEncryptor = item.type === 'encryptor';
     const isDecryptor = item.type === 'decryptor';
-    console.log('is encryptor', isEncryptor);
-    console.log('is decryptyor', isDecryptor);
 
 
     let backgroundColor = '#F2F2F7';
