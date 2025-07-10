@@ -173,7 +173,7 @@ export const useGameStore = create<GameState>((set) => ({
     conversationHistory: [],
     currentTurn: null,
     secretWord: null,
-    score: 0,
+    score: 5, // Reset to neutral score (matches backend INITIAL_SCORE)
     round: 1,
     maxRounds: 5,
     lastAIGuess: null,
