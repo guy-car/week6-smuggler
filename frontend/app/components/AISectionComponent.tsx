@@ -34,7 +34,7 @@ const AISectionComponent: React.FC<AISectionProps> = ({
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>AI Analysis</Text>
+            <Text style={styles.title}>AI Listener</Text>
 
             {isAITurn ? (
                 <View style={styles.thinkingContainer}>
@@ -79,23 +79,23 @@ const AISectionComponent: React.FC<AISectionProps> = ({
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: '#E3F2FD',
-        borderRadius: 12,
+        backgroundColor: 'rgba(10,10,20,0.85)',
+        borderRadius: 24,
         padding: 16,
         marginHorizontal: 16,
         marginVertical: 8,
-        borderWidth: 1,
-        borderColor: '#BBDEFB',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
+        borderWidth: 4,
+        borderColor: '#FF00C8',
+        shadowColor: '#FF00C8',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.7,
+        shadowRadius: 16,
+        elevation: 8,
     },
     title: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#1976D2',
+        color: '#fff',
         marginBottom: 12,
         textAlign: 'center',
     },
@@ -190,16 +190,16 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     noAnalysisContainer: {
-        backgroundColor: '#FFF3CD',
+        backgroundColor: 'rgba(0,0,0,0.5)',
         padding: 16,
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: '#FFEAA7',
+        borderColor: 'black',
         alignItems: 'center',
     },
     noAnalysisText: {
         fontSize: 14,
-        color: '#856404',
+        color: '#fff',
         textAlign: 'center',
         lineHeight: 20,
     },
