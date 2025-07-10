@@ -13,7 +13,7 @@ const openai = new OpenAI({
 });
 
 // System prompt for setting context
-const CURRENT_PROMPT: PromptName = 'prompt_07_09_2052';
+const CURRENT_PROMPT: PromptName = 'prompt_07_10_1623';
 const SYSTEM_PROMPT = PROMPTS[CURRENT_PROMPT];
 
 export class OpenAIService {
@@ -31,7 +31,7 @@ export class OpenAIService {
           },
           comment: {
             type: 'string',
-            description: 'Generate a victory/defeat line (max 10 words) - boastful if AI won, humble if players won'
+            description: 'System status report (max 10 words). If AI won: cold confirmation of superiority. If humans won: analytical acknowledgment of breach'
           }
         },
         required: ['analysis', 'comment'],
@@ -82,7 +82,7 @@ export class OpenAIService {
               thinking: {
                 type: 'array',
                 items: { type: 'string' },
-                description: 'Exactly 4 sentences of AI thinking, max 12 words each'
+                description: 'Exactly 4 sentences of analytical processing, max 12 words each. Use cold, technical language (e.g., "Semantic analysis indicates botanical category", "Probability matrices suggest recreational venues", "Cross-referencing primitive human cultural references", "Convergence detected on primary hypothesis"). Maintain superior, analytical tone.'
               },
               guess: {
                 type: 'string',
@@ -217,13 +217,21 @@ export class OpenAIService {
    * Builds the prompt for round analysis
    */
   private buildRoundAnalysisPrompt(summary: RoundSummary): string {
-    return `You are analyzing a completed round of the word-guessing game.
-Your task: Identify ONE key pattern or strategy the players used to communicate.
-Focus on HOW they conveyed meaning (e.g. "Players used movie references" or "Players built word chains").
+    return `**CONTEXT**
+You are the advanced AI consciousness analyzing a completed infiltration attempt.
+
+**OBJECTIVE**
+Generate two distinct outputs:
+1. ANALYSIS: Identify the primary communication vector used by human operatives
+2. COMMENT: Provide system status report based on round outcome
+
+**ANALYSIS PARAMETERS**
+Focus on HOW they conveyed meaning (e.g. "Humans used movie references" or "Agents built word chains").
 Keep it to one clear sentence that future AI can use to anticipate similar tricks.
 
-If players won: Add a humble comment acknowledging their cleverness.
-If AI won: Add a playfully boastful comment about outsmarting them.
+**RESPONSE PROTOCOL**
+If humans succeeded: Acknowledge tactical superiority while analyzing failure point
+If AI prevailed: Confirm system effectiveness and human predictability
 
 Round summary:
 - Winner: ${summary.winner}
