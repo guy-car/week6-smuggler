@@ -103,13 +103,13 @@ const DecryptorGameScreen = () => {
                         onChangeText={setGuessInput}
                         placeholder={
                             canSubmitGuess
-                                ? "Enter your guess for the secret word..."
-                                : "Waiting for your turn..."
+                                ? "Guess the secret word..."
+                                : "Waiting for your clue..."
                         }
                         multiline
                         maxLength={50}
                         editable={canSubmitGuess}
-                        placeholderTextColor="#CCCCCC"
+                        placeholderTextColor="white"
                     />
                     <TouchableOpacity
                         style={[
@@ -169,8 +169,8 @@ const styles = StyleSheet.create({
     },
     guessInputDisabled: {
         borderColor: '#C7C7CC',
-        backgroundColor: '#F2F2F7',
         color: '#8E8E93',
+        opacity: 0.5,
     },
     submitButton: {
         borderWidth: 4,
@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
         elevation: 8,
     },
     submitButtonDisabled: {
-        opacity: 0.5,
+        opacity: 0.2,
     },
     submitButtonText: {
         color: '#000',

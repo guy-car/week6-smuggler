@@ -115,7 +115,7 @@ const EncryptorGameScreen = () => {
                         onChangeText={setMessageInput}
                         placeholder={
                             canSendMessage
-                                ? "Help the decryptor guess the word..."
+                                ? "Help the decoder guess the word..."
                                 : "Waiting for your turn..."
                         }
                         multiline
