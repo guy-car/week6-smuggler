@@ -166,7 +166,8 @@ export class GameHandlers {
                 message: {
                     content: message,
                     senderId: socket.id,
-                    timestamp: new Date()
+                    timestamp: new Date(),
+                    type: 'encryptor' // <-- Added type field
                 },
                 currentTurn: nextGameState.currentTurn
             };
@@ -329,7 +330,8 @@ export class GameHandlers {
                     message: {
                         content: guess,
                         senderId: socket.id,
-                        timestamp: new Date()
+                        timestamp: new Date(),
+                        type: 'decryptor' // <-- Added type field
                     },
                     currentTurn: nextGameState.currentTurn
                 };
