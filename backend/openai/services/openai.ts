@@ -32,7 +32,7 @@ export class OpenAIService {
   }
 
   /**
-   * Analyzes conversation history and returns AI's assessment
+   * Analyzes conversation history and returns AI's assessment adding a comment to the guess
    */
   async analyzeConversation(turns: Turn[]): Promise<AIResponse> {
     try {
