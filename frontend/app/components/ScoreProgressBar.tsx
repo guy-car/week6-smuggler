@@ -6,6 +6,7 @@ interface ScoreProgressBarProps {
     maxScore?: number;
     aiWinsScore: number;
     humansWinScore: number;
+    isInModal?: boolean;
 }
 
 const getCircleColor = (score: number, aiWinsScore: number, humansWinScore: number) => {
@@ -23,6 +24,7 @@ const ScoreProgressBar: React.FC<ScoreProgressBarProps> = ({
     maxScore,
     aiWinsScore,
     humansWinScore,
+    isInModal = false,
 }) => {
     // Dynamic range based on aiWinsScore and humansWinScore
     const minScore = Math.min(aiWinsScore, humansWinScore);
@@ -37,50 +39,59 @@ const ScoreProgressBar: React.FC<ScoreProgressBarProps> = ({
     const filledColor = getCircleColor(clampedScore, aiWinsScore, humansWinScore);
 
     return (
-        <View style={styles.container}>
-            {/* Top labels */}
-            <View style={styles.labelsRow}>
-                <Text style={[styles.label, styles.leftLabel]} numberOfLines={1} ellipsizeMode="clip">AI WINS</Text>
-                <Text style={styles.centerLabel} numberOfLines={1} ellipsizeMode="clip">SCORE</Text>
-                <Text style={[styles.label, styles.rightLabel]} numberOfLines={1} ellipsizeMode="clip">HUMANS WIN</Text>
-            </View>
-            {/* Stepper */}
-            <View style={styles.stepperRow}>
-                {stepValues.map((val, idx) => {
-                    const isFilled = idx === currentStepIdx;
-                    return (
-                        <View
-                            key={val}
-                            style={[
-                                styles.circle,
-                                isFilled && {
-                                    backgroundColor: filledColor,
-                                    borderColor: filledColor,
-                                    shadowColor: filledColor,
-                                    shadowOffset: { width: 0, height: 0 },
-                                    shadowOpacity: 0.9,
-                                    shadowRadius: 10,
-                                    elevation: 8,
-                                },
-                                !isFilled && {
-                                    borderColor: val < currentStepIdx ? '#FF3B30' : val > currentStepIdx ? '#30FF6A' : '#FFC300',
-                                },
-                            ]}
-                        />
-                    );
-                })}
+        <View style={styles.wrapper}>
+            {/* Background overlay - only show when not in modal */}
+            
+            <View style={styles.container}>
+                {/* Top labels */}
+                <View style={styles.labelsRow}>
+                    <Text style={[styles.label, styles.leftLabel]} numberOfLines={1} ellipsizeMode="clip">AI WINS</Text>
+                    <Text style={styles.centerLabel} numberOfLines={1} ellipsizeMode="clip">SCORE</Text>
+                    <Text style={[styles.label, styles.rightLabel]} numberOfLines={1} ellipsizeMode="clip">HUMANS WIN</Text>
+                </View>
+                {/* Stepper */}
+                <View style={styles.stepperRow}>
+                    {stepValues.map((val, idx) => {
+                        const isFilled = idx === currentStepIdx;
+                        return (
+                            <View
+                                key={val}
+                                style={[
+                                    styles.circle,
+                                    isFilled && {
+                                        backgroundColor: filledColor,
+                                        borderColor: filledColor,
+                                        shadowColor: filledColor,
+                                        shadowOffset: { width: 0, height: 0 },
+                                        shadowOpacity: 0.9,
+                                        shadowRadius: 10,
+                                        elevation: 8,
+                                    },
+                                    !isFilled && {
+                                        borderColor: val < currentStepIdx ? '#FF3B30' : val > currentStepIdx ? '#30FF6A' : '#FFC300',
+                                    },
+                                ]}
+                            />
+                        );
+                    })}
+                </View>
             </View>
         </View>
     );
 };
 
 const styles = StyleSheet.create({
+    wrapper: {
+        position: 'relative',
+        width: '100%',
+        backgroundColor: 'transparent',
+    },
     container: {
         paddingTop: 10,
         paddingHorizontal: 8,
         backgroundColor: 'transparent',
         alignItems: 'stretch',
-        marginTop: 46,
+        marginTop: 6,
     },
     labelsRow: {
         flexDirection: 'row',

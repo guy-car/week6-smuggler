@@ -76,7 +76,7 @@ const DecryptorGameScreen = () => {
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             >
                 <View style={styles.topRow}>
-                    <View style={{ flex: 1 }}>
+                    <View style={{ flex: 1, marginTop: 30}}>
                         <ScoreProgressBar
                             score={score}
                             maxScore={10}
