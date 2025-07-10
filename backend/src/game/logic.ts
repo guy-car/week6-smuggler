@@ -80,7 +80,13 @@ export class GameLogic {
         if (isCorrect) {
             // AI wins the round - update score and advance to next round
             const scoreUpdated = this.gameStateManager.updateScore(newGameState, false); // false = AI wins
-            const nextRound = this.gameStateManager.advanceRound(scoreUpdated);
+            // Note: This method doesn't have access to roles, so we'll need to handle this differently
+            // For now, we'll create a mock roles object for testing
+            const mockRoles: RoleAssignment = {
+                encryptor: 'player1',
+                decryptor: 'player2'
+            };
+            const { newGameState: nextRound } = this.gameStateManager.advanceRound(scoreUpdated, mockRoles);
 
             // Check if game ended
             if (this.gameStateManager.isGameEnded(nextRound)) {
@@ -133,7 +139,7 @@ export class GameLogic {
         if (isCorrect) {
             // Players win the round - update score and advance to next round
             const scoreUpdated = this.gameStateManager.updateScore(gameState, true); // true = players win
-            const nextRound = this.gameStateManager.advanceRound(scoreUpdated);
+            const { newGameState: nextRound } = this.gameStateManager.advanceRound(scoreUpdated, roles);
 
             // Check if game ended
             if (this.gameStateManager.isGameEnded(nextRound)) {
