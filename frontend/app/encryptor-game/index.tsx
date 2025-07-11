@@ -47,7 +47,7 @@ const EncryptorGameScreen = () => {
         // Validate that the message doesn't contain the secret word or similar variations
         if (secretWord && isMessageTooSimilar(messageInput.trim(), secretWord)) {
             Alert.alert(
-                'Do Better', 
+                'Do Better',
                 'Are you trying to get us killed? Be more creative with your hints!',
                 [{ text: 'OK' }]
             );
@@ -125,13 +125,13 @@ const EncryptorGameScreen = () => {
                         onChangeText={setMessageInput}
                         placeholder={
                             canSendMessage
-                                ? "Help the decoder guess the word..."
-                                : "Waiting for your turn..."
+                                ? "Send a clue to your ally..."
+                                : "Waiting for AI response..."
                         }
                         multiline
                         maxLength={200}
                         editable={canSendMessage}
-                        placeholderTextColor="#CCCCCC"
+                        placeholderTextColor="white"
                     />
                     <TouchableOpacity
                         style={[
@@ -148,7 +148,7 @@ const EncryptorGameScreen = () => {
                     </TouchableOpacity>
                 </View>
             </KeyboardAvoidingView>
-            
+
             <RoundModal />
         </ImageBackground>
     );
@@ -268,8 +268,7 @@ const styles = StyleSheet.create({
     sendButtonDisabled: {
     },
     sendButtonText: {
-        color: '#fff',
-        fontWeight: '600',
+        color: '#007AFF',
     },
     modalOverlay: {
         position: 'absolute',

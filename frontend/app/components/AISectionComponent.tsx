@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Turn } from '../../store/gameStore';
+import React, { useEffect, useRef } from 'react';
+import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Turn, useGameStore } from '../../store/gameStore';
 import AIGuessSection from './AIGuessSection';
 import AIThinkingSection from './AIThinkingSection';
 import ConversationHistory from './ConversationHistory';
@@ -20,21 +20,32 @@ const AISectionComponent: React.FC<AISectionProps> = ({
     onQuit,
     conversationHistoryProps,
 }) => {
-    const [countdown, setCountdown] = useState(30);
+    const remainingTime = useGameStore((state) => state.remainingTime);
+    const flashAnim = useRef(new Animated.Value(1)).current;
 
-    // Countdown timer effect
+    // Flashing animation for last 5 seconds
     useEffect(() => {
-        const timer = setInterval(() => {
-            setCountdown((prevCount) => {
-                if (prevCount <= 1) {
-                    return 30; // Reset to 30 when it reaches 0
-                }
-                return prevCount - 1;
-            });
-        }, 1000);
-
-        return () => clearInterval(timer);
-    }, []);
+        if (remainingTime <= 5 && remainingTime > 0) {
+            const flashAnimation = Animated.loop(
+                Animated.sequence([
+                    Animated.timing(flashAnim, {
+                        toValue: 0.3,
+                        duration: 500,
+                        useNativeDriver: true,
+                    }),
+                    Animated.timing(flashAnim, {
+                        toValue: 1,
+                        duration: 500,
+                        useNativeDriver: true,
+                    }),
+                ])
+            );
+            flashAnimation.start();
+            return () => flashAnimation.stop();
+        } else {
+            flashAnim.setValue(1);
+        }
+    }, [remainingTime, flashAnim]);
 
     // Get the latest AI turn from conversation history
     const latestAITurn = conversationHistory
@@ -57,6 +68,21 @@ const AISectionComponent: React.FC<AISectionProps> = ({
 
     const aiAnalysis = latestAITurn ? parseAIContent(latestAITurn.content) : null;
 
+    // Only show timer for human turns
+    const showTimer = currentTurn === 'encryptor' || currentTurn === 'decryptor';
+
+    // Timer styling based on remaining time
+    const getTimerStyle = () => {
+        if (remainingTime <= 5) {
+            return [styles.timerContainer, styles.timerContainerFlashing];
+        } else if (remainingTime <= 10) {
+            return [styles.timerContainer, styles.timerContainerWarning];
+        } else if (remainingTime <= 20) {
+            return [styles.timerContainer, styles.timerContainerLow];
+        }
+        return [styles.timerContainer, styles.timerContainerNormal];
+    };
+
     return (
         <View style={styles.container}>
             <View style={styles.headerRow}>
@@ -68,9 +94,11 @@ const AISectionComponent: React.FC<AISectionProps> = ({
                     <View style={{ width: 60 }} />
                 )}
                 <Text style={styles.title} numberOfLines={1} ellipsizeMode="clip">AI is Listening</Text>
-                <View style={styles.timerContainer}>
-                    <Text style={styles.timerText}>{countdown}s</Text>
-                </View>
+                {showTimer && (
+                    <Animated.View style={[getTimerStyle(), { opacity: flashAnim }]}>
+                        <Text style={styles.timerText}>{remainingTime}s</Text>
+                    </Animated.View>
+                )}
             </View>
 
             {isAITurn ? (
@@ -150,9 +178,30 @@ const styles = StyleSheet.create({
     timerContainer: {
         paddingHorizontal: 10,
         paddingVertical: 5,
-        backgroundColor: 'red',
         borderRadius: 8,
         marginLeft: 10,
+    },
+    timerContainerNormal: {
+        backgroundColor: '#34C759', // Green for normal time (30-21)
+    },
+    timerContainerLow: {
+        backgroundColor: '#FF9500', // Yellow for low time (20-11)
+    },
+    timerContainerWarning: {
+        backgroundColor: '#FF3B30', // Red for warning (10-6)
+        shadowColor: '#FF3B30',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.8,
+        shadowRadius: 8,
+        elevation: 6,
+    },
+    timerContainerFlashing: {
+        backgroundColor: '#FF3B30', // Bright red for flashing (5-1)
+        shadowColor: '#FF3B30',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 1,
+        shadowRadius: 12,
+        elevation: 8,
     },
     timerText: {
         color: '#FFFFFF',

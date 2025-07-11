@@ -25,6 +25,103 @@ export class GameHandlers {
     }
 
     /**
+     * Emit timer update to all players in a room
+     */
+    public emitTimerUpdate = (roomId: string) => {
+        const room = this.roomManager.getRoom(roomId);
+        if (!room || !room.gameState) {
+            return;
+        }
+
+        const remainingTime = this.gameStateManager.getRemainingTime(room.gameState);
+
+        this.io.to(roomId).emit('timer_update', {
+            roomId,
+            remainingTime,
+            currentTurn: room.gameState.currentTurn
+        });
+    };
+
+    /**
+     * Check for timer expiration and handle AI win if needed
+     */
+    public checkTimerExpiration = (roomId: string) => {
+        const room = this.roomManager.getRoom(roomId);
+        if (!room || !room.gameState) {
+            return;
+        }
+
+        // Only check timer for human turns
+        if (room.gameState.currentTurn === 'ai') {
+            return;
+        }
+
+        // Emit timer update
+        this.emitTimerUpdate(roomId);
+
+        // Check if timer has expired
+        if (this.gameStateManager.isHumanTurnExpired(room.gameState)) {
+            console.log(`[TIMER] Human turn expired in room ${roomId}. AI wins the round.`);
+
+            // Handle timer expiration - AI wins
+            const updatedGameState = this.gameStateManager.handleTimerExpiration(room.gameState);
+            room.gameState = updatedGameState;
+
+            // Check if game ended
+            if (this.gameStateManager.isGameEnded(updatedGameState)) {
+                const gameEnded = this.gameStateManager.endGame(updatedGameState);
+                room.gameState = gameEnded;
+
+                // Emit game end event
+                const gameEndData = {
+                    roomId,
+                    winner: 'ai',
+                    finalScore: gameEnded.score,
+                    correct: false,
+                    reason: 'timer_expired'
+                };
+
+                this.io.to(roomId).emit('game_end', gameEndData);
+            } else {
+                // Advance to next round with role switching
+                const { newGameState, newRoles } = this.gameStateManager.advanceRound(updatedGameState, room.roles!);
+
+                // Update player roles in room
+                room.players.forEach(player => {
+                    if (newRoles.encryptor === player.id) {
+                        player.role = 'encryptor';
+                    } else if (newRoles.decryptor === player.id) {
+                        player.role = 'decryptor';
+                    }
+                });
+
+                // Update room state with new roles
+                room.gameState = newGameState;
+                room.roles = newRoles;
+
+                // Select new secret word
+                const newSecretWord = this.wordManager.selectRandomWord();
+                newGameState.secretWord = newSecretWord;
+
+                // Emit round end event with timer expiration reason
+                const roundEndData = {
+                    roomId,
+                    correct: false,
+                    score: newGameState.score,
+                    gameEnded: false,
+                    newSecretWord,
+                    currentTurn: newGameState.currentTurn,
+                    roles: newRoles,
+                    reason: 'timer_expired',
+                    round: newGameState.currentRound
+                };
+
+                this.io.to(roomId).emit('round_end', roundEndData);
+            }
+        }
+    };
+
+    /**
      * Handle start_game event - starts the game when both players are ready
      */
     public handleStartGame = (socket: Socket, data: { roomId: string }) => {
@@ -296,6 +393,17 @@ export class GameHandlers {
 
                     socket.to(roomId).emit('game_end', gameEndData);
                     socket.emit('game_end', gameEndData);
+
+                    // Emit guess result for game end
+                    const guessResultData = {
+                        roomId,
+                        correct: isCorrect,
+                        guess,
+                        score: finalGameState.score
+                    };
+
+                    socket.to(roomId).emit('guess_result', guessResultData);
+                    socket.emit('guess_result', guessResultData);
                 } else {
                     // Advance to next round with role switching
                     const { newGameState, newRoles } = this.gameStateManager.advanceRound(updatedGameState, room.roles!);
@@ -328,22 +436,20 @@ export class GameHandlers {
                         roles: newRoles // Include new roles in round_end event
                     };
 
-
-
                     socket.to(roomId).emit('round_end', roundEndData);
                     socket.emit('round_end', roundEndData);
+
+                    // Emit guess result for round end
+                    const guessResultData = {
+                        roomId,
+                        correct: isCorrect,
+                        guess,
+                        score: newGameState.score
+                    };
+
+                    socket.to(roomId).emit('guess_result', guessResultData);
+                    socket.emit('guess_result', guessResultData);
                 }
-
-                // Emit guess result
-                const guessResultData = {
-                    roomId,
-                    correct: isCorrect,
-                    guess,
-                    score: updatedGameState.score
-                };
-
-                socket.to(roomId).emit('guess_result', guessResultData);
-                socket.emit('guess_result', guessResultData);
             } else {
                 // Incorrect guess - add to conversation history and continue
                 // Add decryptor guess to conversation history
@@ -569,6 +675,16 @@ export class GameHandlers {
                     };
 
                     this.io.to(roomId).emit('game_end', gameEndData);
+
+                    // Emit guess result for game end
+                    const guessResultData = {
+                        roomId,
+                        correct: true,
+                        guess: aiResponse.guess,
+                        score: gameEnded.score
+                    };
+
+                    this.io.to(roomId).emit('guess_result', guessResultData);
                 } else {
                     // Update player roles in room
                     room.players.forEach(player => {
@@ -594,12 +710,21 @@ export class GameHandlers {
                         score: newGameState.score,
                         gameEnded: false,
                         newSecretWord,
+                        currentTurn: newGameState.currentTurn,
                         roles: newRoles // Include new roles in round_end event
                     };
 
-
-
                     this.io.to(roomId).emit('round_end', roundEndData);
+
+                    // Emit guess result for round end
+                    const guessResultData = {
+                        roomId,
+                        correct: true,
+                        guess: aiResponse.guess,
+                        score: newGameState.score
+                    };
+
+                    this.io.to(roomId).emit('guess_result', guessResultData);
                 }
             } else {
                 // AI incorrect - advance turn to decryptor
@@ -701,6 +826,16 @@ export class GameHandlers {
                     };
 
                     this.io.to(roomId).emit('game_end', gameEndData);
+
+                    // Emit guess result for game end
+                    const guessResultData = {
+                        roomId,
+                        correct: true,
+                        guess: guess,
+                        score: gameEnded.score
+                    };
+
+                    this.io.to(roomId).emit('guess_result', guessResultData);
                 } else {
                     // Update player roles in room
                     room.players.forEach(player => {
@@ -731,6 +866,16 @@ export class GameHandlers {
                     };
 
                     this.io.to(roomId).emit('round_end', roundEndData);
+
+                    // Emit guess result for round end
+                    const guessResultData = {
+                        roomId,
+                        correct: true,
+                        guess: guess,
+                        score: newGameState.score
+                    };
+
+                    this.io.to(roomId).emit('guess_result', guessResultData);
                 }
             } else {
                 // AI incorrect - advance turn to decryptor
