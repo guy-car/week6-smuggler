@@ -541,6 +541,13 @@ export function getSocket() {
       console.log('[WebSocket] Player left:', data.playerId);
       useGameStore.getState().setPlayers(data.players);
     });
+
+    // Listen for typing:indicator events from the server
+    if (socket) {
+      socket.on('typing:indicator', (data: { role: 'encoder' | 'decoder'; isTyping: boolean }) => {
+        useGameStore.getState().setTypingIndicator(data);
+      });
+    }
   }
   return socket;
 }
@@ -646,4 +653,18 @@ export function startGame() {
   if (roomId) {
     socket.emit('start_game', { roomId });
   }
+}
+
+export function emitTypingStart(role: 'encoder' | 'decoder') {
+  const socket = getSocket();
+  const roomId = useGameStore.getState().roomId;
+  if (!roomId) return;
+  socket.emit('typing:start', { roomId, role });
+}
+
+export function emitTypingStop(role: 'encoder' | 'decoder') {
+  const socket = getSocket();
+  const roomId = useGameStore.getState().roomId;
+  if (!roomId) return;
+  socket.emit('typing:stop', { roomId, role });
 } 

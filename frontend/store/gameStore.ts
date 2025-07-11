@@ -79,6 +79,12 @@ interface GameState {
   // Available rooms for lobby
   availableRooms: Room[];
 
+  // Typing indicator state
+  typingIndicator: {
+    role: 'encoder' | 'decoder' | null;
+    isTyping: boolean;
+  } | null;
+
   // Actions
   setConnected: (connected: boolean) => void;
   setSocketId: (socketId: string | null) => void;
@@ -107,6 +113,7 @@ interface GameState {
   setAvailableRooms: (rooms: Room[]) => void;
   setLastAIGuess: (guess: string | null) => void;
   setRemainingTime: (time: number) => void;
+  setTypingIndicator: (indicator: { role: 'encoder' | 'decoder'; isTyping: boolean } | null) => void;
   reset: () => void;
 }
 
@@ -149,6 +156,9 @@ export const useGameStore = create<GameState>((set) => ({
   // Available rooms
   availableRooms: [],
 
+  // Typing indicator state
+  typingIndicator: null,
+
   // Actions
   setConnected: (connected) => set({ connected }),
   setSocketId: (socketId) => set({ socketId }),
@@ -179,6 +189,7 @@ export const useGameStore = create<GameState>((set) => ({
   setAvailableRooms: (rooms) => set({ availableRooms: rooms }),
   setLastAIGuess: (guess) => set({ lastAIGuess: guess }),
   setRemainingTime: (time) => set({ remainingTime: time }),
+  setTypingIndicator: (indicator) => set({ typingIndicator: indicator }),
   reset: () => set((state) => ({
     // Do NOT reset connected or socketId
     player: null,
@@ -205,5 +216,6 @@ export const useGameStore = create<GameState>((set) => ({
     showRoundModal: false,
     roundModalData: null,
     availableRooms: [],
+    typingIndicator: null,
   })),
 })); 
