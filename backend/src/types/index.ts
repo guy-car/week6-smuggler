@@ -24,6 +24,12 @@ export interface Player {
     socketId: string;
 }
 
+export interface TypingState {
+    role: 'encoder' | 'decoder';
+    isTyping: boolean;
+    lastTypingTime: number;
+}
+
 export interface Room {
     id: string;
     players: Player[];
@@ -31,6 +37,7 @@ export interface Room {
     roles: RoleAssignment | null; // Add this for role switching
     createdAt: Date;
     lastActivity: Date;
+    typingState: TypingState | null; // Add typing state for live typing indicators
 }
 
 export interface GameState {
