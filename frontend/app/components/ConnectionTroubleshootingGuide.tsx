@@ -6,88 +6,29 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { useButtonSound } from '../../hooks/useButtonSound';
 
 interface ConnectionTroubleshootingGuideProps {
     onClose?: () => void;
 }
 
-const ConnectionTroubleshootingGuide: React.FC<ConnectionTroubleshootingGuideProps> = ({ onClose }) => {
+const ConnectionTroubleshootingGuide: React.FC<ConnectionTroubleshootingGuideProps> = ({
+    onClose,
+}) => {
     const [expandedSection, setExpandedSection] = useState<string | null>(null);
     const [connectionTestResult, setConnectionTestResult] = useState<{
         status: 'idle' | 'testing' | 'success' | 'error';
         message: string;
     }>({ status: 'idle', message: '' });
+    const playButtonSound = useButtonSound();
 
-    const troubleshootingSteps = [
-        {
-            id: 'server',
-            title: '1. Check if the server is running',
-            content: [
-                'Make sure the backend server is started with: npm run dev:backend',
-                'Check that the server is listening on the correct port (usually 3000)',
-                'Look for server startup messages in the terminal',
-                `Try accessing the server in a web browser: ${process.env.EXPO_PUBLIC_BACKEND_URL || 'http://localhost:3000'}/api/health`
-            ]
-        },
-        {
-            id: 'network',
-            title: '2. Verify network configuration',
-            content: [
-                'Ensure your phone and computer are on the same WiFi network',
-                'Check that you\'re not on a guest or isolated network',
-                'Verify the IP address in your .env file matches your computer\'s IP',
-                'Use "ifconfig" (Mac/Linux) or "ipconfig" (Windows) to find your IP'
-            ]
-        },
-        {
-            id: 'firewall',
-            title: '3. Check firewall settings',
-            content: [
-                'Temporarily disable your computer\'s firewall',
-                'Allow incoming connections on port 3000',
-                'Check if antivirus software is blocking the connection',
-                'On macOS, check System Preferences > Security & Privacy > Firewall'
-            ]
-        },
-        {
-            id: 'environment',
-            title: '4. Verify environment configuration',
-            content: [
-                'Check that EXPO_PUBLIC_BACKEND_URL is set correctly in your .env file',
-                `The format should be: ${process.env.EXPO_PUBLIC_BACKEND_URL || 'http://YOUR_IP_ADDRESS:3000'}`,
-                `Example: ${process.env.EXPO_PUBLIC_BACKEND_URL || 'http://192.168.1.100:3000'}`,
-                'Make sure there are no extra spaces or characters'
-            ]
-        },
-        {
-            id: 'testing',
-            title: '5. Test connectivity',
-            content: [
-                `On your phone, open a browser and try: ${process.env.EXPO_PUBLIC_BACKEND_URL || 'http://YOUR_IP:3000'}/api/health`,
-                'If this doesn\'t work, it\'s a network issue, not a code issue',
-                'Try pinging your computer\'s IP from another device',
-                'Check if your router has any restrictions'
-            ]
-        },
-        {
-            id: 'restart',
-            title: '6. Restart everything',
-            content: [
-                'Stop the backend server (Ctrl+C)',
-                'Stop the Expo development server',
-                'Close the Expo Go app completely',
-                'Restart the backend server',
-                'Restart the Expo development server',
-                'Reopen the Expo Go app'
-            ]
-        }
-    ];
-
-    const toggleSection = (sectionId: string) => {
-        setExpandedSection(expandedSection === sectionId ? null : sectionId);
+    const handleClose = () => {
+        playButtonSound();
+        if (onClose) onClose();
     };
 
     const handleTestConnection = async () => {
+        playButtonSound();
         const backendUrl = process.env.EXPO_PUBLIC_BACKEND_URL || 'http://localhost:3000';
         const healthUrl = `${backendUrl}/api/health`;
 
@@ -120,6 +61,16 @@ const ConnectionTroubleshootingGuide: React.FC<ConnectionTroubleshootingGuidePro
         }
     };
 
+    const handleClearTest = () => {
+        playButtonSound();
+        setConnectionTestResult({ status: 'idle', message: '' });
+    };
+
+    const toggleSection = (sectionId: string) => {
+        playButtonSound();
+        setExpandedSection(expandedSection === sectionId ? null : sectionId);
+    };
+
     const getConnectionTestStyles = () => {
         switch (connectionTestResult.status) {
             case 'success':
@@ -138,7 +89,7 @@ const ConnectionTroubleshootingGuide: React.FC<ConnectionTroubleshootingGuidePro
             <View style={styles.header}>
                 <Text style={styles.title}>Connection Troubleshooting</Text>
                 {onClose && (
-                    <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+                    <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
                         <Text style={styles.closeButtonText}>✕</Text>
                     </TouchableOpacity>
                 )}
@@ -168,7 +119,7 @@ const ConnectionTroubleshootingGuide: React.FC<ConnectionTroubleshootingGuidePro
                         {connectionTestResult.status !== 'testing' && (
                             <TouchableOpacity
                                 style={styles.clearTestButton}
-                                onPress={() => setConnectionTestResult({ status: 'idle', message: '' })}
+                                onPress={handleClearTest}
                             >
                                 <Text style={styles.clearTestButtonText}>Clear</Text>
                             </TouchableOpacity>

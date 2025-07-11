@@ -7,6 +7,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import { useButtonSound } from '../../hooks/useButtonSound';
 import { getSocket } from '../../services/websocket';
 import { useGameStore } from '../../store/gameStore';
 import ConnectionTroubleshootingGuide from './ConnectionTroubleshootingGuide';
@@ -16,33 +17,37 @@ interface ConnectionErrorScreenProps {
 }
 
 const ConnectionErrorScreen: React.FC<ConnectionErrorScreenProps> = ({ onRetry }) => {
-    const { error, isLoading } = useGameStore();
+    const { error, setError, setIsLoading } = useGameStore();
+    const [isLoading, setLocalLoading] = useState(false);
     const [showTroubleshooting, setShowTroubleshooting] = useState(false);
     const [connectionTestResult, setConnectionTestResult] = useState<{
         status: 'idle' | 'testing' | 'success' | 'error';
         message: string;
     }>({ status: 'idle', message: '' });
+    const playButtonSound = useButtonSound();
 
     const handleRetry = async () => {
+        playButtonSound();
         if (onRetry) {
             onRetry();
         } else {
             // Default retry behavior
-            useGameStore.getState().setIsLoading(true);
-            useGameStore.getState().setError(null);
+            setLocalLoading(true);
+            setError(null);
 
             try {
                 // Attempt to reconnect
                 getSocket();
             } catch (err: any) {
-                useGameStore.getState().setError(err.message || 'Failed to connect to server');
+                setError(err.message || 'Failed to connect to server');
             } finally {
-                useGameStore.getState().setIsLoading(false);
+                setLocalLoading(false);
             }
         }
     };
 
     const handleCheckConnection = async () => {
+        playButtonSound();
         const backendUrl = process.env.EXPO_PUBLIC_BACKEND_URL || 'http://localhost:3000';
         const healthUrl = `${backendUrl}/api/health`;
 
@@ -73,6 +78,16 @@ const ConnectionErrorScreen: React.FC<ConnectionErrorScreenProps> = ({ onRetry }
                 message: '❌ Cannot reach backend server. This usually means:\n• Server is not running\n• Wrong IP address in config\n• Firewall blocking connection\n• Device not on same network'
             });
         }
+    };
+
+    const handleClearTest = () => {
+        playButtonSound();
+        setConnectionTestResult({ status: 'idle', message: '' });
+    };
+
+    const handleShowTroubleshooting = () => {
+        playButtonSound();
+        setShowTroubleshooting(true);
     };
 
     const getErrorDetails = () => {
@@ -186,7 +201,7 @@ const ConnectionErrorScreen: React.FC<ConnectionErrorScreenProps> = ({ onRetry }
 
                     <TouchableOpacity
                         style={[styles.button, styles.tertiaryButton]}
-                        onPress={() => setShowTroubleshooting(true)}
+                        onPress={handleShowTroubleshooting}
                         disabled={isLoading}
                     >
                         <Text style={styles.tertiaryButtonText}>📖 Troubleshooting Guide</Text>
@@ -202,7 +217,7 @@ const ConnectionErrorScreen: React.FC<ConnectionErrorScreenProps> = ({ onRetry }
                         {connectionTestResult.status !== 'testing' && (
                             <TouchableOpacity
                                 style={styles.clearTestButton}
-                                onPress={() => setConnectionTestResult({ status: 'idle', message: '' })}
+                                onPress={handleClearTest}
                             >
                                 <Text style={styles.clearTestButtonText}>Clear</Text>
                             </TouchableOpacity>

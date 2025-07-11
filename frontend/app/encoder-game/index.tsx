@@ -12,6 +12,7 @@ import {
     View,
 } from 'react-native';
 import encoderBg from '../../assets/images/encoder.png';
+import { useSendSound } from '../../hooks/useSendSound';
 import { leaveRoom, sendMessage } from '../../services/websocket';
 import { useGameStore } from '../../store/gameStore';
 import { isMessageTooSimilar } from '../../utils/stringValidation';
@@ -37,11 +38,31 @@ const EncoderGameScreen = () => {
 
     const [messageInput, setMessageInput] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const playSendSound = useSendSound();
 
     const canSendMessage = currentTurn === 'encoder' && gameStatus === 'active';
     const isMyTurn = currentTurn === playerRole;
 
     const flashAnim = useRef(new Animated.Value(1)).current;
+
+    // Initialize audio and load sound
+    useEffect(() => {
+        const setup = async () => {
+            // await initializeAudio(); // This line is removed as per the new_code
+            // const loadedSound = await loadSound( // This line is removed as per the new_code
+            //     require('../../assets/sound-FX/send_button_v1.mp3') // This line is removed as per the new_code
+            // ); // This line is removed as per the new_code
+            // setSound(loadedSound); // This line is removed as per the new_code
+        };
+
+        setup();
+
+        return () => {
+            // if (sound) { // This line is removed as per the new_code
+            //     sound.unloadAsync(); // This line is removed as per the new_code
+            // } // This line is removed as per the new_code
+        };
+    }, []);
 
     // Flashing animation for last 30 seconds
     useEffect(() => {
@@ -103,6 +124,9 @@ const EncoderGameScreen = () => {
         }
 
         setIsSubmitting(true);
+        // Play sound immediately without awaiting
+        playSendSound();
+        
         try {
             await sendMessage(messageInput.trim());
             setMessageInput('');

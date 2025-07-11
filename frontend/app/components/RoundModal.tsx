@@ -1,5 +1,6 @@
 import React from 'react';
 import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useButtonSound } from '../../hooks/useButtonSound';
 import { useGameStore } from '../../store/gameStore';
 import ScoreProgressBar from './ScoreProgressBar';
 
@@ -11,8 +12,10 @@ const RoundModal: React.FC = () => {
         setRoundModalData,
         score
     } = useGameStore();
+    const playButtonSound = useButtonSound();
 
     const handleDismiss = () => {
+        playButtonSound();
         setShowRoundModal(false);
         setRoundModalData(null);
     };

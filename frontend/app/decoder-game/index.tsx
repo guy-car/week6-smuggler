@@ -13,6 +13,7 @@ import {
     View,
 } from 'react-native';
 import decoderBg from '../../assets/images/decoder.png';
+import { useSendSound } from '../../hooks/useSendSound';
 import { leaveRoom, submitGuess } from '../../services/websocket';
 import { useGameStore } from '../../store/gameStore';
 import AISectionComponent from '../components/AISectionComponent';
@@ -35,6 +36,38 @@ const DecoderGameScreen = () => {
 
     const [guessInput, setGuessInput] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const playSendSound = useSendSound();
+
+    const handleSubmitGuess = async () => {
+        if (!guessInput.trim() || !canSubmitGuess || isSubmitting) {
+            return;
+        }
+
+        setIsSubmitting(true);
+        // Play sound immediately without awaiting
+        playSendSound();
+        
+        try {
+            await submitGuess(guessInput.trim());
+            setGuessInput('');
+        } catch (error: any) {
+            Alert.alert('Error', error.message || 'Failed to submit guess');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleAbort = () => {
+        leaveRoom();
+        useGameStore.getState().setCurrentScreen('lobby');
+        useGameStore.getState().setRoomId(null);
+        useGameStore.getState().setPlayers([]);
+        useGameStore.getState().reset();
+    };
+
+    useEffect(() => {
+        // This will be handled by the ConversationHistory component
+    }, [conversationHistory]);
 
     const canSubmitGuess = currentTurn === 'decoder' && gameStatus === 'active';
     const isMyTurn = currentTurn === playerRole;
@@ -84,34 +117,6 @@ const DecoderGameScreen = () => {
         }
         return [styles.timerContainer, styles.timerContainerNormal];
     };
-
-    const handleSubmitGuess = async () => {
-        if (!guessInput.trim() || !canSubmitGuess || isSubmitting) {
-            return;
-        }
-
-        setIsSubmitting(true);
-        try {
-            await submitGuess(guessInput.trim());
-            setGuessInput('');
-        } catch (error: any) {
-            Alert.alert('Error', error.message || 'Failed to submit guess');
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    const handleAbort = () => {
-        leaveRoom();
-        useGameStore.getState().setCurrentScreen('lobby');
-        useGameStore.getState().setRoomId(null);
-        useGameStore.getState().setPlayers([]);
-        useGameStore.getState().reset();
-    };
-
-    useEffect(() => {
-        // This will be handled by the ConversationHistory component
-    }, [conversationHistory]);
 
     return (
         <ImageBackground
