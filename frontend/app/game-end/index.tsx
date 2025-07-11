@@ -8,6 +8,7 @@ import {
     View,
 } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
+import { useButtonSound } from '../../hooks/useButtonSound';
 import { useGameStore } from '../../store/gameStore';
 
 const GameEndScreen = () => {
@@ -19,8 +20,10 @@ const GameEndScreen = () => {
         playerRole,
         reset,
     } = useGameStore();
+    const playButtonSound = useButtonSound();
 
     const handleReturnToLobby = () => {
+        playButtonSound();
         reset();
         // Use state-based navigation to return to lobby
         useGameStore.getState().setCurrentScreen('lobby');

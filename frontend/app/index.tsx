@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { getSocket } from '../services/websocket';
 import { useGameStore } from '../store/gameStore';
+import { soundManager } from '../utils/soundManager';
 import ConnectionErrorScreen from './components/ConnectionErrorScreen';
 import DecoderGameScreen from './decoder-game';
 import EncoderGameScreen from './encoder-game';
@@ -21,13 +22,16 @@ const App = () => {
     } = useGameStore();
 
     useEffect(() => {
-        // Initialize WebSocket connection
-        const initializeConnection = async () => {
+        // Initialize WebSocket connection and sound manager
+        const initialize = async () => {
             setIsLoading(true);
             setError(null);
 
             try {
-                // Get socket instance (this will trigger connection)
+                // Initialize sound manager first
+                await soundManager.initialize();
+                
+                // Then initialize WebSocket
                 getSocket();
             } catch (err: any) {
                 setError(err.message || 'Failed to connect to server');
@@ -36,7 +40,12 @@ const App = () => {
             }
         };
 
-        initializeConnection();
+        initialize();
+
+        // Cleanup on unmount
+        return () => {
+            soundManager.cleanup();
+        };
     }, []);
 
     // Show loading screen while connecting

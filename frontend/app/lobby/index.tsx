@@ -2,6 +2,7 @@ import { BlurView } from 'expo-blur';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, ImageBackground, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import lobbyBackground from '../../assets/images/lobby.png';
+import { useButtonSound } from '../../hooks/useButtonSound';
 import { createRoom, getAvailableRooms, getSocket, joinRoom } from '../../services/websocket';
 import { useGameStore } from '../../store/gameStore';
 import ConnectionStatusIndicator from '../components/ConnectionStatusIndicator';
@@ -11,6 +12,7 @@ const LobbyScreen = () => {
     const connected = useGameStore((s) => s.connected);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const playButtonSound = useButtonSound();
 
     useEffect(() => {
         if (connected) {
@@ -28,6 +30,7 @@ const LobbyScreen = () => {
     }, [connected]);
 
     const handleCreateRoom = async () => {
+        playButtonSound();
         setLoading(true);
         setError(null);
         try {
@@ -40,6 +43,7 @@ const LobbyScreen = () => {
     };
 
     const handleJoinRoom = (roomId: string) => {
+        playButtonSound();
         joinRoom(roomId);
     };
 
