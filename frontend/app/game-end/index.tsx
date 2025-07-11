@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import {
-    ActivityIndicator,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -19,63 +18,36 @@ const GameEndScreen = () => {
         reset,
     } = useGameStore();
 
-    const [countdown, setCountdown] = useState(5);
-    const [isNavigating, setIsNavigating] = useState(false);
-
-    // Determine game result
-    const isWinner = score > 0;
-    const isAIWinner = score < 0;
-    const isTie = score === 0;
-
-    useEffect(() => {
-        const timer = setInterval(() => {
-            setCountdown((prev) => {
-                if (prev <= 1) {
-                    clearInterval(timer);
-                    handleReturnToLobby();
-                    return 0;
-                }
-                return prev - 1;
-            });
-        }, 1000);
-
-        return () => clearInterval(timer);
-    }, []);
-
     const handleReturnToLobby = () => {
-        setIsNavigating(true);
         reset();
         // Use state-based navigation to return to lobby
         useGameStore.getState().setCurrentScreen('lobby');
     };
 
-    const handleReturnNow = () => {
-        handleReturnToLobby();
-    };
-
     const getResultText = () => {
         if (isWinner) {
             return 'Humans Win! 🎉';
-        } else if (isAIWinner) {
-            return 'AI Wins! 🤖';
         } else {
-            return "It's a Tie! 🤝";
+            return 'AI Wins! 🤖';
         }
     };
 
     const getResultColor = () => {
         if (isWinner) {
             return '#34C759';
-        } else if (isAIWinner) {
-            return '#FF3B30';
         } else {
-            return '#FF9500';
+            return '#FF3B30';
         }
     };
 
     const getRoleText = () => {
         return playerRole === 'encoder' ? 'Encoder' : 'Decoder';
     };
+
+    // Determine game result
+    const isWinner = score > 0;
+    const isAIWinner = score <= 0; // AI wins when score is 0 or negative
+    const isTie = false; // No ties in this game - AI wins at 0
 
     return (
         <View style={styles.container}>
@@ -134,20 +106,12 @@ const GameEndScreen = () => {
                     )}
                 </View>
 
-                <View style={styles.countdownContainer}>
-                    <Text style={styles.countdownText}>
-                        Returning to lobby in {countdown} seconds...
-                    </Text>
-                    {isNavigating && <ActivityIndicator style={styles.loading} />}
-                </View>
-
                 <TouchableOpacity
                     style={styles.returnButton}
-                    onPress={handleReturnNow}
-                    disabled={isNavigating}
+                    onPress={handleReturnToLobby}
                 >
                     <Text style={styles.returnButtonText}>
-                        Return to Lobby Now
+                        Return to Lobby
                     </Text>
                 </TouchableOpacity>
             </View>
@@ -218,19 +182,6 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: 'bold',
         color: '#007AFF',
-    },
-    countdownContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 24,
-    },
-    countdownText: {
-        fontSize: 16,
-        color: '#8E8E93',
-        marginRight: 8,
-    },
-    loading: {
-        marginLeft: 8,
     },
     returnButton: {
         backgroundColor: '#007AFF',
