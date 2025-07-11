@@ -268,7 +268,8 @@ const styles = StyleSheet.create({
     sendButtonDisabled: {
     },
     sendButtonText: {
-        color: '#007AFF',
+        color: '#fff',
+        fontWeight: 'bold',
     },
     modalOverlay: {
         position: 'absolute',

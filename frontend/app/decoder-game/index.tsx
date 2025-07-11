@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
         elevation: 8,
     },
     submitButtonDisabled: {
-        opacity: 0.2,
+        opacity: .4,
     },
     submitButtonText: {
         color: '#000',
