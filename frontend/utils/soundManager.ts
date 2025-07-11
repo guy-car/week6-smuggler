@@ -28,7 +28,12 @@ class SoundManager {
             const clickSound = await Audio.Sound.createAsync(
                 require('../assets/sound-FX/click_1.mp3'),
                 { shouldPlay: false, volume: 1.0, isLooping: false },
-                undefined,
+                (status) => {
+                    // Optional: Handle status updates
+                    if (status.isLoaded) {
+                        console.log('Click sound loaded successfully');
+                    }
+                },
                 true // Download first
             );
             this.sounds.set('click', clickSound.sound);
@@ -36,7 +41,12 @@ class SoundManager {
             const sendSound = await Audio.Sound.createAsync(
                 require('../assets/sound-FX/send_button_v1.mp3'),
                 { shouldPlay: false, volume: 1.0, isLooping: false },
-                undefined,
+                (status) => {
+                    // Optional: Handle status updates
+                    if (status.isLoaded) {
+                        console.log('Send sound loaded successfully');
+                    }
+                },
                 true // Download first
             );
             this.sounds.set('send', sendSound.sound);
@@ -48,6 +58,7 @@ class SoundManager {
     }
 
     playClick() {
+        console.log('🔊 Playing click sound');
         const sound = this.sounds.get('click');
         if (sound) {
             try {
@@ -56,10 +67,13 @@ class SoundManager {
             } catch (error) {
                 console.error('Error playing click sound:', error);
             }
+        } else {
+            console.warn('Click sound not found or not loaded');
         }
     }
 
     playSend() {
+        console.log('🔊 Playing send sound');
         const sound = this.sounds.get('send');
         if (sound) {
             try {
@@ -67,6 +81,8 @@ class SoundManager {
             } catch (error) {
                 console.error('Error playing send sound:', error);
             }
+        } else {
+            console.warn('Send sound not found or not loaded');
         }
     }
 
