@@ -12,19 +12,22 @@ const ConversationMessage: React.FC<ConversationMessageProps> = ({ item, current
     const isEncoder = item.type === 'encoder';
     const isDecoder = item.type === 'decoder';
 
-
-    let backgroundColor = '#F2F2F7';
-    let textColor = '#000000';
-    let borderColor = '#E5E5EA';
+    // Holographic color themes
+    let backgroundColor = 'rgba(0,255,255,0.08)';
+    let textColor = '#00FFF0';
+    let borderColor = '#00FFF0';
+    let shadowColor = '#00FFF0';
 
     if (isEncoder) {
-        backgroundColor = '#E8F5E8';
-        textColor = '#2E7D32';
-        borderColor = '#C8E6C9';
+        backgroundColor = 'rgba(0,255,90,0.12)';
+        textColor = '#00FF90';
+        borderColor = '#00FF90';
+        shadowColor = '#00FF90';
     } else if (isDecoder) {
-        backgroundColor = '#FFF3E0';
-        textColor = '#F57C00';
-        borderColor = '#FFCC02';
+        backgroundColor = 'rgba(255,200,0,0.10)';
+        textColor = '#FFD600';
+        borderColor = '#FFD600';
+        shadowColor = '#FFD600';
     }
 
     const alignSelf = isCurrentPlayer ? 'flex-end' : 'flex-start';
@@ -33,7 +36,7 @@ const ConversationMessage: React.FC<ConversationMessageProps> = ({ item, current
     return (
         <View style={[
             styles.turnContainer,
-            { alignSelf, maxWidth, backgroundColor, borderColor }
+            { alignSelf, maxWidth, backgroundColor, borderColor, shadowColor }
         ]}>
             <View style={styles.turnHeader}>
                 <Text style={[styles.turnType, { color: textColor }]}>
@@ -50,17 +53,13 @@ const ConversationMessage: React.FC<ConversationMessageProps> = ({ item, current
 const styles = StyleSheet.create({
     turnContainer: {
         marginVertical: 4,
-        padding: 12,
-        borderRadius: 12,
-        borderWidth: 1,
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 1,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-        elevation: 2,
+        padding: 14,
+        borderRadius: 6,
+        borderWidth: 2,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.7,
+        shadowRadius: 14,
+        elevation: 8,
     },
     turnHeader: {
         flexDirection: 'row',
@@ -70,16 +69,24 @@ const styles = StyleSheet.create({
     },
     turnType: {
         fontSize: 12,
-        fontWeight: '600',
+        fontWeight: '700',
         textTransform: 'uppercase',
+        fontFamily: 'monospace',
+        textShadowColor: '#00FFF0',
+        textShadowOffset: { width: 0, height: 0 },
+        textShadowRadius: 6,
     },
     timestamp: {
         fontSize: 10,
         opacity: 0.7,
     },
     turnContent: {
-        fontSize: 14,
-        lineHeight: 20,
+        fontSize: 15,
+        lineHeight: 22,
+        fontFamily: 'monospace',
+        textShadowColor: '#00FFF0',
+        textShadowOffset: { width: 0, height: 0 },
+        textShadowRadius: 8,
     },
 });
 
