@@ -23,9 +23,9 @@ const AISectionComponent: React.FC<AISectionProps> = ({
     const remainingTime = useGameStore((state) => state.remainingTime);
     const flashAnim = useRef(new Animated.Value(1)).current;
 
-    // Flashing animation for last 5 seconds
+    // Flashing animation for last 30 seconds
     useEffect(() => {
-        if (remainingTime <= 5 && remainingTime > 0) {
+        if (remainingTime <= 30 && remainingTime > 0) {
             const flashAnimation = Animated.loop(
                 Animated.sequence([
                     Animated.timing(flashAnim, {
@@ -71,13 +71,21 @@ const AISectionComponent: React.FC<AISectionProps> = ({
     // Only show timer for human turns
     const showTimer = currentTurn === 'encoder' || currentTurn === 'decoder';
 
+    // Format timer display as MM:SS
+    const formatTimerDisplay = (seconds: number): string => {
+        const totalSeconds = Math.floor(seconds); // Floor to handle decimals
+        const minutes = Math.floor(totalSeconds / 60);
+        const remainingSeconds = Math.abs(totalSeconds % 60); // Use abs for negative numbers
+        return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+    };
+
     // Timer styling based on remaining time
     const getTimerStyle = () => {
-        if (remainingTime <= 5) {
+        if (remainingTime <= 30) {
             return [styles.timerContainer, styles.timerContainerFlashing];
-        } else if (remainingTime <= 10) {
+        } else if (remainingTime <= 60) {
             return [styles.timerContainer, styles.timerContainerWarning];
-        } else if (remainingTime <= 20) {
+        } else if (remainingTime <= 120) {
             return [styles.timerContainer, styles.timerContainerLow];
         }
         return [styles.timerContainer, styles.timerContainerNormal];
@@ -96,7 +104,7 @@ const AISectionComponent: React.FC<AISectionProps> = ({
                 <Text style={styles.title} numberOfLines={1} ellipsizeMode="clip">AI is Listening</Text>
                 {showTimer && (
                     <Animated.View style={[getTimerStyle(), { opacity: flashAnim }]}>
-                        <Text style={styles.timerText}>{remainingTime}s</Text>
+                        <Text style={styles.timerText}>{formatTimerDisplay(remainingTime)}</Text>
                     </Animated.View>
                 )}
             </View>
@@ -182,13 +190,13 @@ const styles = StyleSheet.create({
         marginLeft: 10,
     },
     timerContainerNormal: {
-        backgroundColor: '#34C759', // Green for normal time (30-21)
+        backgroundColor: '#34C759', // Green for normal time (>2 minutes)
     },
     timerContainerLow: {
-        backgroundColor: '#FF9500', // Yellow for low time (20-11)
+        backgroundColor: '#FF9500', // Yellow for low time (1-2 minutes)
     },
     timerContainerWarning: {
-        backgroundColor: '#FF3B30', // Red for warning (10-6)
+        backgroundColor: '#FF3B30', // Red for warning (<1 minute)
         shadowColor: '#FF3B30',
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 0.8,
@@ -196,7 +204,7 @@ const styles = StyleSheet.create({
         elevation: 6,
     },
     timerContainerFlashing: {
-        backgroundColor: '#FF3B30', // Bright red for flashing (5-1)
+        backgroundColor: '#FF3B30', // Bright red for flashing (<30 seconds)
         shadowColor: '#FF3B30',
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 1,
