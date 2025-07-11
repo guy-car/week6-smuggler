@@ -2,10 +2,10 @@ import { AITurn, AnalyzeRequest, DecoderTurn, EncoderTurn, GameState, Player, Ro
 import { fuzzyStringMatch, getMaxLevenshteinDistance } from '../utils/helpers';
 
 export class GameStateManager {
-    private readonly INITIAL_SCORE = 5; // Start at neutral score
-    private readonly MAX_SCORE = 10;
+    private readonly INITIAL_SCORE = 3; // Start at neutral score
+    private readonly MAX_SCORE = 6;
     private readonly MIN_SCORE = 0;
-    private readonly WIN_SCORE = 10;
+    private readonly WIN_SCORE = 6;
     private readonly LOSE_SCORE = 0;
     private readonly ROUND_DURATION = 180; // 3 minutes for round timer
     private readonly MAX_ROUNDS = 5; // Maximum rounds to prevent infinite games

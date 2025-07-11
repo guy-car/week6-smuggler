@@ -11,7 +11,7 @@ describe('Game State Persistence', () => {
     describe('saveGameStateForPlayer', () => {
         it('should save game state for encoder player', () => {
             const gameState: GameState = {
-                score: 5,
+                score: 3,
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [
@@ -35,7 +35,7 @@ describe('Game State Persistence', () => {
 
         it('should save game state for decoder player', () => {
             const gameState: GameState = {
-                score: 5,
+                score: 3,
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [],
@@ -57,7 +57,7 @@ describe('Game State Persistence', () => {
 
         it('should return null role for unknown player', () => {
             const gameState: GameState = {
-                score: 5,
+                score: 3,
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [],
@@ -81,7 +81,7 @@ describe('Game State Persistence', () => {
     describe('restoreGameStateForPlayer', () => {
         it('should allow rejoin when game state is compatible', () => {
             const savedGameState: GameState = {
-                score: 5,
+                score: 3,
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [],
@@ -91,7 +91,7 @@ describe('Game State Persistence', () => {
             };
 
             const currentGameState: GameState = {
-                score: 5,
+                score: 3,
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [
@@ -121,7 +121,7 @@ describe('Game State Persistence', () => {
 
         it('should not allow rejoin when game has ended', () => {
             const savedGameState: GameState = {
-                score: 5,
+                score: 3,
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [],
@@ -131,7 +131,7 @@ describe('Game State Persistence', () => {
             };
 
             const currentGameState: GameState = {
-                score: 10,
+                score: 6,
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [],
@@ -158,7 +158,7 @@ describe('Game State Persistence', () => {
 
         it('should not allow rejoin when player role not found', () => {
             const savedGameState: GameState = {
-                score: 5,
+                score: 3,
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [],
@@ -168,7 +168,7 @@ describe('Game State Persistence', () => {
             };
 
             const currentGameState: GameState = {
-                score: 5,
+                score: 3,
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [],
@@ -195,7 +195,7 @@ describe('Game State Persistence', () => {
 
         it('should not allow rejoin when round has changed', () => {
             const savedGameState: GameState = {
-                score: 5,
+                score: 3,
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [],
@@ -232,7 +232,7 @@ describe('Game State Persistence', () => {
 
         it('should not allow rejoin when secret word has changed', () => {
             const savedGameState: GameState = {
-                score: 5,
+                score: 3,
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [],
@@ -242,7 +242,7 @@ describe('Game State Persistence', () => {
             };
 
             const currentGameState: GameState = {
-                score: 5,
+                score: 3,
                 currentRound: 1,
                 secretWord: 'banana',
                 conversationHistory: [],
@@ -269,7 +269,7 @@ describe('Game State Persistence', () => {
 
         it('should not allow rejoin when score has changed significantly', () => {
             const savedGameState: GameState = {
-                score: 5,
+                score: 3,
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [],
@@ -279,7 +279,7 @@ describe('Game State Persistence', () => {
             };
 
             const currentGameState: GameState = {
-                score: 8,
+                score: 5,
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [],
@@ -307,7 +307,7 @@ describe('Game State Persistence', () => {
     describe('canPlayerRejoin', () => {
         it('should allow rejoin for active game with valid role', () => {
             const gameState: GameState = {
-                score: 5,
+                score: 3,
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [],
@@ -329,7 +329,7 @@ describe('Game State Persistence', () => {
 
         it('should not allow rejoin for ended game', () => {
             const gameState: GameState = {
-                score: 10,
+                score: 6,
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [],
@@ -351,7 +351,7 @@ describe('Game State Persistence', () => {
 
         it('should not allow rejoin for player without role', () => {
             const gameState: GameState = {
-                score: 5,
+                score: 3,
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [],
@@ -375,7 +375,7 @@ describe('Game State Persistence', () => {
     describe('getGameStateSummary', () => {
         it('should return correct summary for active game', () => {
             const gameState: GameState = {
-                score: 5,
+                score: 3,
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [
@@ -388,7 +388,7 @@ describe('Game State Persistence', () => {
 
             const summary = gameStateManager.getGameStateSummary(gameState);
 
-            expect(summary.score).toBe(5);
+            expect(summary.score).toBe(3);
             expect(summary.round).toBe(1);
             expect(summary.currentTurn).toBe('decoder');
             expect(summary.messageCount).toBe(1);
@@ -397,7 +397,7 @@ describe('Game State Persistence', () => {
 
         it('should return correct summary for ended game', () => {
             const gameState: GameState = {
-                score: 10,
+                score: 6,
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [],
@@ -408,7 +408,7 @@ describe('Game State Persistence', () => {
 
             const summary = gameStateManager.getGameStateSummary(gameState);
 
-            expect(summary.score).toBe(10);
+            expect(summary.score).toBe(6);
             expect(summary.round).toBe(1);
             expect(summary.currentTurn).toBe('encoder');
             expect(summary.messageCount).toBe(0);
@@ -417,7 +417,7 @@ describe('Game State Persistence', () => {
 
         it('should handle complex conversation history', () => {
             const gameState: GameState = {
-                score: 5,
+                score: 3,
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [
