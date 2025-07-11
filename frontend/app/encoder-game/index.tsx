@@ -314,12 +314,17 @@ const styles = StyleSheet.create({
     },
     sendButton: {
         borderWidth: 4,
-        borderColor: 'blue',
+        borderColor: '#00FF90',
         paddingHorizontal: 20,
         paddingVertical: 12,
         borderRadius: 8,
         justifyContent: 'center',
-        backgroundColor: 'rgba(0, 16, 186, 0.8)',
+        backgroundColor: 'rgba(0,255,144,0.5)',
+        shadowColor: '#00FF90',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.8,
+        shadowRadius: 16,
+        elevation: 10,
     },
     sendButtonDisabled: {
     },
@@ -468,10 +473,12 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     timerContainer: {
+        width: 60, // Fixed width for timer
         paddingHorizontal: 10,
         paddingVertical: 5,
         borderRadius: 8,
         marginLeft: 10,
+        textAlign: 'center',
     },
     timerContainerNormal: {
         backgroundColor: '#34C759', // Green for normal time (>2 minutes)
@@ -499,6 +506,7 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontSize: 16,
         fontWeight: 'bold',
+        textAlign: 'center',
     },
 });
 

@@ -268,10 +268,12 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     timerContainer: {
+        width: 60, // Fixed width for timer
         paddingHorizontal: 10,
         paddingVertical: 5,
         borderRadius: 8,
         marginLeft: 10,
+        textAlign: 'center',
     },
     timerContainerNormal: {
         backgroundColor: '#34C759', // Green for normal time (>2 minutes)
@@ -299,6 +301,7 @@ const styles = StyleSheet.create({
         color: '#FFFFFF',
         fontSize: 16,
         fontWeight: 'bold',
+        textAlign: 'center',
     },
 });
 
