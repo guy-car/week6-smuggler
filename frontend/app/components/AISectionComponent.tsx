@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Animated, Keyboard, ScrollView, StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
+import { Animated, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Turn, useGameStore } from '../../store/gameStore';
 import AIDisplayComponent from './AIDisplayComponent';
 import ConversationHistory from './ConversationHistory';
@@ -102,19 +102,19 @@ const AISectionComponent: React.FC<AISectionProps> = ({
 
     return (
         <View style={styles.container}>
-<View style={styles.headerRow}>
-    <Text style={styles.title} numberOfLines={1} ellipsizeMode="clip">AI is Listening</Text>
-</View>
+            <View style={styles.headerRow}>
+                <Text style={styles.title} numberOfLines={1} ellipsizeMode="clip">AI is Listening</Text>
+            </View>
 
-{(shouldShowAIThinking || (aiAnalysis?.guess && !hasNewHumanMessagesAfterAI)) && (
-    <View style={styles.latestAnalysisContainer}>
-        <AIDisplayComponent
-            isThinking={shouldShowAIThinking}
-            thinkingText="Analyzing"
-            guess={!hasNewHumanMessagesAfterAI ? aiAnalysis?.guess : undefined}
-        />
-    </View>
-)}
+            {(shouldShowAIThinking || (aiAnalysis?.guess && !hasNewHumanMessagesAfterAI)) && (
+                <View style={styles.latestAnalysisContainer}>
+                    <AIDisplayComponent
+                        isThinking={shouldShowAIThinking}
+                        thinkingText="Analyzing"
+                        guess={!hasNewHumanMessagesAfterAI ? aiAnalysis?.guess : undefined}
+                    />
+                </View>
+            )}
             {/* Scrollable conversation history */}
             <View style={styles.conversationContainer}>
                 <ScrollView

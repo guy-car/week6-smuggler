@@ -138,7 +138,7 @@ const EncoderGameScreen = () => {
         playSendSound();
 
         triggerActionHaptics();
-        
+
         try {
             await sendMessage(messageInput.trim());
             setMessageInput('');
@@ -223,42 +223,42 @@ const EncoderGameScreen = () => {
                                 />
                             </View>
                         </View>
-                        {/* inputContainer is NOT wrapped, so input remains interactive */}
-                        <View style={styles.inputContainer}>
-                            <TextInput
-                                style={[
-                                    styles.messageInput,
-                                    !canSendMessage && styles.messageInputDisabled,
-                                ]}
-                                value={messageInput}
-                                onChangeText={handleTyping}
-                                placeholder={
-                                    canSendMessage
-                                        ? "Send a clue to your ally..."
-                                        : "Waiting for AI response..."
-                                }
-                                multiline
-                                maxLength={200}
-                                editable={canSendMessage}
-                                placeholderTextColor="white"
-                            />
-                            <TouchableOpacity
-                                style={[
-                                    styles.sendButton,
-                                    (!canSendMessage || !messageInput.trim() || isSubmitting) &&
-                                    styles.sendButtonDisabled,
-                                ]}
-                                onPress={handleSendMessage}
-                                disabled={!canSendMessage || !messageInput.trim() || isSubmitting}
-                            >
-                                <Text style={styles.sendButtonText}>
-                                    {isSubmitting ? 'Sending...' : 'Send'}
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
                     </KeyboardAvoidingView>
                 </View>
             </TouchableWithoutFeedback>
+            {/* inputContainer is outside TouchableWithoutFeedback, so input remains interactive */}
+            <View style={styles.inputContainer}>
+                <TextInput
+                    style={[
+                        styles.messageInput,
+                        !canSendMessage && styles.messageInputDisabled,
+                    ]}
+                    value={messageInput}
+                    onChangeText={handleTyping}
+                    placeholder={
+                        canSendMessage
+                            ? "Send a clue to your ally..."
+                            : "Waiting for AI response..."
+                    }
+                    multiline
+                    maxLength={200}
+                    editable={canSendMessage}
+                    placeholderTextColor="white"
+                />
+                <TouchableOpacity
+                    style={[
+                        styles.sendButton,
+                        (!canSendMessage || !messageInput.trim() || isSubmitting) &&
+                        styles.sendButtonDisabled,
+                    ]}
+                    onPress={handleSendMessage}
+                    disabled={!canSendMessage || !messageInput.trim() || isSubmitting}
+                >
+                    <Text style={styles.sendButtonText}>
+                        {isSubmitting ? 'Sending...' : 'Send'}
+                    </Text>
+                </TouchableOpacity>
+            </View>
             <RoundModal />
         </ImageBackground>
     );
