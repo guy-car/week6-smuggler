@@ -156,70 +156,72 @@ const EncoderGameScreen = () => {
             resizeMode="cover"
         >
             <View style={styles.overlay}>
-                <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-                    <KeyboardAvoidingView
-                        style={styles.container}
-                        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                    >
-                        <View style={styles.topRow}>
-                            <TouchableOpacity style={styles.abortButton} onPress={handleQuit}>
-                                <Text style={styles.abortButtonText}>Abort</Text>
-                            </TouchableOpacity>
-                            <View style={{ flex: 1 }}>
-                                <ScoreProgressBar
-                                    score={score}
-                                    maxScore={6}
-                                    aiWinsScore={0}
-                                    humansWinScore={6}
+                <KeyboardAvoidingView
+                    style={styles.container}
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                >
+                    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+                        <View style={{ flex: 1 }}>
+                            <View style={styles.topRow}>
+                                <TouchableOpacity style={styles.abortButton} onPress={handleQuit}>
+                                    <Text style={styles.abortButtonText}>Abort</Text>
+                                </TouchableOpacity>
+                                <View style={{ flex: 1 }}>
+                                    <ScoreProgressBar
+                                        score={score}
+                                        maxScore={6}
+                                        aiWinsScore={0}
+                                        humansWinScore={6}
+                                    />
+                                </View>
+                                <Animated.View style={[getTimerStyle(), { opacity: flashAnim }]}>
+                                    <Text style={styles.timerText}>{formatTimerDisplay(remainingTime)}</Text>
+                                </Animated.View>
+                            </View>
+                            <View style={styles.content}>
+                                <AISectionComponent
+                                    currentTurn={currentTurn}
+                                    conversationHistory={conversationHistory}
+                                    currentPlayerId={player?.id}
                                 />
                             </View>
-                            <Animated.View style={[getTimerStyle(), { opacity: flashAnim }]}>
-                                <Text style={styles.timerText}>{formatTimerDisplay(remainingTime)}</Text>
-                            </Animated.View>
+                            {/* Secret word above input field */}
+                            <SecretWordContainer secretWord={secretWord || undefined} />
                         </View>
-                        <View style={styles.content}>
-                            <AISectionComponent
-                                currentTurn={currentTurn}
-                                conversationHistory={conversationHistory}
-                                currentPlayerId={player?.id}
-                            />
-                        </View>
-                        {/* Secret word above input field */}
-                        <SecretWordContainer secretWord={secretWord || undefined} />
-                        <View style={styles.inputContainer}>
-                            <TextInput
-                                style={[
-                                    styles.messageInput,
-                                    !canSendMessage && styles.messageInputDisabled,
-                                ]}
-                                value={messageInput}
-                                onChangeText={setMessageInput}
-                                placeholder={
-                                    canSendMessage
-                                        ? "Send a clue to your ally..."
-                                        : "Waiting for AI response..."
-                                }
-                                multiline
-                                maxLength={200}
-                                editable={canSendMessage}
-                                placeholderTextColor="white"
-                            />
-                            <TouchableOpacity
-                                style={[
-                                    styles.sendButton,
-                                    (!canSendMessage || !messageInput.trim() || isSubmitting) &&
-                                    styles.sendButtonDisabled,
-                                ]}
-                                onPress={handleSendMessage}
-                                disabled={!canSendMessage || !messageInput.trim() || isSubmitting}
-                            >
-                                <Text style={styles.sendButtonText}>
-                                    {isSubmitting ? 'Sending...' : 'Send'}
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-                    </KeyboardAvoidingView>
-                </TouchableWithoutFeedback>
+                    </TouchableWithoutFeedback>
+                    <View style={styles.inputContainer}>
+                        <TextInput
+                            style={[
+                                styles.messageInput,
+                                !canSendMessage && styles.messageInputDisabled,
+                            ]}
+                            value={messageInput}
+                            onChangeText={setMessageInput}
+                            placeholder={
+                                canSendMessage
+                                    ? "Send a clue to your ally..."
+                                    : "Waiting for AI response..."
+                            }
+                            multiline
+                            maxLength={200}
+                            editable={canSendMessage}
+                            placeholderTextColor="white"
+                        />
+                        <TouchableOpacity
+                            style={[
+                                styles.sendButton,
+                                (!canSendMessage || !messageInput.trim() || isSubmitting) &&
+                                styles.sendButtonDisabled,
+                            ]}
+                            onPress={handleSendMessage}
+                            disabled={!canSendMessage || !messageInput.trim() || isSubmitting}
+                        >
+                            <Text style={styles.sendButtonText}>
+                                {isSubmitting ? 'Sending...' : 'Send'}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                </KeyboardAvoidingView>
             </View>
             <RoundModal />
         </ImageBackground>
