@@ -85,7 +85,8 @@ const EncoderGameScreen = () => {
             style={styles.background}
             resizeMode="cover"
         >
-            <KeyboardAvoidingView
+            <View style={styles.overlay}>
+                <KeyboardAvoidingView
                 style={styles.container}
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             >
@@ -147,7 +148,8 @@ const EncoderGameScreen = () => {
                         </Text>
                     </TouchableOpacity>
                 </View>
-            </KeyboardAvoidingView>
+                </KeyboardAvoidingView>
+            </View>
 
             <RoundModal />
         </ImageBackground>
@@ -159,6 +161,10 @@ const styles = StyleSheet.create({
         flex: 1,
         width: '100%',
         height: '100%',
+    },
+    overlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.3)',
     },
     container: {
         flex: 1,
