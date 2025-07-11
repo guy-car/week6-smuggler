@@ -165,7 +165,7 @@ describe('Error Handling Tests', () => {
             roomHandlers.handlePlayerReady(socket, { roomId: true as any });
             expect(socket.emit).toHaveBeenCalledWith('player_ready_error', {
                 roomId: true,
-                error: 'Failed to set player ready'
+                error: 'Failed to set player ready status'
             });
         });
 
