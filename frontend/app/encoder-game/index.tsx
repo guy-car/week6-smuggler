@@ -13,12 +13,13 @@ import {
 } from 'react-native';
 import encoderBg from '../../assets/images/encoder.png';
 import { useSendSound } from '../../hooks/useSendSound';
-import { leaveRoom, sendMessage } from '../../services/websocket';
+import { emitTypingStart, emitTypingStop, leaveRoom, sendMessage } from '../../services/websocket';
 import { useGameStore } from '../../store/gameStore';
 import { isMessageTooSimilar } from '../../utils/stringValidation';
 import AISectionComponent from '../components/AISectionComponent';
 import RoundModal from '../components/RoundModal';
 import ScoreProgressBar from '../components/ScoreProgressBar';
+import TypingIndicator from '../components/TypingIndicator';
 import SecretWordContainer from './SecretWordContainer';
 
 const EncoderGameScreen = () => {
@@ -34,6 +35,7 @@ const EncoderGameScreen = () => {
         roomId,
         secretWord,
         remainingTime,
+        typingIndicator,
     } = useGameStore();
 
     const [messageInput, setMessageInput] = useState('');
@@ -44,6 +46,7 @@ const EncoderGameScreen = () => {
     const isMyTurn = currentTurn === playerRole;
 
     const flashAnim = useRef(new Animated.Value(1)).current;
+    const typingTimeoutRef = useRef<any>(null);
 
     // Initialize audio and load sound
     useEffect(() => {
@@ -126,7 +129,7 @@ const EncoderGameScreen = () => {
         setIsSubmitting(true);
         // Play sound immediately without awaiting
         playSendSound();
-        
+
         try {
             await sendMessage(messageInput.trim());
             setMessageInput('');
@@ -135,6 +138,18 @@ const EncoderGameScreen = () => {
         } finally {
             setIsSubmitting(false);
         }
+    };
+
+    const handleTyping = (text: string) => {
+        setMessageInput(text);
+        if (!canSendMessage || !playerRole) return;
+        emitTypingStart(playerRole);
+        if (typingTimeoutRef.current) {
+            clearTimeout(typingTimeoutRef.current);
+        }
+        typingTimeoutRef.current = setTimeout(() => {
+            emitTypingStop(playerRole);
+        }, 1500); // Changed from 1000 to 1500ms
     };
 
     const handleQuit = () => {
@@ -159,7 +174,6 @@ const EncoderGameScreen = () => {
         >
             <View style={styles.overlay}>
                 <KeyboardAvoidingView
-
                     style={styles.container}
                     behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 >
@@ -190,6 +204,14 @@ const EncoderGameScreen = () => {
                     {/* Secret word above input field */}
                     <SecretWordContainer secretWord={secretWord || undefined} />
 
+                    {/* Typing indicator above input field */}
+                    <View style={styles.typingIndicatorContainer}>
+                        <TypingIndicator
+                            role={(typingIndicator?.role || 'encoder') as 'encoder' | 'decoder'}
+                            isVisible={!!(typingIndicator && typingIndicator.isTyping && typingIndicator.role !== playerRole)}
+                        />
+                    </View>
+
                     <View style={styles.inputContainer}>
                         <TextInput
                             style={[
@@ -197,7 +219,7 @@ const EncoderGameScreen = () => {
                                 !canSendMessage && styles.messageInputDisabled,
                             ]}
                             value={messageInput}
-                            onChangeText={setMessageInput}
+                            onChangeText={handleTyping}
                             placeholder={
                                 canSendMessage
                                     ? "Send a clue to your ally..."
@@ -540,6 +562,10 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textAlign: 'center',
         fontFamily: 'Audiowide',
+    },
+    typingIndicatorContainer: {
+        height: 42, // Fixed height to prevent layout shifts (30 + 12 margin)
+        paddingHorizontal: 16,
     },
 });
 

@@ -71,15 +71,6 @@ const AISectionComponent: React.FC<AISectionProps> = ({
     // Only show timer for human turns
     const showTimer = currentTurn === 'encoder' || currentTurn === 'decoder';
 
-    // Format timer display as MM:SS
-    const formatTimerDisplay = (seconds: number): string => {
-        const totalSeconds = Math.floor(seconds); // Floor to handle decimals
-        const minutes = Math.floor(totalSeconds / 60);
-        const remainingSeconds = Math.abs(totalSeconds % 60); // Use abs for negative numbers
-        return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-    };
-
-    // Timer styling based on remaining time
     const getTimerStyle = () => {
         if (remainingTime <= 30) {
             return [styles.timerContainer, styles.timerContainerFlashing];
@@ -87,8 +78,15 @@ const AISectionComponent: React.FC<AISectionProps> = ({
             return [styles.timerContainer, styles.timerContainerWarning];
         } else if (remainingTime <= 120) {
             return [styles.timerContainer, styles.timerContainerLow];
+        } else {
+            return [styles.timerContainer, styles.timerContainerNormal];
         }
-        return [styles.timerContainer, styles.timerContainerNormal];
+    };
+
+    const formatTimerDisplay = (seconds: number) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
 
     return (
@@ -114,24 +112,18 @@ const AISectionComponent: React.FC<AISectionProps> = ({
                     {aiAnalysis.guess && <AIGuessSection guess={aiAnalysis.guess} />}
                 </View>
             )}
-            {/* {!aiAnalysis && !isAITurn && (
-                <View style={styles.noAnalysisContainer}>
-                    <Text style={styles.noAnalysisText}>
-                        No AI analysis available yet. The AI will analyze the conversation after each turn.
-                    </Text>
-                </View>
-            )} */}
+
             {/* Scrollable conversation history */}
             <View style={styles.conversationContainer}>
-                <ScrollView 
+                <ScrollView
                     style={styles.scrollView}
                     showsVerticalScrollIndicator={true}
                     contentContainerStyle={styles.scrollContent}
                 >
-                    <ConversationHistory 
-                        conversation={conversationHistory} 
-                        currentPlayerId={currentPlayerId} 
-                        {...(conversationHistoryProps || {})} 
+                    <ConversationHistory
+                        conversation={conversationHistory}
+                        currentPlayerId={currentPlayerId}
+                        {...(conversationHistoryProps || {})}
                     />
                 </ScrollView>
             </View>
