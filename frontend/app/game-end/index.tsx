@@ -1,6 +1,6 @@
 import { ResizeMode, Video } from 'expo-av';
 import { BlurView } from 'expo-blur';
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
     StyleSheet,
     Text,
@@ -10,6 +10,7 @@ import {
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { useButtonSound } from '../../hooks/useButtonSound';
 import { useGameStore } from '../../store/gameStore';
+import { soundManager } from '../../utils/soundManager';
 
 const GameEndScreen = () => {
     const {
@@ -21,6 +22,25 @@ const GameEndScreen = () => {
         reset,
     } = useGameStore();
     const playButtonSound = useButtonSound();
+
+    // Handle background music and play game end sound
+    useEffect(() => {
+        // Pause background music
+        soundManager.pauseBackgroundMusic();
+        
+        // Play appropriate game end sound
+        if (isAIWinner) {
+            soundManager.playAIWinsGame();
+        } else if (isWinner) {
+            soundManager.playHumansWinGame();
+        }
+
+        // Cleanup: stop game end sound and resume background music
+        return () => {
+            soundManager.stopGameEndSound();
+            soundManager.playBackgroundMusic();
+        };
+    }, []);
 
     const handleReturnToLobby = () => {
         playButtonSound();
@@ -50,9 +70,9 @@ const GameEndScreen = () => {
     };
 
     // Determine game result
-    const isWinner = score >= 10;
+    const isWinner = score >= 6; // Updated to match new win condition
     const isAIWinner = score <= 0; // AI wins when score is 0 or negative
-    const isTie = false; // No ties in this game - AI wins at 0
+    const isTie = false;
 
     return (
         <View style={styles.container}>
