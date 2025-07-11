@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, AppState, StyleSheet, Text, View } from 'react-native';
 import { getSocket } from '../services/websocket';
 import { useGameStore } from '../store/gameStore';
 import { soundManager } from '../utils/soundManager';
@@ -11,7 +11,6 @@ import LobbyScreen from './lobby';
 import RoomScreen from './room';
 
 const App = () => {
-    // --- All original websocket/app logic below ---
     const {
         currentScreen,
         connected,
@@ -30,6 +29,7 @@ const App = () => {
             try {
                 // Initialize sound manager first
                 await soundManager.initialize();
+                await soundManager.playBackgroundMusic();
                 
                 // Then initialize WebSocket
                 getSocket();
@@ -42,8 +42,20 @@ const App = () => {
 
         initialize();
 
+        // Handle app state changes
+        const subscription = AppState.addEventListener('change', (nextAppState) => {
+            if (nextAppState === 'active') {
+                // App came to foreground
+                soundManager.playBackgroundMusic();
+            } else if (nextAppState === 'background' || nextAppState === 'inactive') {
+                // App went to background
+                soundManager.pauseBackgroundMusic();
+            }
+        });
+
         // Cleanup on unmount
         return () => {
+            subscription.remove();
             soundManager.cleanup();
         };
     }, []);
