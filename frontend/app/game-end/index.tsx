@@ -45,7 +45,7 @@ const GameEndScreen = () => {
     };
 
     // Determine game result
-    const isWinner = score > 0;
+    const isWinner = score > 10;
     const isAIWinner = score <= 0; // AI wins when score is 0 or negative
     const isTie = false; // No ties in this game - AI wins at 0
 

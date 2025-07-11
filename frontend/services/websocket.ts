@@ -447,7 +447,8 @@ export function getSocket() {
       useGameStore.getState().setRoundModalData({
         winner,
         correctGuess,
-        pointsChange
+        pointsChange,
+        secretWord: useGameStore.getState().secretWord || ''
       });
       useGameStore.getState().setShowRoundModal(true);
 

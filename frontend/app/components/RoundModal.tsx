@@ -21,7 +21,7 @@ const RoundModal: React.FC = () => {
         return null;
     }
 
-    const { winner, correctGuess, pointsChange } = roundModalData;
+    const { winner, correctGuess, pointsChange, secretWord } = roundModalData;
     const isAI = winner === 'ai';
     const bgColor = isAI ? 'rgba(255, 59, 48, 0.95)' : 'rgba(76, 217, 100, 0.95)';
     const textColor = '#fff';
@@ -53,6 +53,8 @@ const RoundModal: React.FC = () => {
                     {correctGuess && (
                         <Text style={[styles.guessText, { color: textColor }]}>Correct guess: {correctGuess}</Text>
                     )}
+
+                    <Text style={[styles.secretWordText, { color: textColor }]}>Secret word: {secretWord}</Text>
 
                     <Text style={[styles.pointsText, { color: textColor }]}>Points: {pointsText}</Text>
 
@@ -97,6 +99,12 @@ const styles = StyleSheet.create({
         marginTop: 0,
     },
     guessText: {
+        fontSize: 20,
+        fontWeight: '600',
+        textAlign: 'center',
+        marginBottom: 12,
+    },
+    secretWordText: {
         fontSize: 20,
         fontWeight: '600',
         textAlign: 'center',
