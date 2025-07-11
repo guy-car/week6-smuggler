@@ -122,15 +122,15 @@ const AISectionComponent: React.FC<AISectionProps> = ({
             )} */}
             {/* Scrollable conversation history */}
             <View style={styles.conversationContainer}>
-                <ScrollView 
+                <ScrollView
                     style={styles.scrollView}
-                    showsVerticalScrollIndicator={true}
                     contentContainerStyle={styles.scrollContent}
+                    showsVerticalScrollIndicator={true}
                 >
-                    <ConversationHistory 
-                        conversation={conversationHistory} 
-                        currentPlayerId={currentPlayerId} 
-                        {...(conversationHistoryProps || {})} 
+                    <ConversationHistory
+                        conversation={conversationHistory}
+                        currentPlayerId={currentPlayerId}
+                        {...(conversationHistoryProps || {})}
                     />
                 </ScrollView>
             </View>
@@ -327,10 +327,12 @@ const styles = StyleSheet.create({
     },
     conversationContainer: {
         flex: 1,
+        minHeight: 0,
         marginTop: 12,
     },
     scrollView: {
         flex: 1,
+        minHeight: 0,
     },
     scrollContent: {
         flexGrow: 1,

@@ -3,14 +3,12 @@ import {
     Alert,
     Animated,
     ImageBackground,
-    Keyboard,
     KeyboardAvoidingView,
     Platform,
     StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
-    TouchableWithoutFeedback,
     View
 } from 'react-native';
 import encoderBg from '../../assets/images/encoder.png';
@@ -160,35 +158,33 @@ const EncoderGameScreen = () => {
                     style={styles.container}
                     behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 >
-                    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-                        <View style={{ flex: 1 }}>
-                            <View style={styles.topRow}>
-                                <TouchableOpacity style={styles.abortButton} onPress={handleQuit}>
-                                    <Text style={styles.abortButtonText}>Abort</Text>
-                                </TouchableOpacity>
-                                <View style={{ flex: 1 }}>
-                                    <ScoreProgressBar
-                                        score={score}
-                                        maxScore={6}
-                                        aiWinsScore={0}
-                                        humansWinScore={6}
-                                    />
-                                </View>
-                                <Animated.View style={[getTimerStyle(), { opacity: flashAnim }]}>
-                                    <Text style={styles.timerText}>{formatTimerDisplay(remainingTime)}</Text>
-                                </Animated.View>
-                            </View>
-                            <View style={styles.content}>
-                                <AISectionComponent
-                                    currentTurn={currentTurn}
-                                    conversationHistory={conversationHistory}
-                                    currentPlayerId={player?.id}
+                    <View style={{ flex: 1 }}>
+                        <View style={styles.topRow}>
+                            <TouchableOpacity style={styles.abortButton} onPress={handleQuit}>
+                                <Text style={styles.abortButtonText}>Abort</Text>
+                            </TouchableOpacity>
+                            <View style={{ flex: 1 }}>
+                                <ScoreProgressBar
+                                    score={score}
+                                    maxScore={6}
+                                    aiWinsScore={0}
+                                    humansWinScore={6}
                                 />
                             </View>
-                            {/* Secret word above input field */}
-                            <SecretWordContainer secretWord={secretWord || undefined} />
+                            <Animated.View style={[getTimerStyle(), { opacity: flashAnim }]}>
+                                <Text style={styles.timerText}>{formatTimerDisplay(remainingTime)}</Text>
+                            </Animated.View>
                         </View>
-                    </TouchableWithoutFeedback>
+                        <View style={styles.content}>
+                            <AISectionComponent
+                                currentTurn={currentTurn}
+                                conversationHistory={conversationHistory}
+                                currentPlayerId={player?.id}
+                            />
+                        </View>
+                        {/* Secret word above input field */}
+                        <SecretWordContainer secretWord={secretWord || undefined} />
+                    </View>
                     <View style={styles.inputContainer}>
                         <TextInput
                             style={[
@@ -274,6 +270,7 @@ const styles = StyleSheet.create({
     },
     content: {
         flex: 1,
+        minHeight: 0,
         paddingTop: 16,
     },
     controlsContainer: {
