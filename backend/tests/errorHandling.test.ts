@@ -2,6 +2,7 @@ import { Socket } from 'socket.io';
 import { GameStateManager } from '../src/game/state';
 import { RoomManager } from '../src/rooms/manager';
 import { GameHandlers } from '../src/socket/handlers/gameHandlers';
+import { LobbyHandlers } from '../src/socket/handlers/lobbyHandlers';
 import { RoomHandlers } from '../src/socket/handlers/roomHandlers';
 import { Player } from '../src/types';
 
@@ -28,6 +29,7 @@ const createMockIo = () => ({
 describe('Error Handling Tests', () => {
     let roomManager: RoomManager;
     let gameStateManager: GameStateManager;
+    let lobbyHandlers: LobbyHandlers;
     let roomHandlers: RoomHandlers;
     let gameHandlers: GameHandlers;
     let mockIo: any;
@@ -37,7 +39,8 @@ describe('Error Handling Tests', () => {
         roomManager = new RoomManager();
         gameStateManager = new GameStateManager();
         mockIo = createMockIo();
-        roomHandlers = new RoomHandlers(roomManager);
+        lobbyHandlers = new LobbyHandlers(roomManager);
+        roomHandlers = new RoomHandlers(roomManager, lobbyHandlers);
         gameHandlers = new GameHandlers(roomManager, mockIo);
     });
 
@@ -142,7 +145,7 @@ describe('Error Handling Tests', () => {
             const gameState = gameStateManager.createGameState('test', [player]);
 
             // The implementation handles empty content gracefully
-            const updatedState = gameStateManager.addMessage(gameState, { type: 'outsider_hint', content: '', turnNumber: 1 });
+            const updatedState = gameStateManager.addMessage(gameState, { type: 'encoder_hint', content: '', turnNumber: 1 });
             expect(updatedState.conversationHistory).toHaveLength(1);
         });
     });
@@ -225,13 +228,13 @@ describe('Error Handling Tests', () => {
 
             // Get the actual assigned roles
             const room = roomManager.getRoom(roomId);
-            const encryptorPlayer = room?.players.find(p => p.role === 'encryptor');
+            const encoderPlayer = room?.players.find(p => p.role === 'encoder');
 
             // Try to send message as wrong player
-            const nonEncryptorSocket = encryptorPlayer?.id === 'player1' ? socket2 : socket1;
-            gameHandlers.handleSendMessage(nonEncryptorSocket, { roomId: 'test-room', message: 'Hello' }); // Wrong player
+            const nonEncoderSocket = encoderPlayer?.id === 'player1' ? socket2 : socket1;
+            gameHandlers.handleSendMessage(nonEncoderSocket, { roomId: 'test-room', message: 'Hello' }); // Wrong player
 
-            expect(nonEncryptorSocket.emit).toHaveBeenCalledWith('send_message_error', expect.objectContaining({
+            expect(nonEncoderSocket.emit).toHaveBeenCalledWith('send_message_error', expect.objectContaining({
                 roomId: 'test-room'
             }));
         });

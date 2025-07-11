@@ -15,7 +15,7 @@ export class GameLogic {
 
     /**
      * Start a new game
-     * Assigns roles based on join order: first player is Encryptor, second is Decryptor
+     * Assigns roles based on join order: first player is Encoder, second is Decoder
      */
     public startGame(players: Player[]): { gameState: GameState; roles: RoleAssignment; secretWord: string } {
         if (players.length !== 2) {
@@ -35,20 +35,20 @@ export class GameLogic {
     }
 
     /**
-     * Handle encryptor sending a message
+     * Handle encoder sending a message
      */
-    public handleEncryptorMessage(
+    public handleEncoderMessage(
         gameState: GameState,
         content: string,
         roles: RoleAssignment
     ): { newGameState: GameState; shouldAdvanceTurn: boolean } {
-        // Validate it's encryptor's turn
-        if (gameState.currentTurn !== 'encryptor') {
-            throw new Error('Not encryptor\'s turn');
+        // Validate it's encoder's turn
+        if (gameState.currentTurn !== 'encoder') {
+            throw new Error('Not encoder\'s turn');
         }
 
-        // Add outsider turn to conversation history
-        const newGameState = this.gameStateManager.addOutsiderTurn(gameState, content);
+        // Add encoder turn to conversation history
+        const newGameState = this.gameStateManager.addEncoderTurn(gameState, content);
 
         // Advance turn to AI
         const updatedGameState = this.gameStateManager.advanceTurn(newGameState);
@@ -83,8 +83,8 @@ export class GameLogic {
             // Note: This method doesn't have access to roles, so we'll need to handle this differently
             // For now, we'll create a mock roles object for testing
             const mockRoles: RoleAssignment = {
-                encryptor: 'player1',
-                decryptor: 'player2'
+                encoder: 'player1',
+                decoder: 'player2'
             };
             const { newGameState: nextRound } = this.gameStateManager.advanceRound(scoreUpdated, mockRoles);
 
@@ -104,7 +104,7 @@ export class GameLogic {
                 shouldAdvanceTurn: false
             };
         } else {
-            // AI incorrect - advance turn to decryptor
+            // AI incorrect - advance turn to decoder
             const updatedGameState = this.gameStateManager.advanceTurn(newGameState);
             return {
                 newGameState: updatedGameState,
@@ -115,22 +115,22 @@ export class GameLogic {
     }
 
     /**
-     * Handle decryptor guess
+     * Handle decoder guess
      */
-    public handleDecryptorGuess(
+    public handleDecoderGuess(
         gameState: GameState,
         guess: string,
         playerId: string,
         roles: RoleAssignment
     ): { newGameState: GameState; isCorrect: boolean; shouldAdvanceTurn: boolean; isMessage: boolean } {
-        // Validate it's decryptor's turn
-        if (gameState.currentTurn !== 'decryptor') {
-            throw new Error('Not decryptor\'s turn');
+        // Validate it's decoder's turn
+        if (gameState.currentTurn !== 'decoder') {
+            throw new Error('Not decoder\'s turn');
         }
 
         // Validate it's the correct player
-        if (roles.decryptor !== playerId) {
-            throw new Error('Not decryptor\'s turn');
+        if (roles.decoder !== playerId) {
+            throw new Error('Not decoder\'s turn');
         }
 
         // Check if guess is correct
@@ -159,8 +159,8 @@ export class GameLogic {
                 isMessage: false
             };
         } else {
-            // Decryptor incorrect - add to conversation history as insider turn and advance turn to AI
-            const messageAdded = this.gameStateManager.addInsiderTurn(gameState, guess);
+            // Decoder incorrect - add to conversation history as decoder turn and advance turn to AI
+            const messageAdded = this.gameStateManager.addDecoderTurn(gameState, guess);
 
             // Use the advanceTurn method for consistency with the 4-step cycle
             const updatedGameState = this.gameStateManager.advanceTurn(messageAdded);
@@ -180,7 +180,7 @@ export class GameLogic {
     public getGameStatus(gameState: GameState): {
         isGameEnded: boolean;
         winner: 'players' | 'ai' | null;
-        currentTurn: 'encryptor' | 'ai' | 'decryptor';
+        currentTurn: 'encoder' | 'ai' | 'decoder';
         score: number;
         round: number;
     } {
@@ -207,9 +207,9 @@ export class GameLogic {
         }
 
         if (action === 'send_message') {
-            return gameState.currentTurn === 'encryptor' && roles.encryptor === playerId;
+            return gameState.currentTurn === 'encoder' && roles.encoder === playerId;
         } else if (action === 'guess') {
-            return gameState.currentTurn === 'decryptor' && roles.decryptor === playerId;
+            return gameState.currentTurn === 'decoder' && roles.decoder === playerId;
         }
 
         return false;
@@ -218,7 +218,7 @@ export class GameLogic {
     /**
      * Get player role
      */
-    public getPlayerRole(playerId: string, roles: RoleAssignment): 'encryptor' | 'decryptor' | null {
+    public getPlayerRole(playerId: string, roles: RoleAssignment): 'encoder' | 'decoder' | null {
         return this.gameStateManager.getPlayerRole(playerId, roles);
     }
 
@@ -296,18 +296,18 @@ export class GameLogic {
         const errors: string[] = [];
 
         if (action === 'send_message') {
-            if (gameState.currentTurn !== 'encryptor') {
-                errors.push('Not encryptor\'s turn');
+            if (gameState.currentTurn !== 'encoder') {
+                errors.push('Not encoder\'s turn');
             }
-            if (roles.encryptor !== playerId) {
-                errors.push('Only encryptor can send messages');
+            if (roles.encoder !== playerId) {
+                errors.push('Only encoder can send messages');
             }
         } else if (action === 'guess') {
-            if (gameState.currentTurn !== 'decryptor') {
-                errors.push('Not decryptor\'s turn');
+            if (gameState.currentTurn !== 'decoder') {
+                errors.push('Not decoder\'s turn');
             }
-            if (roles.decryptor !== playerId) {
-                errors.push('Only decryptor can make guesses');
+            if (roles.decoder !== playerId) {
+                errors.push('Only decoder can make guesses');
             }
         }
 

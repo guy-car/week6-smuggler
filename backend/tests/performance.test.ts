@@ -1,6 +1,7 @@
 import { Socket, Server as SocketIOServer } from 'socket.io';
 import { RoomManager } from '../src/rooms/manager';
 import { GameHandlers } from '../src/socket/handlers/gameHandlers';
+import { LobbyHandlers } from '../src/socket/handlers/lobbyHandlers';
 import { RoomHandlers } from '../src/socket/handlers/roomHandlers';
 
 // Mock Socket.IO
@@ -21,13 +22,15 @@ const mockIo = {
 
 describe('Performance Validation Tests', () => {
     let roomManager: RoomManager;
+    let lobbyHandlers: LobbyHandlers;
     let roomHandlers: RoomHandlers;
     let gameHandlers: GameHandlers;
 
     beforeEach(() => {
         jest.clearAllMocks();
         roomManager = new RoomManager();
-        roomHandlers = new RoomHandlers(roomManager);
+        lobbyHandlers = new LobbyHandlers(roomManager);
+        roomHandlers = new RoomHandlers(roomManager, lobbyHandlers);
         gameHandlers = new GameHandlers(roomManager, mockIo);
     });
 
@@ -62,34 +65,34 @@ describe('Performance Validation Tests', () => {
         });
 
         it('should handle game state management', () => {
-            const encryptorSocket = createMockSocket('encryptor');
-            const decryptorSocket = createMockSocket('decryptor');
+            const encoderSocket = createMockSocket('encoder');
+            const decoderSocket = createMockSocket('decoder');
             const roomId = 'test-room';
 
             // Setup room with both players
-            roomHandlers.handleJoinRoom(encryptorSocket, { roomId, playerName: 'Encryptor' });
-            roomHandlers.handleJoinRoom(decryptorSocket, { roomId, playerName: 'Decryptor' });
+            roomHandlers.handleJoinRoom(encoderSocket, { roomId, playerName: 'Encoder' });
+            roomHandlers.handleJoinRoom(decoderSocket, { roomId, playerName: 'Decoder' });
 
             // Mark both players as ready
-            roomHandlers.handlePlayerReady(encryptorSocket, { roomId });
-            roomHandlers.handlePlayerReady(decryptorSocket, { roomId });
+            roomHandlers.handlePlayerReady(encoderSocket, { roomId });
+            roomHandlers.handlePlayerReady(decoderSocket, { roomId });
 
             // Start game
-            gameHandlers.handleStartGame(encryptorSocket, { roomId });
+            gameHandlers.handleStartGame(encoderSocket, { roomId });
 
             // Verify game state is created
             const room = roomManager.getRoom(roomId);
             expect(room?.gameState).toBeDefined();
             expect(room?.gameState?.score).toBe(5); // Initial score
-            expect(room?.gameState?.currentTurn).toBe('encryptor');
+            expect(room?.gameState?.currentTurn).toBe('encoder');
 
             // Send a message
-            const encryptorPlayer = room?.players.find(p => p.role === 'encryptor');
-            const encryptorSocketForTest = encryptorPlayer?.id === 'encryptor' ? encryptorSocket : decryptorSocket;
-            gameHandlers.handleSendMessage(encryptorSocketForTest, { roomId, message: 'Test message' });
+            const encoderPlayer = room?.players.find(p => p.role === 'encoder');
+            const encoderSocketForTest = encoderPlayer?.id === 'encoder' ? encoderSocket : decoderSocket;
+            gameHandlers.handleSendMessage(encoderSocketForTest, { roomId, message: 'Test message' });
 
             // Verify message was processed
-            expect(encryptorSocketForTest.emit).toHaveBeenCalledWith('message_sent', expect.objectContaining({
+            expect(encoderSocketForTest.emit).toHaveBeenCalledWith('message_sent', expect.objectContaining({
                 roomId,
                 message: expect.objectContaining({
                     content: 'Test message'
@@ -148,22 +151,22 @@ describe('Performance Validation Tests', () => {
 
             // Create multiple games
             for (let i = 0; i < numGames; i++) {
-                const encryptorSocket = createMockSocket(`encryptor${i}`);
-                const decryptorSocket = createMockSocket(`decryptor${i}`);
+                const encoderSocket = createMockSocket(`encoder${i}`);
+                const decoderSocket = createMockSocket(`decoder${i}`);
                 const roomId = `room${i}`;
 
                 // Setup room with both players
-                roomHandlers.handleJoinRoom(encryptorSocket, { roomId, playerName: `Encryptor ${i}` });
-                roomHandlers.handleJoinRoom(decryptorSocket, { roomId, playerName: `Decryptor ${i}` });
+                roomHandlers.handleJoinRoom(encoderSocket, { roomId, playerName: `Encoder ${i}` });
+                roomHandlers.handleJoinRoom(decoderSocket, { roomId, playerName: `Decoder ${i}` });
 
                 // Mark both players as ready
-                roomHandlers.handlePlayerReady(encryptorSocket, { roomId });
-                roomHandlers.handlePlayerReady(decryptorSocket, { roomId });
+                roomHandlers.handlePlayerReady(encoderSocket, { roomId });
+                roomHandlers.handlePlayerReady(decoderSocket, { roomId });
 
                 // Start game
-                gameHandlers.handleStartGame(encryptorSocket, { roomId });
+                gameHandlers.handleStartGame(encoderSocket, { roomId });
 
-                sockets.push(encryptorSocket, decryptorSocket);
+                sockets.push(encoderSocket, decoderSocket);
             }
 
             // Verify all games are active

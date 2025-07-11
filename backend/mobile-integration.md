@@ -1,10 +1,10 @@
 # Role Switching Implementation Checklist
 
 ## Overview
-This specification addresses the implementation of role switching between players after each round. Currently, players keep their assigned roles (Encryptor/Decryptor) throughout the entire game. The new feature will swap roles after every round, regardless of whether the AI or humans score.
+This specification addresses the implementation of role switching between players after each round. Currently, players keep their assigned roles (Encoder/Decoder) throughout the entire game. The new feature will swap roles after every round, regardless of whether the AI or humans score.
 
 ### Problem Statement
-- Players are assigned fixed roles at game start (first player = Encryptor, second = Decryptor)
+- Players are assigned fixed roles at game start (first player = Encoder, second = Decoder)
 - Roles remain static throughout all rounds of the game
 - Players don't get to experience both sides of the game in a single session
 - Game becomes predictable and less engaging over multiple rounds
@@ -92,7 +92,7 @@ public advanceRound(gameState: GameState, roles: RoleAssignment): {
         ...gameState,
         currentRound: gameState.currentRound + 1,
         conversationHistory: [],
-        currentTurn: 'encryptor'
+        currentTurn: 'encoder'
     };
     
     return { newGameState, newRoles };
@@ -109,10 +109,10 @@ if (isCorrect) {
     
     // Update player roles in room
     room.players.forEach(player => {
-        if (newRoles.encryptor === player.id) {
-            player.role = 'encryptor';
-        } else if (newRoles.decryptor === player.id) {
-            player.role = 'decryptor';
+        if (newRoles.encoder === player.id) {
+            player.role = 'encoder';
+        } else if (newRoles.decoder === player.id) {
+            player.role = 'decoder';
         }
     });
     
@@ -186,7 +186,7 @@ socket.on('round_end', (data: any) => {
     if (data.roles) {
         const currentPlayer = useGameStore.getState().player;
         if (currentPlayer) {
-            const newRole = data.roles.encryptor === currentPlayer.id ? 'encryptor' : 'decryptor';
+            const newRole = data.roles.encoder === currentPlayer.id ? 'encoder' : 'decoder';
             useGameStore.getState().setPlayerRole(newRole);
         }
     }
@@ -328,8 +328,8 @@ The `round_end` event handler is receiving the event but the role processing sec
 
 ```bash
 # Backend - Look for these logs:
-[DEBUG] Round end - Roles before: {encryptor: "player1", decryptor: "player2"}
-[DEBUG] Round end - New roles: {encryptor: "player2", decryptor: "player1"}
+[DEBUG] Round end - Roles before: {encoder: "player1", decoder: "player2"}
+[DEBUG] Round end - New roles: {encoder: "player2", decoder: "player1"}
 [DEBUG] Round end - Emitting with roles: {roomId: "...", roles: {...}}
 
 # Frontend - Look for these logs:
@@ -371,7 +371,7 @@ The `round_end` event handler is receiving the event but the role processing sec
 
 ### Expected Behavior (Updated)
 1. ✅ Player makes correct guess
-2. ❓ Backend logs: `[DEBUG] Round end - New roles: {encryptor: "player2", decryptor: "player1"}`
+2. ❓ Backend logs: `[DEBUG] Round end - New roles: {encoder: "player2", decoder: "player1"}`
 3. ❓ Backend emits: `round_end` with `roles` field
 4. ❓ Frontend logs: `[DEBUG] Round end received: {roles: {...}}`
 5. ❓ Frontend calls: `setPlayerRole('decryptor')` (for player1)

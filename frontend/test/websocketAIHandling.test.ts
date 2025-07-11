@@ -37,7 +37,7 @@ describe('WebSocket AI Message Handling', () => {
                 thinking: ['Analyzing conversation...', 'Processing clues...', 'Evaluating context...', 'Making educated guess...'],
                 guess: 'apple'
             },
-            currentTurn: 'decryptor'
+            currentTurn: 'decoder'
         };
 
         // Execute the logic from the WebSocket handler
@@ -70,7 +70,7 @@ describe('WebSocket AI Message Handling', () => {
                 thinking: ['Test thinking'],
                 guess: 'test'
             },
-            currentTurn: 'encryptor'
+            currentTurn: 'encoder'
         };
 
         // Simulate the handler logic
@@ -84,11 +84,11 @@ describe('WebSocket AI Message Handling', () => {
 
         // Call the store methods
         mockGetState().addTurn(turn);
-        mockGetState().setCurrentTurn(aiResponseData.currentTurn as 'encryptor' | 'ai' | 'decryptor' | null);
+        mockGetState().setCurrentTurn(aiResponseData.currentTurn as 'encoder' | 'ai' | 'decoder' | null);
 
         // Verify the calls
         expect(mockAddTurn).toHaveBeenCalledWith(turn);
-        expect(mockSetCurrentTurn).toHaveBeenCalledWith('encryptor');
+        expect(mockSetCurrentTurn).toHaveBeenCalledWith('encoder');
     });
 
     it('should handle empty thinking array', () => {
@@ -97,7 +97,7 @@ describe('WebSocket AI Message Handling', () => {
                 thinking: [],
                 guess: 'test'
             },
-            currentTurn: 'decryptor'
+            currentTurn: 'decoder'
         };
 
         const formattedContent = `Thinking: ${aiResponseData.turn.thinking.join(' ')}\n\nGuess: ${aiResponseData.turn.guess}`;
@@ -131,7 +131,7 @@ describe('WebSocket AI Message Handling', () => {
                 thinking: ['Test'],
                 guess: 'test'
             },
-            currentTurn: 'encryptor'
+            currentTurn: 'encoder'
         };
 
         // Create two turns
@@ -163,13 +163,13 @@ describe('WebSocket AI Message Handling', () => {
         });
 
         const testCases = [
-            { currentTurn: 'encryptor', expected: 'encryptor' as const },
+            { currentTurn: 'encoder', expected: 'encoder' as const },
             { currentTurn: 'ai', expected: 'ai' as const },
-            { currentTurn: 'decryptor', expected: 'decryptor' as const }
+            { currentTurn: 'decoder', expected: 'decoder' as const }
         ];
 
         testCases.forEach(({ currentTurn, expected }) => {
-            mockSetCurrentTurn(currentTurn as 'encryptor' | 'ai' | 'decryptor' | null);
+            mockSetCurrentTurn(currentTurn as 'encoder' | 'ai' | 'decoder' | null);
             expect(mockSetCurrentTurn).toHaveBeenCalledWith(expected);
         });
     });

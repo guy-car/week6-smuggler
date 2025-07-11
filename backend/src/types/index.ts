@@ -3,15 +3,15 @@ import {
     AIResponseSchema,
     AITurnSchema,
     AnalyzeRequestSchema,
-    InsiderTurnSchema,
-    OutsiderTurnSchema,
+    DecoderTurnSchema,
+    EncoderTurnSchema,
     TurnSchema,
     TurnTypeSchema,
     type AIResponse,
     type AITurn,
     type AnalyzeRequest,
-    type InsiderTurn,
-    type OutsiderTurn,
+    type DecoderTurn,
+    type EncoderTurn,
     type Turn,
     type TurnType
 } from '../../openai/types/game';
@@ -20,7 +20,7 @@ export interface Player {
     id: string; // socket.id for now
     name: string;
     ready: boolean;
-    role: 'encryptor' | 'decryptor' | null;
+    role: 'encoder' | 'decoder' | null;
     socketId: string;
 }
 
@@ -40,7 +40,7 @@ export interface GameState {
     conversationHistory: Turn[];  // Updated to use Turn[] instead of Message[]
     /** Accumulated one-sentence pattern notes from previous rounds */
     previousRoundsAnalysis: string[];
-    currentTurn: 'encryptor' | 'ai' | 'decryptor';
+    currentTurn: 'encoder' | 'ai' | 'decoder';
     gameStatus: 'waiting' | 'active' | 'ended';
     /** Unix timestamp when current human turn expires (null for AI turns) */
     turnExpiresAt?: number;
@@ -48,12 +48,12 @@ export interface GameState {
 
 // Re-export Zod schemas and types
 export {
-    AIResponseSchema, AITurnSchema, AnalyzeRequestSchema, InsiderTurnSchema, OutsiderTurnSchema, TurnSchema, TurnTypeSchema, type AIResponse, type AITurn, type AnalyzeRequest, type InsiderTurn, type OutsiderTurn, type Turn, type TurnType
+    AIResponseSchema, AITurnSchema, AnalyzeRequestSchema, DecoderTurnSchema, EncoderTurnSchema, TurnSchema, TurnTypeSchema, type AIResponse, type AITurn, type AnalyzeRequest, type DecoderTurn, type EncoderTurn, type Turn, type TurnType
 };
 
 export interface RoleAssignment {
-    encryptor: string;
-    decryptor: string;
+    encoder: string;
+    decoder: string;
 }
 
 export interface RoomJoinResult {

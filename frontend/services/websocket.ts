@@ -120,7 +120,7 @@ export function getSocket() {
       // Set temporary role based on player order for immediate navigation
       const currentPlayerId = data.playerId;
       const playerIndex = data.players.findIndex(p => p.id === currentPlayerId);
-      const temporaryRole = playerIndex === 0 ? 'encryptor' : 'decryptor';
+      const temporaryRole = playerIndex === 0 ? 'encoder' : 'decoder';
       useGameStore.getState().setPlayerRole(temporaryRole);
 
       // Set player info
@@ -225,15 +225,15 @@ export function getSocket() {
         }
       }
 
-      // Set the initial turn to encryptor
-      useGameStore.getState().setCurrentTurn('encryptor');
+      // Set the initial turn to encoder
+      useGameStore.getState().setCurrentTurn('encoder');
 
       // Navigate to appropriate game screen
       const playerRole = useGameStore.getState().playerRole;
-      if (playerRole === 'encryptor') {
-        useGameStore.getState().setCurrentScreen('encryptor-game');
-      } else if (playerRole === 'decryptor') {
-        useGameStore.getState().setCurrentScreen('decryptor-game');
+      if (playerRole === 'encoder') {
+        useGameStore.getState().setCurrentScreen('encoder-game');
+      } else if (playerRole === 'decoder') {
+        useGameStore.getState().setCurrentScreen('decoder-game');
       }
     });
 
@@ -258,10 +258,10 @@ export function getSocket() {
 
       // Navigate to appropriate game screen
       const playerRole = useGameStore.getState().playerRole;
-      if (playerRole === 'encryptor') {
-        useGameStore.getState().setCurrentScreen('encryptor-game');
-      } else if (playerRole === 'decryptor') {
-        useGameStore.getState().setCurrentScreen('decryptor-game');
+      if (playerRole === 'encoder') {
+        useGameStore.getState().setCurrentScreen('encoder-game');
+      } else if (playerRole === 'decoder') {
+        useGameStore.getState().setCurrentScreen('decoder-game');
       }
     });
 
@@ -281,7 +281,7 @@ export function getSocket() {
       console.log('[WebSocket] Round start:', data);
       useGameStore.getState().setRound(data.round);
       useGameStore.getState().setSecretWord(data.word);
-      useGameStore.getState().setPlayerRole(data.role as 'encryptor' | 'decryptor' | null);
+      useGameStore.getState().setPlayerRole(data.role as 'encoder' | 'decoder' | null);
     });
 
     socket.on('game:roundEnd', (data: { round: number; scores: any }) => {
@@ -296,7 +296,7 @@ export function getSocket() {
     });
 
     // Turn-based game events
-    socket.on('game:turnStart', (data: { turn: 'encryptor' | 'ai' | 'decryptor' }) => {
+    socket.on('game:turnStart', (data: { turn: 'encoder' | 'ai' | 'decoder' }) => {
       console.log('[WebSocket] Turn start:', data.turn);
       useGameStore.getState().setCurrentTurn(data.turn);
     });
@@ -373,7 +373,7 @@ export function getSocket() {
       useGameStore.getState().addTurn(turn);
       // Store the AI guess for the modal
       useGameStore.getState().setLastAIGuess(data.turn.guess);
-      useGameStore.getState().setCurrentTurn(data.currentTurn as 'encryptor' | 'ai' | 'decryptor' | null);
+      useGameStore.getState().setCurrentTurn(data.currentTurn as 'encoder' | 'ai' | 'decoder' | null);
     });
 
     // Message received (from other player)
@@ -430,13 +430,13 @@ export function getSocket() {
       // Get the correct guess for the modal
       let correctGuess = '';
       if (data.correct) {
-        // Human win - get the last decryptor guess
+        // Human win - get the last decoder guess
         const conversationHistory = useGameStore.getState().conversationHistory;
-        const lastDecryptorTurn = conversationHistory
-          .filter(turn => turn.type === 'decryptor')
+        const lastDecoderTurn = conversationHistory
+          .filter(turn => turn.type === 'decoder')
           .pop();
-        if (lastDecryptorTurn) {
-          correctGuess = lastDecryptorTurn.content;
+        if (lastDecoderTurn) {
+          correctGuess = lastDecoderTurn.content;
         }
       } else {
         // AI win - use the last AI guess
@@ -474,14 +474,14 @@ export function getSocket() {
       if (data.roles) {
         const currentPlayer = useGameStore.getState().player;
         if (currentPlayer) {
-          const newRole = data.roles.encryptor === currentPlayer.id ? 'encryptor' : 'decryptor';
+          const newRole = data.roles.encoder === currentPlayer.id ? 'encoder' : 'decoder';
           useGameStore.getState().setPlayerRole(newRole);
 
           // Switch to appropriate game screen based on new role
-          if (newRole === 'encryptor') {
-            useGameStore.getState().setCurrentScreen('encryptor-game');
-          } else if (newRole === 'decryptor') {
-            useGameStore.getState().setCurrentScreen('decryptor-game');
+          if (newRole === 'encoder') {
+            useGameStore.getState().setCurrentScreen('encoder-game');
+          } else if (newRole === 'decoder') {
+            useGameStore.getState().setCurrentScreen('decoder-game');
           }
         }
       }
@@ -629,8 +629,8 @@ export function submitGuess(guess: string) {
     useGameStore.getState().setError('No room ID found');
     return;
   }
-  // Backend expects 'player_guess' with { roomId, guess, type: 'decryptor' }
-  socket.emit('player_guess', { roomId, guess, type: 'decryptor' });
+  // Backend expects 'player_guess' with { roomId, guess, type: 'decoder' }
+  socket.emit('player_guess', { roomId, guess, type: 'decoder' });
 }
 
 // The backend does not use 'game:word', so we comment this out for now

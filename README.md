@@ -134,9 +134,9 @@ The Express/Socket.IO server provides:
 - `join_room` - Join or create a game room
 - `player_ready` - Mark player as ready
 - `start_game` - Begin game when both players ready
-- `send_message` - Encryptor sends message
+- `send_message` - Encoder sends message
 - `ai_response` - AI thinking process and guess
-- `player_guess` - Decryptor attempts to guess
+- `player_guess` - Decoder attempts to guess
 - `guess_result` - Guess validation result
 - `round_end` - Round completion and score update
 - `game_end` - Game completion
@@ -145,7 +145,7 @@ The Express/Socket.IO server provides:
 
 ### Core Gameplay
 - **2-Player Rooms**: Join with room codes
-- **Role Assignment**: Encryptor/Decryptor roles that switch each round
+- **Role Assignment**: Encoder/Decoder roles that switch each round
 - **Secret Words**: 37 curated words for smuggling
 - **AI Eavesdropper**: Mock AI that analyzes conversations and makes guesses
 - **Tug-of-War Scoring**: Score starts at 5, +1 for players, -1 for AI

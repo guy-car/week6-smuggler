@@ -52,7 +52,7 @@ describe('Lobby Integration Tests', () => {
 
             // The room should be created with the first player
             // When a second player joins via WebSocket, they should be added in order
-            // First player (index 0) should become Encryptor, second player (index 1) should become Decryptor
+            // First player (index 0) should become Encoder, second player (index 1) should become Decoder
 
             expect(firstPlayerId).toBeDefined();
             expect(roomId).toBeDefined();

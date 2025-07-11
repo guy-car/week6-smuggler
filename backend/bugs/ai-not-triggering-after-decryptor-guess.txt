@@ -1,5 +1,5 @@
 # Problem
-AI response is not triggered after decryptor makes an incorrect guess. The game flow should be: encryptor → AI → decryptor → AI, but the AI only responds to encryptor messages, not decryptor guesses.
+AI response is not triggered after decoder makes an incorrect guess. The game flow should be: encoder → AI → decoder → AI, but the AI only responds to encoder messages, not decoder guesses.
 
 # Affected Systems
 - Backend game handlers (`backend/src/socket/handlers/gameHandlers.ts`)
@@ -13,7 +13,7 @@ The issue was in the `handleAIResponse` method where the AI service was being ca
 Fixed the AI service call to pass only the conversation history parameter. Added comprehensive debugging logs to track turn state changes and AI service calls to prevent similar issues in the future.
 
 # Debugging Process
-1. Added logging to track turn state changes in both encryptor and decryptor handlers
+1. Added logging to track turn state changes in both encoder and decoder handlers
 2. Added debugging to `handleAIResponse` to track when AI service is called and what it returns
 3. Identified parameter mismatch in AI service call
 4. Fixed the AI service call to use correct parameters

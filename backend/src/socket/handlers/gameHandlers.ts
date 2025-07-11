@@ -88,10 +88,10 @@ export class GameHandlers {
 
                 // Update player roles in room
                 room.players.forEach(player => {
-                    if (newRoles.encryptor === player.id) {
-                        player.role = 'encryptor';
-                    } else if (newRoles.decryptor === player.id) {
-                        player.role = 'decryptor';
+                    if (newRoles.encoder === player.id) {
+                        player.role = 'encoder';
+                    } else if (newRoles.decoder === player.id) {
+                        player.role = 'decoder';
                     }
                 });
 
@@ -163,10 +163,10 @@ export class GameHandlers {
 
             // Update player roles in the room
             room.players.forEach(player => {
-                if (roles.encryptor === player.id) {
-                    player.role = 'encryptor';
-                } else if (roles.decryptor === player.id) {
-                    player.role = 'decryptor';
+                if (roles.encoder === player.id) {
+                    player.role = 'encoder';
+                } else if (roles.decoder === player.id) {
+                    player.role = 'decoder';
                 }
             });
 
@@ -190,7 +190,7 @@ export class GameHandlers {
     };
 
     /**
-     * Handle send_message event - encryptor sends a message
+     * Handle send_message event - encoder sends a message
      */
     public handleSendMessage = (socket: Socket, data: { roomId: string; message: string }) => {
         try {
@@ -209,8 +209,8 @@ export class GameHandlers {
 
             // Get current roles
             const roles = {
-                encryptor: room.players.find(p => p.role === 'encryptor')!.id,
-                decryptor: room.players.find(p => p.role === 'decryptor')!.id
+                encoder: room.players.find(p => p.role === 'encoder')!.id,
+                decoder: room.players.find(p => p.role === 'decoder')!.id
             };
 
             // Validate turn order
@@ -249,8 +249,8 @@ export class GameHandlers {
                 return;
             }
 
-            // Add outsider turn to conversation history
-            const updatedGameState = this.gameStateManager.addOutsiderTurn(room.gameState, message);
+            // Add encoder message to conversation history
+            const updatedGameState = this.gameStateManager.addEncoderTurn(room.gameState, message);
 
             // Advance turn to AI
             const nextGameState = this.gameStateManager.advanceTurn(updatedGameState);
@@ -266,7 +266,7 @@ export class GameHandlers {
                     content: message,
                     senderId: socket.id,
                     timestamp: new Date(),
-                    type: 'encryptor' // <-- Added type field
+                    type: 'encoder' // <-- Added type field
                 },
                 currentTurn: nextGameState.currentTurn
             };
@@ -289,7 +289,7 @@ export class GameHandlers {
     };
 
     /**
-     * Handle player_guess event - decryptor attempts to guess the secret word
+     * Handle player_guess event - decoder attempts to guess the secret word
      */
     public handlePlayerGuess = async (socket: Socket, data: { roomId: string; guess: string }) => {
         try {
@@ -308,8 +308,8 @@ export class GameHandlers {
 
             // Get current roles
             const roles = {
-                encryptor: room.players.find(p => p.role === 'encryptor')!.id,
-                decryptor: room.players.find(p => p.role === 'decryptor')!.id
+                encoder: room.players.find(p => p.role === 'encoder')!.id,
+                decoder: room.players.find(p => p.role === 'decoder')!.id
             };
 
             // Validate turn order
@@ -410,10 +410,10 @@ export class GameHandlers {
 
                     // Update player roles in room
                     room.players.forEach(player => {
-                        if (newRoles.encryptor === player.id) {
-                            player.role = 'encryptor';
-                        } else if (newRoles.decryptor === player.id) {
-                            player.role = 'decryptor';
+                        if (newRoles.encoder === player.id) {
+                            player.role = 'encoder';
+                        } else if (newRoles.decoder === player.id) {
+                            player.role = 'decoder';
                         }
                     });
 
@@ -452,8 +452,8 @@ export class GameHandlers {
                 }
             } else {
                 // Incorrect guess - add to conversation history and continue
-                // Add decryptor guess to conversation history
-                const updatedGameState = this.gameStateManager.addInsiderTurn(room.gameState, guess);
+                // Add decoder guess to conversation history
+                const updatedGameState = this.gameStateManager.addDecoderTurn(room.gameState, guess);
 
                 // Advance turn to AI
                 const nextGameState = this.gameStateManager.advanceTurn(updatedGameState);
@@ -469,7 +469,7 @@ export class GameHandlers {
                         content: guess,
                         senderId: socket.id,
                         timestamp: new Date(),
-                        type: 'decryptor' // <-- Added type field
+                        type: 'decoder' // <-- Added type field
                     },
                     currentTurn: nextGameState.currentTurn
                 };
@@ -540,8 +540,8 @@ export class GameHandlers {
             // If game is active, check if player can rejoin
             if (room.gameState) {
                 const roles = {
-                    encryptor: room.players.find(p => p.role === 'encryptor')!.id,
-                    decryptor: room.players.find(p => p.role === 'decryptor')!.id
+                    encoder: room.players.find(p => p.role === 'encoder')!.id,
+                    decoder: room.players.find(p => p.role === 'decoder')!.id
                 };
 
                 const canRejoin = this.gameStateManager.canPlayerRejoin(
@@ -688,10 +688,10 @@ export class GameHandlers {
                 } else {
                     // Update player roles in room
                     room.players.forEach(player => {
-                        if (newRoles.encryptor === player.id) {
-                            player.role = 'encryptor';
-                        } else if (newRoles.decryptor === player.id) {
-                            player.role = 'decryptor';
+                        if (newRoles.encoder === player.id) {
+                            player.role = 'encoder';
+                        } else if (newRoles.decoder === player.id) {
+                            player.role = 'decoder';
                         }
                     });
 
@@ -727,7 +727,7 @@ export class GameHandlers {
                     this.io.to(roomId).emit('guess_result', guessResultData);
                 }
             } else {
-                // AI incorrect - advance turn to decryptor
+                // AI incorrect - advance turn to decoder
                 const nextGameState = this.gameStateManager.advanceTurn(updatedGameState);
                 room.gameState = nextGameState;
             }
@@ -777,10 +777,10 @@ export class GameHandlers {
                 // Look for words in the conversation that might be clues
                 const conversationText = room.gameState.conversationHistory
                     .map(turn => {
-                        if (turn.type === 'outsider_hint') {
-                            return turn.content.toLowerCase();
-                        } else if (turn.type === 'insider_guess') {
-                            return turn.guess.toLowerCase();
+                        if (turn.type === 'encoder_hint') {
+                            return (turn as any).content?.toLowerCase?.() || '';
+                        } else if (turn.type === 'decoder_guess') {
+                            return (turn as any).guess?.toLowerCase?.() || '';
                         }
                         return '';
                     })
@@ -839,10 +839,10 @@ export class GameHandlers {
                 } else {
                     // Update player roles in room
                     room.players.forEach(player => {
-                        if (newRoles.encryptor === player.id) {
-                            player.role = 'encryptor';
-                        } else if (newRoles.decryptor === player.id) {
-                            player.role = 'decryptor';
+                        if (newRoles.encoder === player.id) {
+                            player.role = 'encoder';
+                        } else if (newRoles.decoder === player.id) {
+                            player.role = 'decoder';
                         }
                     });
 
@@ -878,7 +878,7 @@ export class GameHandlers {
                     this.io.to(roomId).emit('guess_result', guessResultData);
                 }
             } else {
-                // AI incorrect - advance turn to decryptor
+                // AI incorrect - advance turn to decoder
                 const nextGameState = this.gameStateManager.advanceTurn(updatedGameState);
                 room.gameState = nextGameState;
             }

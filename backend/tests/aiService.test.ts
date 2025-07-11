@@ -12,7 +12,7 @@ describe('MockAIService', () => {
         it('should generate complete AI analysis with all required fields', async () => {
             const conversationHistory: Turn[] = [
                 {
-                    type: 'outsider_hint',
+                    type: 'encoder_hint',
                     content: 'This is a test message about animals',
                     turnNumber: 1
                 }
@@ -57,7 +57,7 @@ describe('MockAIService', () => {
         it('should generate exactly 4 thinking sentences', async () => {
             const conversationHistory: Turn[] = [
                 {
-                    type: 'outsider_hint',
+                    type: 'encoder_hint',
                     content: 'This is a test message',
                     turnNumber: 1
                 }
@@ -78,7 +78,7 @@ describe('MockAIService', () => {
             expect(emptyThinking.length).toBe(4);
 
             const singleMessage: Turn[] = [{
-                type: 'outsider_hint',
+                type: 'encoder_hint',
                 content: 'test',
                 turnNumber: 1
             }];
@@ -86,9 +86,9 @@ describe('MockAIService', () => {
             expect(singleThinking.length).toBe(4);
 
             const multipleMessages: Turn[] = [
-                { type: 'outsider_hint', content: 'test1', turnNumber: 1 },
+                { type: 'encoder_hint', content: 'test1', turnNumber: 1 },
                 { type: 'ai_analysis', thinking: ['T1', 'T2', 'T3', 'T4'], guess: 'guess1', turnNumber: 2 },
-                { type: 'insider_guess', guess: 'test3', turnNumber: 3 },
+                { type: 'decoder_guess', guess: 'test3', turnNumber: 3 },
                 { type: 'ai_analysis', thinking: ['T5', 'T6', 'T7', 'T8'], guess: 'guess2', turnNumber: 4 }
             ];
             const multipleThinking = await aiService.generateThinkingProcess(multipleMessages);
@@ -129,7 +129,7 @@ describe('MockAIService', () => {
         it('should prefer words related to conversation content', async () => {
             const conversationHistory: Turn[] = [
                 {
-                    type: 'outsider_hint',
+                    type: 'encoder_hint',
                     content: 'I love eating pizza with friends',
                     turnNumber: 1
                 }
@@ -155,7 +155,7 @@ describe('MockAIService', () => {
         it('should fallback to random word when no semantic connections found', async () => {
             const conversationHistory: Turn[] = [
                 {
-                    type: 'outsider_hint',
+                    type: 'encoder_hint',
                     content: 'This is completely unrelated content',
                     turnNumber: 1
                 }

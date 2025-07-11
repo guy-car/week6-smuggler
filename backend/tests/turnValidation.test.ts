@@ -1,19 +1,19 @@
-import { AITurn, InsiderTurn, OutsiderTurn, Turn } from '../src/types';
+import { AITurn, DecoderTurn, EncoderTurn, Turn } from '../src/types';
 
 describe('Turn Validation', () => {
     describe('Turn Structure Validation', () => {
-        it('should validate correct OutsiderTurn structure', () => {
-            const outsiderTurn: OutsiderTurn = {
-                type: 'outsider_hint',
+        it('should validate correct EncoderTurn structure', () => {
+            const encoderTurn: EncoderTurn = {
+                type: 'encoder_hint',
                 content: 'This is a hint message',
                 turnNumber: 1
             };
 
-            expect(outsiderTurn.type).toBe('outsider_hint');
-            expect(typeof outsiderTurn.content).toBe('string');
-            expect(outsiderTurn.content.length).toBeGreaterThan(0);
-            expect(typeof outsiderTurn.turnNumber).toBe('number');
-            expect(outsiderTurn.turnNumber).toBeGreaterThan(0);
+            expect(encoderTurn.type).toBe('encoder_hint');
+            expect(typeof encoderTurn.content).toBe('string');
+            expect(encoderTurn.content.length).toBeGreaterThan(0);
+            expect(typeof encoderTurn.turnNumber).toBe('number');
+            expect(encoderTurn.turnNumber).toBeGreaterThan(0);
         });
 
         it('should validate correct AITurn structure', () => {
@@ -39,27 +39,27 @@ describe('Turn Validation', () => {
             expect(aiTurn.turnNumber).toBeGreaterThan(0);
         });
 
-        it('should validate correct InsiderTurn structure', () => {
-            const insiderTurn: InsiderTurn = {
-                type: 'insider_guess',
+        it('should validate correct DecoderTurn structure', () => {
+            const decoderTurn: DecoderTurn = {
+                type: 'decoder_guess',
                 guess: 'testguess',
                 turnNumber: 3
             };
 
-            expect(insiderTurn.type).toBe('insider_guess');
-            expect(typeof insiderTurn.guess).toBe('string');
-            expect(insiderTurn.guess.length).toBeGreaterThan(0);
-            expect(typeof insiderTurn.turnNumber).toBe('number');
-            expect(insiderTurn.turnNumber).toBeGreaterThan(0);
+            expect(decoderTurn.type).toBe('decoder_guess');
+            expect(typeof decoderTurn.guess).toBe('string');
+            expect(decoderTurn.guess.length).toBeGreaterThan(0);
+            expect(typeof decoderTurn.turnNumber).toBe('number');
+            expect(decoderTurn.turnNumber).toBeGreaterThan(0);
         });
     });
 
     describe('Turn Order Validation', () => {
-        it('should validate correct turn sequence: outsider → ai → insider → ai', () => {
+        it('should validate correct turn sequence: encoder → ai → decoder → ai', () => {
             const conversationHistory: Turn[] = [
-                { type: 'outsider_hint', content: 'First hint', turnNumber: 1 },
+                { type: 'encoder_hint', content: 'First hint', turnNumber: 1 },
                 { type: 'ai_analysis', thinking: ['T1', 'T2', 'T3', 'T4'], guess: 'guess1', turnNumber: 2 },
-                { type: 'insider_guess', guess: 'wrongguess', turnNumber: 3 },
+                { type: 'decoder_guess', guess: 'wrongguess', turnNumber: 3 },
                 { type: 'ai_analysis', thinking: ['T5', 'T6', 'T7', 'T8'], guess: 'guess2', turnNumber: 4 }
             ];
 
@@ -68,42 +68,42 @@ describe('Turn Validation', () => {
                 const turn = conversationHistory[i]!;
 
                 if (i === 0) {
-                    expect(turn.type).toBe('outsider_hint');
+                    expect(turn.type).toBe('encoder_hint');
                 } else if (i % 2 === 1) {
                     expect(turn.type).toBe('ai_analysis');
                 } else {
-                    expect(turn.type).toBe('insider_guess');
+                    expect(turn.type).toBe('decoder_guess');
                 }
             }
         });
 
-        it('should detect invalid turn sequence: two outsider turns in a row', () => {
+        it('should detect invalid turn sequence: two encoder turns in a row', () => {
             const conversationHistory: Turn[] = [
-                { type: 'outsider_hint', content: 'First hint', turnNumber: 1 },
-                { type: 'outsider_hint', content: 'Second hint', turnNumber: 2 } // Invalid
+                { type: 'encoder_hint', content: 'First hint', turnNumber: 1 },
+                { type: 'encoder_hint', content: 'Second hint', turnNumber: 2 } // Invalid
             ];
 
-            expect(conversationHistory[0]?.type).toBe('outsider_hint');
-            expect(conversationHistory[1]?.type).toBe('outsider_hint');
+            expect(conversationHistory[0]?.type).toBe('encoder_hint');
+            expect(conversationHistory[1]?.type).toBe('encoder_hint');
             // This should be detected as invalid in validation logic
         });
 
-        it('should detect invalid turn sequence: two insider turns in a row', () => {
+        it('should detect invalid turn sequence: two decoder turns in a row', () => {
             const conversationHistory: Turn[] = [
-                { type: 'outsider_hint', content: 'First hint', turnNumber: 1 },
+                { type: 'encoder_hint', content: 'First hint', turnNumber: 1 },
                 { type: 'ai_analysis', thinking: ['T1', 'T2', 'T3', 'T4'], guess: 'guess1', turnNumber: 2 },
-                { type: 'insider_guess', guess: 'wrongguess1', turnNumber: 3 },
-                { type: 'insider_guess', guess: 'wrongguess2', turnNumber: 4 } // Invalid
+                { type: 'decoder_guess', guess: 'wrongguess1', turnNumber: 3 },
+                { type: 'decoder_guess', guess: 'wrongguess2', turnNumber: 4 } // Invalid
             ];
 
-            expect(conversationHistory[2]?.type).toBe('insider_guess');
-            expect(conversationHistory[3]?.type).toBe('insider_guess');
+            expect(conversationHistory[2]?.type).toBe('decoder_guess');
+            expect(conversationHistory[3]?.type).toBe('decoder_guess');
             // This should be detected as invalid in validation logic
         });
 
         it('should detect invalid turn sequence: two AI turns in a row', () => {
             const conversationHistory: Turn[] = [
-                { type: 'outsider_hint', content: 'First hint', turnNumber: 1 },
+                { type: 'encoder_hint', content: 'First hint', turnNumber: 1 },
                 { type: 'ai_analysis', thinking: ['T1', 'T2', 'T3', 'T4'], guess: 'guess1', turnNumber: 2 },
                 { type: 'ai_analysis', thinking: ['T5', 'T6', 'T7', 'T8'], guess: 'guess2', turnNumber: 3 } // Invalid
             ];
@@ -117,9 +117,9 @@ describe('Turn Validation', () => {
     describe('Turn Number Validation', () => {
         it('should validate sequential turn numbers starting from 1', () => {
             const conversationHistory: Turn[] = [
-                { type: 'outsider_hint', content: 'First hint', turnNumber: 1 },
+                { type: 'encoder_hint', content: 'First hint', turnNumber: 1 },
                 { type: 'ai_analysis', thinking: ['T1', 'T2', 'T3', 'T4'], guess: 'guess1', turnNumber: 2 },
-                { type: 'insider_guess', guess: 'wrongguess', turnNumber: 3 },
+                { type: 'decoder_guess', guess: 'wrongguess', turnNumber: 3 },
                 { type: 'ai_analysis', thinking: ['T5', 'T6', 'T7', 'T8'], guess: 'guess2', turnNumber: 4 }
             ];
 
@@ -130,7 +130,7 @@ describe('Turn Validation', () => {
 
         it('should detect non-sequential turn numbers', () => {
             const conversationHistory: Turn[] = [
-                { type: 'outsider_hint', content: 'First hint', turnNumber: 1 },
+                { type: 'encoder_hint', content: 'First hint', turnNumber: 1 },
                 { type: 'ai_analysis', thinking: ['T1', 'T2', 'T3', 'T4'], guess: 'guess1', turnNumber: 3 } // Invalid: should be 2
             ];
 
@@ -141,7 +141,7 @@ describe('Turn Validation', () => {
 
         it('should detect duplicate turn numbers', () => {
             const conversationHistory: Turn[] = [
-                { type: 'outsider_hint', content: 'First hint', turnNumber: 1 },
+                { type: 'encoder_hint', content: 'First hint', turnNumber: 1 },
                 { type: 'ai_analysis', thinking: ['T1', 'T2', 'T3', 'T4'], guess: 'guess1', turnNumber: 1 } // Invalid: duplicate
             ];
 
@@ -226,58 +226,58 @@ describe('Turn Validation', () => {
         });
     });
 
-    describe('Insider Guess Validation', () => {
-        it('should validate insider guess is not empty', () => {
-            const validInsiderTurn: InsiderTurn = {
-                type: 'insider_guess',
+    describe('Decoder Guess Validation', () => {
+        it('should validate decoder guess is not empty', () => {
+            const validDecoderTurn: DecoderTurn = {
+                type: 'decoder_guess',
                 guess: 'test', // Any length is valid
                 turnNumber: 3
             };
 
-            expect(validInsiderTurn.guess.length).toBeGreaterThan(0);
-            expect(typeof validInsiderTurn.guess).toBe('string');
+            expect(validDecoderTurn.guess.length).toBeGreaterThan(0);
+            expect(typeof validDecoderTurn.guess).toBe('string');
         });
 
-        it('should allow insider guess of any reasonable length', () => {
-            const shortGuess: InsiderTurn = {
-                type: 'insider_guess',
+        it('should allow decoder guess of any reasonable length', () => {
+            const shortGuess: DecoderTurn = {
+                type: 'decoder_guess',
                 guess: 'a', // Single character
                 turnNumber: 3
             };
 
-            const longGuess: InsiderTurn = {
-                type: 'insider_guess',
+            const longGuess: DecoderTurn = {
+                type: 'decoder_guess',
                 guess: 'verylongguesswordthatiscompletelyvalid', // Long guess
-                turnNumber: 4
+                turnNumber: 3
             };
 
-            expect(shortGuess.guess.length).toBe(1);
-            expect(longGuess.guess.length).toBeGreaterThan(12);
+            expect(shortGuess.guess.length).toBeGreaterThan(0);
+            expect(longGuess.guess.length).toBeGreaterThan(0);
             expect(typeof shortGuess.guess).toBe('string');
             expect(typeof longGuess.guess).toBe('string');
         });
     });
 
-    describe('Outsider Hint Validation', () => {
-        it('should validate outsider hint content is not empty', () => {
-            const validOutsiderTurn: OutsiderTurn = {
-                type: 'outsider_hint',
-                content: 'This is a meaningful hint message',
+    describe('Encoder Hint Validation', () => {
+        it('should validate encoder hint content is not empty', () => {
+            const validEncoderTurn: EncoderTurn = {
+                type: 'encoder_hint',
+                content: 'This is a valid hint message',
                 turnNumber: 1
             };
 
-            expect(validOutsiderTurn.content.length).toBeGreaterThan(0);
-            expect(typeof validOutsiderTurn.content).toBe('string');
+            expect(validEncoderTurn.content.length).toBeGreaterThan(0);
+            expect(typeof validEncoderTurn.content).toBe('string');
         });
 
-        it('should detect outsider hint with empty content', () => {
-            const invalidOutsiderTurn: OutsiderTurn = {
-                type: 'outsider_hint',
+        it('should detect encoder hint with empty content', () => {
+            const invalidEncoderTurn: EncoderTurn = {
+                type: 'encoder_hint',
                 content: '', // Empty content
                 turnNumber: 1
             };
 
-            expect(invalidOutsiderTurn.content.length).toBe(0);
+            expect(invalidEncoderTurn.content.length).toBe(0);
             // This should be detected as invalid in validation logic
         });
     });

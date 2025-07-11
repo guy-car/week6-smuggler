@@ -2,7 +2,6 @@ import dotenv from 'dotenv';
 import OpenAI from 'openai';
 import path from 'path';
 import { AIResponse, AIResponseSchema, RoundAnalysis, RoundAnalysisSchema, RoundSummary, Turn } from '../types/game';
-import { PROMPTS, PromptName } from './promptTests';
 
 // Load environment variables from root .env file
 dotenv.config({ path: path.join(__dirname, '../../../.env') });
@@ -13,8 +12,28 @@ const openai = new OpenAI({
 });
 
 // System prompt for setting context
-const CURRENT_PROMPT: PromptName = 'prompt_07_10_1623';
-const SYSTEM_PROMPT = PROMPTS[CURRENT_PROMPT];
+const CURRENT_PROMPT: string = 'prompt_07_10_1623';
+const SYSTEM_PROMPT = `You are playing a word-guessing game where two players (ENCODER and DECODER) are trying to communicate a secret word while you attempt to intercept and guess it first.
+
+Game Rules:
+- The ENCODER knows the secret word and sends hints
+- The DECODER receives hints and tries to guess the secret word
+- You analyze all messages and try to guess before the DECODER
+- After each point, a new secret word is chosen
+
+Your task: Analyze the conversation and make intelligent guesses based on conceptual reasoning.
+
+CRITICAL REASONING APPROACH:
+- DO NOT extract words directly from the hints
+- Instead, think about what the hints DESCRIBE or POINT TO
+- Consider categories, properties, and associations
+- Make conceptual leaps (e.g., "place where people gather" → temple, church, stadium, theater)
+
+For each analysis:
+1. Consider what concept or category is being hinted at
+2. Think about what words fit that concept
+3. Choose the most likely possibility based on all available clues
+4. Build on previous hints to narrow down possibilities`;
 
 export class OpenAIService {
   private readonly ANALYZE_ROUND_TOOL = {
@@ -42,15 +61,15 @@ export class OpenAIService {
 
   extractPreviousGuesses(turns: Turn[]): string[] {
     const guesses: string[] = [];
-    
+
     for (const turn of turns) {
       if (turn.type === 'ai_analysis' && turn.guess) {
         guesses.push(turn.guess);
-      } else if (turn.type === 'insider_guess' && turn.guess) {
+      } else if (turn.type === 'decoder_guess' && turn.guess) {
         guesses.push(turn.guess);
       }
     }
-    
+
     return [...new Set(guesses)];
   }
 
@@ -62,12 +81,12 @@ export class OpenAIService {
       // Extract previous guesses
       const previousGuesses = this.extractPreviousGuesses(turns);
       console.log('[DEBUG🙈🙈🙈🙈] Previous guesses extracted:', previousGuesses);
-      
+
       // Log which prompt version is being used
       console.log('[DEBUG🤖] Using prompt version:', CURRENT_PROMPT);
 
       // Create tool with avoidance text
-      const avoidanceText = previousGuesses.length > 0 
+      const avoidanceText = previousGuesses.length > 0
         ? ` CRITICAL: Must NOT be any of these previously guessed words: ${previousGuesses.join(', ')}`
         : '';
 
@@ -103,17 +122,17 @@ export class OpenAIService {
       // Format conversation history as a single context block
       const conversationHistory = turns.map(turn => {
         switch (turn.type) {
-          case 'outsider_hint':
-            return `[OUTSIDER] ${turn.content}`;
-          case 'insider_guess':
-            return `[INSIDER] Guessed: ${turn.guess}`;
+          case 'encoder_hint':
+            return `[ENCODER] ${turn.content}`;
+          case 'decoder_guess':
+            return `[DECODER] Guessed: ${turn.guess}`;
           case 'ai_analysis':
             return `[ANALYSIS] Thinking: ${turn.thinking.join(' ')} | Guess: ${turn.guess}`;
         }
       }).join('\n');
 
       // Add previous analyses to system prompt if available
-      const previousAnalysesContext = previousAnalyses?.length 
+      const previousAnalysesContext = previousAnalyses?.length
         ? `\nPreviously observed player strategies:\n${previousAnalyses.join('\n')}\nBe on the lookout for similar approaches.`
         : '';
 
@@ -248,10 +267,10 @@ ${this.formatConversationHistory(summary.conversation)}`;
   private formatConversationHistory(turns: Turn[]): string {
     return turns.map(turn => {
       switch (turn.type) {
-        case 'outsider_hint':
-          return `[OUTSIDER] ${turn.content}`;
-        case 'insider_guess':
-          return `[INSIDER] Guessed: ${turn.guess}`;
+        case 'encoder_hint':
+          return `[ENCODER] ${turn.content}`;
+        case 'decoder_guess':
+          return `[DECODER] Guessed: ${turn.guess}`;
         case 'ai_analysis':
           return `[ANALYSIS] Thinking: ${turn.thinking.join(' ')} | Guess: ${turn.guess}`;
       }

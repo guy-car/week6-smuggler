@@ -74,7 +74,7 @@ const GameEndScreen = () => {
     };
 
     const getRoleText = () => {
-        return playerRole === 'encryptor' ? 'Encryptor' : 'Decryptor';
+        return playerRole === 'encoder' ? 'Encoder' : 'Decoder';
     };
 
     return (

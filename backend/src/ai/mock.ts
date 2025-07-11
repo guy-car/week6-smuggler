@@ -138,11 +138,11 @@ export class MockAIService {
                 // Analyze conversation content for clues
                 const conversationText = conversationHistory
                     .map(turn => {
-                        if (turn.type === 'outsider_hint') {
+                        if (turn.type === 'encoder_hint') {
                             return turn.content.toLowerCase();
                         } else if (turn.type === 'ai_analysis') {
                             return turn.guess.toLowerCase();
-                        } else if (turn.type === 'insider_guess') {
+                        } else if (turn.type === 'decoder_guess') {
                             return turn.guess.toLowerCase();
                         }
                         return '';

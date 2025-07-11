@@ -1,7 +1,7 @@
 import { Turn } from '../store/gameStore';
 
 describe('Conversation Filtering Logic', () => {
-    const createMockTurn = (type: 'encryptor' | 'ai' | 'decryptor', content: string, playerId?: string): Turn => ({
+    const createMockTurn = (type: 'encoder' | 'ai' | 'decoder', content: string, playerId?: string): Turn => ({
         id: `turn-${Date.now()}-${Math.random()}`,
         type,
         content,
@@ -12,9 +12,9 @@ describe('Conversation Filtering Logic', () => {
     describe('AI Message Filtering', () => {
         it('should filter out AI messages from conversation display', () => {
             const conversation: Turn[] = [
-                createMockTurn('encryptor', 'Hello world', 'player1'),
+                createMockTurn('encoder', 'Hello world', 'player1'),
                 createMockTurn('ai', 'Thinking: Analyzing...\n\nGuess: apple'),
-                createMockTurn('decryptor', 'My guess is orange', 'player2'),
+                createMockTurn('decoder', 'My guess is orange', 'player2'),
                 createMockTurn('ai', 'Thinking: Processing...\n\nGuess: banana')
             ];
 
@@ -23,18 +23,18 @@ describe('Conversation Filtering Logic', () => {
 
             // Verify results
             expect(displayConversation).toHaveLength(2);
-            expect(displayConversation[0]?.type).toBe('encryptor');
-            expect(displayConversation[1]?.type).toBe('decryptor');
+            expect(displayConversation[0]?.type).toBe('encoder');
+            expect(displayConversation[1]?.type).toBe('decoder');
             expect(displayConversation.some(turn => turn.type === 'ai')).toBe(false);
         });
 
         it('should preserve conversation order when filtering AI messages', () => {
             const conversation: Turn[] = [
-                createMockTurn('encryptor', 'First message', 'player1'),
+                createMockTurn('encoder', 'First message', 'player1'),
                 createMockTurn('ai', 'AI response 1'),
-                createMockTurn('decryptor', 'Second message', 'player2'),
+                createMockTurn('decoder', 'Second message', 'player2'),
                 createMockTurn('ai', 'AI response 2'),
-                createMockTurn('encryptor', 'Third message', 'player1')
+                createMockTurn('encoder', 'Third message', 'player1')
             ];
 
             const displayConversation = conversation.filter(turn => turn.type !== 'ai');
@@ -59,9 +59,9 @@ describe('Conversation Filtering Logic', () => {
 
         it('should return all messages when no AI messages are present', () => {
             const conversation: Turn[] = [
-                createMockTurn('encryptor', 'Message 1', 'player1'),
-                createMockTurn('decryptor', 'Guess 1', 'player2'),
-                createMockTurn('encryptor', 'Message 2', 'player1')
+                createMockTurn('encoder', 'Message 1', 'player1'),
+                createMockTurn('decoder', 'Guess 1', 'player2'),
+                createMockTurn('encoder', 'Message 2', 'player1')
             ];
 
             const displayConversation = conversation.filter(turn => turn.type !== 'ai');
@@ -81,22 +81,22 @@ describe('Conversation Filtering Logic', () => {
     });
 
     describe('Message Type Classification', () => {
-        it('should correctly identify encryptor messages', () => {
-            const turn = createMockTurn('encryptor', 'Test message', 'player1');
+        it('should correctly identify encoder messages', () => {
+            const turn = createMockTurn('encoder', 'Test message', 'player1');
 
-            expect(turn.type).toBe('encryptor');
-            expect(turn.type === 'encryptor').toBe(true);
+            expect(turn.type).toBe('encoder');
+            expect(turn.type === 'encoder').toBe(true);
             expect(turn.type === 'ai').toBe(false);
-            expect(turn.type === 'decryptor').toBe(false);
+            expect(turn.type === 'decoder').toBe(false);
         });
 
-        it('should correctly identify decryptor messages', () => {
-            const turn = createMockTurn('decryptor', 'Test guess', 'player2');
+        it('should correctly identify decoder messages', () => {
+            const turn = createMockTurn('decoder', 'Test guess', 'player2');
 
-            expect(turn.type).toBe('decryptor');
-            expect(turn.type === 'decryptor').toBe(true);
+            expect(turn.type).toBe('decoder');
+            expect(turn.type === 'decoder').toBe(true);
             expect(turn.type === 'ai').toBe(false);
-            expect(turn.type === 'encryptor').toBe(false);
+            expect(turn.type === 'encoder').toBe(false);
         });
 
         it('should correctly identify AI messages', () => {
@@ -104,8 +104,8 @@ describe('Conversation Filtering Logic', () => {
 
             expect(turn.type).toBe('ai');
             expect(turn.type === 'ai').toBe(true);
-            expect(turn.type === 'encryptor').toBe(false);
-            expect(turn.type === 'decryptor').toBe(false);
+            expect(turn.type === 'encoder').toBe(false);
+            expect(turn.type === 'decoder').toBe(false);
         });
     });
 
@@ -166,9 +166,9 @@ describe('Conversation Filtering Logic', () => {
     describe('Conversation State Management', () => {
         it('should maintain conversation history with AI messages for backend processing', () => {
             const fullConversation: Turn[] = [
-                createMockTurn('encryptor', 'Message 1', 'player1'),
+                createMockTurn('encoder', 'Message 1', 'player1'),
                 createMockTurn('ai', 'Thinking: Test...\n\nGuess: test'),
-                createMockTurn('decryptor', 'Guess 1', 'player2')
+                createMockTurn('decoder', 'Guess 1', 'player2')
             ];
 
             // Full conversation should include AI messages (for backend)
@@ -183,9 +183,9 @@ describe('Conversation Filtering Logic', () => {
 
         it('should preserve all message metadata when filtering', () => {
             const conversation: Turn[] = [
-                createMockTurn('encryptor', 'Test message', 'player1'),
+                createMockTurn('encoder', 'Test message', 'player1'),
                 createMockTurn('ai', 'AI response'),
-                createMockTurn('decryptor', 'Test guess', 'player2')
+                createMockTurn('decoder', 'Test guess', 'player2')
             ];
 
             const displayConversation = conversation.filter(turn => turn.type !== 'ai');

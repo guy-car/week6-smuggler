@@ -9,19 +9,19 @@ interface ConversationMessageProps {
 
 const ConversationMessage: React.FC<ConversationMessageProps> = ({ item, currentPlayerId }) => {
     const isCurrentPlayer = item.playerId === currentPlayerId;
-    const isEncryptor = item.type === 'encryptor';
-    const isDecryptor = item.type === 'decryptor';
+    const isEncoder = item.type === 'encoder';
+    const isDecoder = item.type === 'decoder';
 
 
     let backgroundColor = '#F2F2F7';
     let textColor = '#000000';
     let borderColor = '#E5E5EA';
 
-    if (isEncryptor) {
+    if (isEncoder) {
         backgroundColor = '#E8F5E8';
         textColor = '#2E7D32';
         borderColor = '#C8E6C9';
-    } else if (isDecryptor) {
+    } else if (isDecoder) {
         backgroundColor = '#FFF3E0';
         textColor = '#F57C00';
         borderColor = '#FFCC02';
@@ -36,11 +36,11 @@ const ConversationMessage: React.FC<ConversationMessageProps> = ({ item, current
             { alignSelf, maxWidth, backgroundColor, borderColor }
         ]}>
             <View style={styles.turnHeader}>
-                <Text style={[styles.turnType, { color: textColor }]}> 
-                    {isEncryptor ? 'Encryptor' : 'Decryptor'}
+                <Text style={[styles.turnType, { color: textColor }]}>
+                    {isEncoder ? 'Encoder' : 'Decoder'}
                 </Text>
             </View>
-            <Text style={[styles.turnContent, { color: textColor }]}> 
+            <Text style={[styles.turnContent, { color: textColor }]}>
                 {item.content}
             </Text>
         </View>
