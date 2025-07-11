@@ -27,20 +27,16 @@ const GameEndScreen = () => {
     const getResultText = () => {
         if (isWinner) {
             return 'Humans Win! 🎉';
-        } else if (isAIWinner) {
-            return 'AI Wins! 🤖';
         } else {
-            return "It's a Tie! 🤝";
+            return 'AI Wins! 🤖';
         }
     };
 
     const getResultColor = () => {
         if (isWinner) {
             return '#34C759';
-        } else if (isAIWinner) {
-            return '#FF3B30';
         } else {
-            return '#FF9500';
+            return '#FF3B30';
         }
     };
 
@@ -50,8 +46,8 @@ const GameEndScreen = () => {
 
     // Determine game result
     const isWinner = score > 0;
-    const isAIWinner = score < 0;
-    const isTie = score === 0;
+    const isAIWinner = score <= 0; // AI wins when score is 0 or negative
+    const isTie = false; // No ties in this game - AI wins at 0
 
     return (
         <View style={styles.container}>
