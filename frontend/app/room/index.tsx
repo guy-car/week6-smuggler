@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontWeight: 'bold',
         fontSize: 18,
-        fontFamily: 'monospace',
+        fontFamily: 'Audiowide',
     },
     roomIdContainer: {
         alignItems: 'center',
@@ -148,13 +148,15 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: 'bold',
         letterSpacing: 1,
+        fontFamily: 'VT323',
     },
     roomId: {
         color: '#fff',
-        fontSize: 24,
+        fontSize: 34,
         fontWeight: 'bold',
         letterSpacing: 2,
         marginTop: 2,
+        fontFamily: 'VT323',
     },
     introContainer: {
         backgroundColor: 'rgba(30,30,30,0.8)',

@@ -227,6 +227,7 @@ const styles = StyleSheet.create({
         maxHeight: 100,
         color: '#fff',
         backgroundColor: 'rgba(0,0,0,0.5)',
+        fontFamily: 'Audiowide',
     },
     guessInputDisabled: {
         borderColor: '#C7C7CC',
