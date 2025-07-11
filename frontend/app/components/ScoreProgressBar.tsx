@@ -46,7 +46,6 @@ const ScoreProgressBar: React.FC<ScoreProgressBarProps> = ({
                 {/* Top labels */}
                 <View style={styles.labelsRow}>
                     <Text style={[styles.label, styles.leftLabel]} numberOfLines={1} ellipsizeMode="clip">AI WINS</Text>
-                    <Text style={styles.centerLabel} numberOfLines={1} ellipsizeMode="clip">SCORE</Text>
                     <Text style={[styles.label, styles.rightLabel]} numberOfLines={1} ellipsizeMode="clip">HUMANS WIN</Text>
                 </View>
                 {/* Stepper */}
@@ -83,7 +82,8 @@ const ScoreProgressBar: React.FC<ScoreProgressBarProps> = ({
 const styles = StyleSheet.create({
     wrapper: {
         position: 'relative',
-        width: '100%',
+        width: '60%',
+        alignSelf: 'center',
         backgroundColor: 'transparent',
     },
     container: {
@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
         borderWidth: 3,
         borderColor: '#fff',
         backgroundColor: 'transparent',
-        marginHorizontal: 10,
+        marginHorizontal: 3,
         shadowColor: 'transparent',
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 0,
