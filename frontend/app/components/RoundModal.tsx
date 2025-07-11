@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useButtonSound } from '../../hooks/useButtonSound';
 import { useGameStore } from '../../store/gameStore';
+import { soundManager } from '../../utils/soundManager';
 import ScoreProgressBar from './ScoreProgressBar';
 
 const RoundModal: React.FC = () => {
@@ -13,6 +14,26 @@ const RoundModal: React.FC = () => {
         score
     } = useGameStore();
     const playButtonSound = useButtonSound();
+
+    // Handle background music and play round end sound
+    useEffect(() => {
+        if (showRoundModal && roundModalData) {
+            // Pause background music
+            soundManager.pauseBackgroundMusic();
+            // Play appropriate round end sound
+            if (roundModalData.winner === 'ai') {
+                soundManager.playAIWinsRound();
+            } else {
+                soundManager.playHumansWinRound();
+            }
+        }
+        // Resume background music when modal is dismissed
+        return () => {
+            if (showRoundModal) {
+                soundManager.playBackgroundMusic();
+            }
+        };
+    }, [showRoundModal, roundModalData]);
 
     const handleDismiss = () => {
         playButtonSound();
@@ -40,8 +61,6 @@ const RoundModal: React.FC = () => {
         >
             <View style={styles.overlay}>
                 <View style={[styles.modalBox, { backgroundColor: bgColor }]}>
-
-
                     <Text style={[styles.modalText, { color: textColor }]}>{message}</Text>
                     <Text style={[styles.secretWordText, { color: textColor }]}>Secret word: {secretWord}</Text>
 
@@ -55,7 +74,6 @@ const RoundModal: React.FC = () => {
                             isInModal={true}
                         />
                     </View>
-
 
                     <Text style={[styles.pointsText, { color: textColor }]}>Points: {pointsText}</Text>
 

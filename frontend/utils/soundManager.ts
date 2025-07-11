@@ -1,4 +1,5 @@
 import { Audio } from 'expo-av';
+import { Platform } from 'react-native';
 
 class SoundManager {
     private static instance: SoundManager;
@@ -7,14 +8,45 @@ class SoundManager {
     private initialized: boolean = false;
     private musicVolume: number = 0.5; // Default music volume
     private effectsVolume: number = 1.0; // Default effects volume
+    private hasUserInteraction: boolean = false;
+    private currentGameEndSound: Audio.Sound | null = null;
+    private webInteractionHandler: (() => void) | null = null;
 
-    private constructor() {}
+    private constructor() {
+        // Set up web interaction handler immediately for the entire lifecycle
+        if (Platform.OS === 'web' && typeof document !== 'undefined') {
+            this.setupWebAutoplayHandler();
+        }
+    }
 
     static getInstance(): SoundManager {
         if (!SoundManager.instance) {
             SoundManager.instance = new SoundManager();
         }
         return SoundManager.instance;
+    }
+
+    private setupWebAutoplayHandler() {
+        if (this.webInteractionHandler) {
+            // Remove existing listeners before setting up new ones
+            document.removeEventListener('click', this.webInteractionHandler);
+            document.removeEventListener('touchstart', this.webInteractionHandler);
+            document.removeEventListener('keydown', this.webInteractionHandler);
+        }
+
+        this.webInteractionHandler = () => {
+            if (!this.hasUserInteraction) {
+                console.log('First user interaction detected, enabling audio');
+                this.hasUserInteraction = true;
+                this.playBackgroundMusic().catch(error => {
+                    console.warn('Failed to play background music after interaction:', error);
+                });
+            }
+        };
+
+        document.addEventListener('click', this.webInteractionHandler);
+        document.addEventListener('touchstart', this.webInteractionHandler);
+        document.addEventListener('keydown', this.webInteractionHandler);
     }
 
     async initialize() {
@@ -24,7 +56,7 @@ class SoundManager {
             await Audio.setAudioModeAsync({
                 playsInSilentModeIOS: true,
                 staysActiveInBackground: false,
-                shouldDuckAndroid: true, // Enable ducking on Android
+                shouldDuckAndroid: true,
             });
 
             // Preload all sounds
@@ -52,6 +84,56 @@ class SoundManager {
             );
             this.sounds.set('send', sendSound.sound);
 
+            // Load game end sounds
+            const aiWinsGameSound = await Audio.Sound.createAsync(
+                require('../assets/sound-FX/ai-wins-game.mp3'),
+                { shouldPlay: false, volume: this.effectsVolume, isLooping: false },
+                (status) => {
+                    if (status.isLoaded) {
+                        console.log('AI wins game sound loaded successfully');
+                    }
+                },
+                true
+            );
+            this.sounds.set('ai-wins-game', aiWinsGameSound.sound);
+
+            const humansWinGameSound = await Audio.Sound.createAsync(
+                require('../assets/sound-FX/humans-win-game.mp3'),
+                { shouldPlay: false, volume: this.effectsVolume, isLooping: false },
+                (status) => {
+                    if (status.isLoaded) {
+                        console.log('Humans win game sound loaded successfully');
+                    }
+                },
+                true
+            );
+            this.sounds.set('humans-win-game', humansWinGameSound.sound);
+
+            // Load round end sounds
+            const aiWinsRoundSound = await Audio.Sound.createAsync(
+                require('../assets/sound-FX/ai-wins-round.mp3'),
+                { shouldPlay: false, volume: this.effectsVolume, isLooping: false },
+                (status) => {
+                    if (status.isLoaded) {
+                        console.log('AI wins round sound loaded successfully');
+                    }
+                },
+                true
+            );
+            this.sounds.set('ai-wins-round', aiWinsRoundSound.sound);
+
+            const humansWinRoundSound = await Audio.Sound.createAsync(
+                require('../assets/sound-FX/humans-win-round.mp3'),
+                { shouldPlay: false, volume: this.effectsVolume, isLooping: false },
+                (status) => {
+                    if (status.isLoaded) {
+                        console.log('Humans win round sound loaded successfully');
+                    }
+                },
+                true
+            );
+            this.sounds.set('humans-win-round', humansWinRoundSound.sound);
+
             // Load background music
             const bgMusic = await Audio.Sound.createAsync(
                 require('../assets/sound-FX/lobby-sound.mp3'),
@@ -71,6 +153,12 @@ class SoundManager {
             this.backgroundMusic = bgMusic.sound;
 
             this.initialized = true;
+
+            // On native platforms, start playing immediately
+            if (Platform.OS !== 'web') {
+                await this.playBackgroundMusic();
+            }
+            // On web, we already set up the interaction handler in constructor
         } catch (error) {
             console.error('Failed to initialize audio:', error);
         }
@@ -78,6 +166,13 @@ class SoundManager {
 
     async playBackgroundMusic() {
         if (!this.backgroundMusic) return;
+
+        // On web, check for user interaction
+        if (Platform.OS === 'web' && !this.hasUserInteraction) {
+            console.log('Waiting for user interaction before playing background music');
+            return;
+        }
+
         try {
             const status = await this.backgroundMusic.getStatusAsync();
             if (status.isLoaded) {
@@ -87,7 +182,11 @@ class SoundManager {
                 }
             }
         } catch (error) {
-            console.error('Error playing background music:', error);
+            if (Platform.OS === 'web' && !this.hasUserInteraction) {
+                console.log('Browser requires user interaction before playing audio');
+            } else {
+                console.error('Error playing background music:', error);
+            }
         }
     }
 
@@ -159,7 +258,89 @@ class SoundManager {
         }
     }
 
+    async playAIWinsGame() {
+        console.log('🔊 Playing AI wins game sound');
+        const sound = this.sounds.get('ai-wins-game');
+        if (sound) {
+            try {
+                // Stop any currently playing game end sound
+                if (this.currentGameEndSound) {
+                    await this.currentGameEndSound.stopAsync();
+                }
+                this.currentGameEndSound = sound;
+                this.duckBackgroundMusic();
+                await sound.replayAsync();
+            } catch (error) {
+                console.error('Error playing AI wins game sound:', error);
+            }
+        } else {
+            console.warn('AI wins game sound not found or not loaded');
+        }
+    }
+
+    async playHumansWinGame() {
+        console.log('🔊 Playing humans win game sound');
+        const sound = this.sounds.get('humans-win-game');
+        if (sound) {
+            try {
+                // Stop any currently playing game end sound
+                if (this.currentGameEndSound) {
+                    await this.currentGameEndSound.stopAsync();
+                }
+                this.currentGameEndSound = sound;
+                this.duckBackgroundMusic();
+                await sound.replayAsync();
+            } catch (error) {
+                console.error('Error playing humans win game sound:', error);
+            }
+        } else {
+            console.warn('Humans win game sound not found or not loaded');
+        }
+    }
+
+    async stopGameEndSound() {
+        if (this.currentGameEndSound) {
+            try {
+                await this.currentGameEndSound.stopAsync();
+                this.currentGameEndSound = null;
+            } catch (error) {
+                console.error('Error stopping game end sound:', error);
+            }
+        }
+    }
+
+    playAIWinsRound() {
+        console.log('🔊 Playing AI wins round sound');
+        const sound = this.sounds.get('ai-wins-round');
+        if (sound) {
+            try {
+                this.duckBackgroundMusic();
+                sound.replayAsync();
+            } catch (error) {
+                console.error('Error playing AI wins round sound:', error);
+            }
+        } else {
+            console.warn('AI wins round sound not found or not loaded');
+        }
+    }
+
+    playHumansWinRound() {
+        console.log('🔊 Playing humans win round sound');
+        const sound = this.sounds.get('humans-win-round');
+        if (sound) {
+            try {
+                this.duckBackgroundMusic();
+                sound.replayAsync();
+            } catch (error) {
+                console.error('Error playing humans win round sound:', error);
+            }
+        } else {
+            console.warn('Humans win round sound not found or not loaded');
+        }
+    }
+
     async cleanup() {
+        await this.stopGameEndSound();
         if (this.backgroundMusic) {
             await this.backgroundMusic.unloadAsync();
             this.backgroundMusic = null;
@@ -169,6 +350,8 @@ class SoundManager {
         }
         this.sounds.clear();
         this.initialized = false;
+        // Don't reset hasUserInteraction on cleanup, maintain it for the session
+        // Don't remove web interaction handlers either, keep them for the session
     }
 }
 
