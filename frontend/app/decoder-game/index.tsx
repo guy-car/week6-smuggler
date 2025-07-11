@@ -115,11 +115,10 @@ const DecoderGameScreen = () => {
                     <TouchableOpacity
                         style={[
                             styles.submitButton,
-                            (!canSubmitGuess || !guessInput.trim() || isSubmitting) &&
-                            styles.submitButtonDisabled,
+                            !canSubmitGuess && styles.submitButtonDisabled,
                         ]}
                         onPress={handleSubmitGuess}
-                        disabled={!canSubmitGuess || !guessInput.trim() || isSubmitting}
+                        disabled={!canSubmitGuess}
                     >
                         <Text style={styles.submitButtonText}>
                             {isSubmitting ? 'Submitting...' : 'Guess'}
