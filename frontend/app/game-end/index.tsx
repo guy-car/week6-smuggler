@@ -1,3 +1,5 @@
+import { ResizeMode, Video } from 'expo-av';
+import { BlurView } from 'expo-blur';
 import React from 'react';
 import {
     StyleSheet,
@@ -26,9 +28,9 @@ const GameEndScreen = () => {
 
     const getResultText = () => {
         if (isWinner) {
-            return 'Humans Win! 🎉';
+            return 'Humans Defeat AI!';
         } else {
-            return 'AI Wins! 🤖';
+            return 'Humans Lose';
         }
     };
 
@@ -45,12 +47,33 @@ const GameEndScreen = () => {
     };
 
     // Determine game result
-    const isWinner = score > 10;
+    const isWinner = score >= 10;
     const isAIWinner = score <= 0; // AI wins when score is 0 or negative
     const isTie = false; // No ties in this game - AI wins at 0
 
     return (
         <View style={styles.container}>
+            {isAIWinner && (
+                <Video
+                    source={require('../../assets/videos/end_game_ai_wins.mp4')}
+                    style={styles.videoBackground}
+                    resizeMode={ResizeMode.COVER}
+                    shouldPlay
+                    isLooping
+                    isMuted
+                />
+            )}
+            {isWinner && (
+                <Video
+                    source={require('../../assets/videos/end_game_humans_win.mp4')}
+                    style={styles.videoBackground}
+                    resizeMode={ResizeMode.COVER}
+                    shouldPlay
+                    isLooping
+                    isMuted
+                />
+            )}
+            {/* <SparksShower /> */}
             <View style={styles.content}>
                 <Text style={styles.title}>Game Over</Text>
 
@@ -63,57 +86,18 @@ const GameEndScreen = () => {
                     </Animated.Text>
                 </View>
 
-                {/* Confetti effect (simple animated circles) */}
-                <View style={styles.confettiContainer} pointerEvents="none">
-                    {[...Array(12)].map((_, i) => (
-                        <Animated.View
-                            key={i}
-                            entering={FadeIn.delay(i * 100).duration(800)}
-                            style={[
-                                styles.confetti,
-                                {
-                                    left: `${Math.random() * 90}%`,
-                                    backgroundColor: i % 2 === 0 ? '#34C759' : '#FF3B30',
-                                },
-                            ]}
-                        />
-                    ))}
-                </View>
-
-                <View style={styles.statsContainer}>
-                    <View style={styles.statItem}>
-                        <Text style={styles.statLabel}>Final Score</Text>
-                        <Text style={[styles.statValue, { color: getResultColor() }]}>
-                            {score > 0 ? `+${score}` : score}
-                        </Text>
+                <BlurView intensity={40} tint="dark" style={styles.blurButtonBackground}>
+                    <View style={styles.glowContainer}>
+                        <TouchableOpacity
+                            style={styles.returnButton}
+                            onPress={handleReturnToLobby}
+                        >
+                            <Text style={styles.returnButtonText}>
+                                Return to Lobby
+                            </Text>
+                        </TouchableOpacity>
                     </View>
-
-                    <View style={styles.statItem}>
-                        <Text style={styles.statLabel}>Rounds Played</Text>
-                        <Text style={styles.statValue}>{round}/{maxRounds}</Text>
-                    </View>
-
-                    <View style={styles.statItem}>
-                        <Text style={styles.statLabel}>Your Role</Text>
-                        <Text style={styles.statValue}>{getRoleText()}</Text>
-                    </View>
-
-                    {secretWord && (
-                        <View style={styles.statItem}>
-                            <Text style={styles.statLabel}>Secret Word</Text>
-                            <Text style={styles.secretWord}>{secretWord}</Text>
-                        </View>
-                    )}
-                </View>
-
-                <TouchableOpacity
-                    style={styles.returnButton}
-                    onPress={handleReturnToLobby}
-                >
-                    <Text style={styles.returnButtonText}>
-                        Return to Lobby
-                    </Text>
-                </TouchableOpacity>
+                </BlurView>
             </View>
         </View>
     );
@@ -126,8 +110,17 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
+    videoBackground: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: '100%',
+        height: '100%',
+    },
     content: {
-        backgroundColor: '#FFFFFF',
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
         borderRadius: 16,
         padding: 32,
         margin: 24,
@@ -145,7 +138,7 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 28,
         fontWeight: 'bold',
-        color: '#000000',
+        color: '#fff',
         marginBottom: 24,
     },
     resultContainer: {
@@ -183,18 +176,45 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#007AFF',
     },
+    blurButtonBackground: {
+        width: '90%',
+        alignSelf: 'center',
+        borderRadius: 20, // Ensure this matches the button
+        marginBottom: 24,
+        overflow: 'hidden',
+    },
+    glowContainer: {
+        borderRadius: 20, // Match the button's borderRadius
+        shadowColor: '#ff3333',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.6,
+        shadowRadius: 15,
+        elevation: 10,
+    },
     returnButton: {
-        backgroundColor: '#007AFF',
-        paddingVertical: 16,
-        paddingHorizontal: 32,
-        borderRadius: 12,
-        minWidth: 200,
+        backgroundColor: 'rgba(30,30,30,0.4)',
+        borderRadius: 20, // Match the wrapper's borderRadius
+        paddingVertical: 18,
+        paddingHorizontal: 48,
+        borderWidth: 3,
+        borderColor: '#ff3333',
+        shadowColor: '#ff3333',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.8,
+        shadowRadius: 20,
+        elevation: 12,
         alignItems: 'center',
     },
     returnButtonText: {
-        color: '#FFFFFF',
-        fontSize: 16,
-        fontWeight: '600',
+        color: '#fff',
+        fontSize: 20,
+        fontWeight: 'bold',
+        fontFamily: 'monospace',
+        letterSpacing: 2,
+        textAlign: 'center',
+        textShadowColor: '#000',
+        textShadowOffset: { width: 1, height: 1 },
+        textShadowRadius: 4,
     },
     confettiContainer: {
         position: 'absolute',
