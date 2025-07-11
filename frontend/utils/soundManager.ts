@@ -58,21 +58,22 @@ class SoundManager {
     }
 
     playClick() {
-        console.log('playClick() called');
+        console.log('🔊 Playing click sound');
         const sound = this.sounds.get('click');
-        console.log('🎹🎹🎹Click sound retrieved:', sound ? 'found' : 'not found');
         if (sound) {
             try {
-                console.log('🎹🎹🎹About to play click sound');
+                // Don't await, just fire and forget for better responsiveness
                 sound.replayAsync();
-                console.log('🎹🎹🎹Click sound replayAsync() called');
             } catch (error) {
                 console.error('Error playing click sound:', error);
             }
+        } else {
+            console.warn('Click sound not found or not loaded');
         }
     }
 
     playSend() {
+        console.log('🔊 Playing send sound');
         const sound = this.sounds.get('send');
         if (sound) {
             try {
@@ -80,6 +81,8 @@ class SoundManager {
             } catch (error) {
                 console.error('Error playing send sound:', error);
             }
+        } else {
+            console.warn('Send sound not found or not loaded');
         }
     }
 

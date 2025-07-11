@@ -1,5 +1,8 @@
+import { useCallback } from 'react';
 import { soundManager } from '../utils/soundManager';
 
 export const useSendSound = () => {
-    return soundManager.playSend.bind(soundManager);
+    return useCallback(() => {
+        soundManager.playSend();
+    }, []);
 }; 
