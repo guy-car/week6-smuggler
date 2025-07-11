@@ -116,8 +116,8 @@ const AISectionComponent: React.FC<AISectionProps> = ({
             <View style={styles.conversationContainer}>
                 <ScrollView
                     style={styles.scrollView}
-                    showsVerticalScrollIndicator={true}
                     contentContainerStyle={styles.scrollContent}
+                    showsVerticalScrollIndicator={true}
                 >
                     <ConversationHistory
                         conversation={conversationHistory}
@@ -319,10 +319,12 @@ const styles = StyleSheet.create({
     },
     conversationContainer: {
         flex: 1,
+        minHeight: 0,
         marginTop: 12,
     },
     scrollView: {
         flex: 1,
+        minHeight: 0,
     },
     scrollContent: {
         flexGrow: 1,
