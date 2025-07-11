@@ -181,41 +181,41 @@ const DecoderGameScreen = () => {
                                 />
                             </View>
                         </View>
-                        {/* inputContainer is NOT wrapped, so input remains interactive */}
-                        <View style={styles.inputContainer}>
-                            <TextInput
-                                style={[
-                                    styles.guessInput,
-                                    !canSubmitGuess && styles.guessInputDisabled,
-                                ]}
-                                value={guessInput}
-                                onChangeText={handleTyping}
-                                placeholder={
-                                    canSubmitGuess
-                                        ? "Guess the secret word..."
-                                        : "Waiting for your clue..."
-                                }
-                                multiline
-                                maxLength={50}
-                                editable={canSubmitGuess}
-                                placeholderTextColor="white"
-                            />
-                            <TouchableOpacity
-                                style={[
-                                    styles.submitButton,
-                                    !canSubmitGuess && styles.submitButtonDisabled,
-                                ]}
-                                onPress={handleSubmitGuess}
-                                disabled={!canSubmitGuess}
-                            >
-                                <Text style={styles.submitButtonText}>
-                                    {isSubmitting ? 'Submitting...' : 'Guess'}
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
                     </KeyboardAvoidingView>
                 </View>
             </TouchableWithoutFeedback>
+            {/* inputContainer is outside TouchableWithoutFeedback, so input remains interactive */}
+            <View style={styles.inputContainer}>
+                <TextInput
+                    style={[
+                        styles.guessInput,
+                        !canSubmitGuess && styles.guessInputDisabled,
+                    ]}
+                    value={guessInput}
+                    onChangeText={handleTyping}
+                    placeholder={
+                        canSubmitGuess
+                            ? "Guess the secret word..."
+                            : "Waiting for your clue..."
+                    }
+                    multiline
+                    maxLength={50}
+                    editable={canSubmitGuess}
+                    placeholderTextColor="white"
+                />
+                <TouchableOpacity
+                    style={[
+                        styles.submitButton,
+                        !canSubmitGuess && styles.submitButtonDisabled,
+                    ]}
+                    onPress={handleSubmitGuess}
+                    disabled={!canSubmitGuess}
+                >
+                    <Text style={styles.submitButtonText}>
+                        {isSubmitting ? 'Submitting...' : 'Guess'}
+                    </Text>
+                </TouchableOpacity>
+            </View>
             <RoundModal />
         </ImageBackground>
     );
