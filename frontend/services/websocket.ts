@@ -425,11 +425,11 @@ export function getSocket() {
       // Calculate points change and winner for modal
       const currentScore = useGameStore.getState().score;
       const pointsChange = data.score - currentScore;
-      const winner = data.correct ? 'humans' : 'ai';
+      const winner = data.humansWon ? 'humans' : 'ai';
 
       // Get the correct guess for the modal
       let correctGuess = '';
-      if (data.correct) {
+      if (data.humansWon) {
         // Human win - get the last decoder guess
         const conversationHistory = useGameStore.getState().conversationHistory;
         const lastDecoderTurn = conversationHistory

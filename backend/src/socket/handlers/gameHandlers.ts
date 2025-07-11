@@ -72,7 +72,7 @@ export class GameHandlers {
                     roomId,
                     winner: 'ai',
                     finalScore: gameEnded.score,
-                    correct: false,
+                    humansWon: false,
                     reason: 'timer_expired'
                 };
 
@@ -101,7 +101,7 @@ export class GameHandlers {
                 // Emit round end event with timer expiration reason
                 const roundEndData = {
                     roomId,
-                    correct: false,
+                    humansWon: false,
                     score: newGameState.score,
                     gameEnded: false,
                     newSecretWord,
@@ -383,7 +383,7 @@ export class GameHandlers {
                         roomId,
                         winner,
                         finalScore: finalGameState.score,
-                        correct: isCorrect
+                        humansWon: isCorrect
                     };
 
                     socket.to(roomId).emit('game_end', gameEndData);
@@ -392,7 +392,7 @@ export class GameHandlers {
                     // Emit guess result for game end
                     const guessResultData = {
                         roomId,
-                        correct: isCorrect,
+                        humansWon: isCorrect,
                         guess,
                         score: finalGameState.score
                     };
@@ -423,7 +423,7 @@ export class GameHandlers {
                     // Emit round end event with new roles
                     const roundEndData = {
                         roomId,
-                        correct: isCorrect,
+                        humansWon: isCorrect,
                         score: newGameState.score,
                         gameEnded: false,
                         newSecretWord,
@@ -437,7 +437,7 @@ export class GameHandlers {
                     // Emit guess result for round end
                     const guessResultData = {
                         roomId,
-                        correct: isCorrect,
+                        humansWon: isCorrect,
                         guess,
                         score: newGameState.score
                     };
@@ -475,7 +475,7 @@ export class GameHandlers {
                 // Emit guess result (incorrect)
                 const guessResultData = {
                     roomId,
-                    correct: false,
+                    humansWon: false,
                     guess,
                     score: room.gameState.score
                 };
@@ -666,7 +666,7 @@ export class GameHandlers {
                         roomId,
                         winner: 'ai',
                         finalScore: gameEnded.score,
-                        correct: true
+                        humansWon: false
                     };
 
                     this.io.to(roomId).emit('game_end', gameEndData);
@@ -674,7 +674,7 @@ export class GameHandlers {
                     // Emit guess result for game end
                     const guessResultData = {
                         roomId,
-                        correct: true,
+                        humansWon: false,
                         guess: aiResponse.guess,
                         score: gameEnded.score
                     };
@@ -701,7 +701,7 @@ export class GameHandlers {
                     // Emit round end event with new roles
                     const roundEndData = {
                         roomId,
-                        correct: true,
+                        humansWon: false,
                         score: newGameState.score,
                         gameEnded: false,
                         newSecretWord,
@@ -714,7 +714,7 @@ export class GameHandlers {
                     // Emit guess result for round end
                     const guessResultData = {
                         roomId,
-                        correct: true,
+                        humansWon: false,
                         guess: aiResponse.guess,
                         score: newGameState.score
                     };
@@ -817,7 +817,7 @@ export class GameHandlers {
                         roomId,
                         winner: 'ai',
                         finalScore: gameEnded.score,
-                        correct: true
+                        humansWon: false
                     };
 
                     this.io.to(roomId).emit('game_end', gameEndData);
@@ -825,7 +825,7 @@ export class GameHandlers {
                     // Emit guess result for game end
                     const guessResultData = {
                         roomId,
-                        correct: true,
+                        humansWon: false,
                         guess: guess,
                         score: gameEnded.score
                     };
@@ -852,7 +852,7 @@ export class GameHandlers {
                     // Emit round end event with new roles
                     const roundEndData = {
                         roomId,
-                        correct: true,
+                        humansWon: false,
                         score: newGameState.score,
                         gameEnded: false,
                         newSecretWord,
@@ -865,7 +865,7 @@ export class GameHandlers {
                     // Emit guess result for round end
                     const guessResultData = {
                         roomId,
-                        correct: true,
+                        humansWon: false,
                         guess: guess,
                         score: newGameState.score
                     };
