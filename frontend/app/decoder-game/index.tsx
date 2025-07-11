@@ -12,6 +12,7 @@ import {
     View
 } from 'react-native';
 import decoderBg from '../../assets/images/decoder.png';
+import { useActionHaptics, useButtonHaptics } from '../../hooks/useHaptics';
 import { useSendSound } from '../../hooks/useSendSound';
 import { leaveRoom, submitGuess } from '../../services/websocket';
 import { useGameStore } from '../../store/gameStore';
@@ -36,6 +37,8 @@ const DecoderGameScreen = () => {
     const [guessInput, setGuessInput] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const playSendSound = useSendSound();
+    const triggerActionHaptics = useActionHaptics();
+    const triggerButtonHaptics = useButtonHaptics();
 
     const handleSubmitGuess = async () => {
         if (!guessInput.trim() || !canSubmitGuess || isSubmitting) {
@@ -43,8 +46,9 @@ const DecoderGameScreen = () => {
         }
 
         setIsSubmitting(true);
-        // Play sound immediately without awaiting
+        // Play sound and haptics immediately without awaiting
         playSendSound();
+        triggerActionHaptics();
         
         try {
             await submitGuess(guessInput.trim());
@@ -57,6 +61,7 @@ const DecoderGameScreen = () => {
     };
 
     const handleAbort = () => {
+        triggerButtonHaptics();
         leaveRoom();
         useGameStore.getState().setCurrentScreen('lobby');
         useGameStore.getState().setRoomId(null);
