@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, Keyboard, ScrollView, StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
 import { Turn, useGameStore } from '../../store/gameStore';
-import AIGuessSection from './AIGuessSection';
+import AIDisplayComponent from './AIDisplayComponent';
 import ConversationHistory from './ConversationHistory';
 
 interface AISectionProps {
@@ -67,6 +67,18 @@ const AISectionComponent: React.FC<AISectionProps> = ({
 
     const aiAnalysis = latestAITurn ? parseAIContent(latestAITurn.content) : null;
 
+    // Determine if we should show AI thinking state
+    const hasHumanMessages = conversationHistory.some(turn => turn.type === 'encoder' || turn.type === 'decoder');
+
+    // Check if humans have sent messages after the latest AI turn
+    const hasNewHumanMessagesAfterAI = latestAITurn ?
+        conversationHistory.some(turn =>
+            (turn.type === 'encoder' || turn.type === 'decoder') &&
+            new Date(turn.timestamp) > new Date(latestAITurn.timestamp)
+        ) : hasHumanMessages;
+
+    const shouldShowAIThinking = isAITurn && hasHumanMessages && hasNewHumanMessagesAfterAI;
+
     // Only show timer for human turns
     const showTimer = currentTurn === 'encoder' || currentTurn === 'decoder';
 
@@ -90,29 +102,19 @@ const AISectionComponent: React.FC<AISectionProps> = ({
 
     return (
         <View style={styles.container}>
-            <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-                <View>
-                    <View style={styles.headerRow}>
-                        <Text style={styles.title} numberOfLines={1} ellipsizeMode="clip">AI is Listening</Text>
-                    </View>
-                    {isAITurn ? (
-                        <View style={styles.thinkingContainer}>
-                            <Text style={styles.thinkingText}>AI is analyzing the conversation...</Text>
-                            <View style={styles.loadingDots}>
-                                <Text style={styles.dot}>•</Text>
-                                <Text style={styles.dot}>•</Text>
-                                <Text style={styles.dot}>•</Text>
-                            </View>
-                        </View>
-                    ) : null}
-                    {aiAnalysis && (
-                        <View style={styles.latestAnalysisContainer}>
-                            {/* {aiAnalysis.thinking && <AIThinkingSection thinking={aiAnalysis.thinking} />} */}
-                            {aiAnalysis.guess && <AIGuessSection guess={aiAnalysis.guess} />}
-                        </View>
-                    )}
-                </View>
-            </TouchableWithoutFeedback>
+<View style={styles.headerRow}>
+    <Text style={styles.title} numberOfLines={1} ellipsizeMode="clip">AI is Listening</Text>
+</View>
+
+{(shouldShowAIThinking || (aiAnalysis?.guess && !hasNewHumanMessagesAfterAI)) && (
+    <View style={styles.latestAnalysisContainer}>
+        <AIDisplayComponent
+            isThinking={shouldShowAIThinking}
+            thinkingText="Analyzing"
+            guess={!hasNewHumanMessagesAfterAI ? aiAnalysis?.guess : undefined}
+        />
+    </View>
+)}
             {/* Scrollable conversation history */}
             <View style={styles.conversationContainer}>
                 <ScrollView
@@ -209,44 +211,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
     },
-    thinkingContainer: {
-        backgroundColor: 'rgba(0,255,255,0.08)',
-        padding: 14,
-        borderRadius: 6,
-        borderWidth: 2,
-        borderColor: '#00FFF0',
-        shadowColor: '#00FFF0',
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.7,
-        shadowRadius: 16,
-        elevation: 8,
-        marginBottom: 12,
-        alignItems: 'center',
-    },
-    thinkingText: {
-        fontSize: 15,
-        color: '#00FFF0',
-        fontFamily: 'VT323',
-        textShadowColor: '#00FFF0',
-        textShadowOffset: { width: 0, height: 0 },
-        textShadowRadius: 8,
-        fontStyle: 'italic',
-        marginBottom: 8,
-    },
-    loadingDots: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-    },
-    dot: {
-        fontSize: 20,
-        color: '#00FFF0',
-        fontFamily: 'monospace',
-        textShadowColor: '#00FFF0',
-        textShadowOffset: { width: 0, height: 0 },
-        textShadowRadius: 8,
-        marginHorizontal: 2,
-        opacity: 0.7,
-    },
+
     waitingContainer: {
         backgroundColor: '#F5F5F5',
         padding: 16,
@@ -270,41 +235,7 @@ const styles = StyleSheet.create({
         marginBottom: 12,
         textAlign: 'center',
     },
-    thinkingSection: {
-        marginBottom: 12,
-        padding: 12,
-        backgroundColor: '#F8F9FA',
-        borderRadius: 8,
-        borderLeftWidth: 4,
-        borderLeftColor: '#6C757D',
-    },
-    guessSection: {
-        padding: 12,
-        backgroundColor: '#E8F5E8',
-        borderRadius: 8,
-        borderLeftWidth: 4,
-        borderLeftColor: '#28A745',
-    },
-    sectionLabel: {
-        fontSize: 13,
-        fontWeight: '600',
-        color: '#495057',
-        marginBottom: 6,
-        textTransform: 'uppercase',
-        letterSpacing: 0.5,
-    },
-    thinkingContent: {
-        fontSize: 14,
-        color: '#495057',
-        lineHeight: 20,
-        fontStyle: 'italic',
-    },
-    guessContent: {
-        fontSize: 16,
-        color: '#155724',
-        lineHeight: 22,
-        fontWeight: '500',
-    },
+
     noAnalysisContainer: {
         backgroundColor: 'rgba(0,0,0,0.5)',
         padding: 16,
