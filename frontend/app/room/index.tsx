@@ -68,50 +68,51 @@ const RoomScreen = () => {
                         <View style={{ width: 60 }} /> {/* Spacer for symmetry */}
                     </View>
                 </BlurView>
-                {/* Scroll Area overlayed near the top */}
-                <ScrollArea />
-                {/* Main content, with safe area padding at the bottom only */}
-                <View style={{ flex: 1, justifyContent: 'flex-end', paddingTop: styles.header.height + insets.top, paddingBottom: insets.bottom }}>
-                    {/* Footer: Pills stacked above Ready button */}
-                    <View style={styles.footerStack}>
-                        <View style={styles.pillsRow}>
-                            <View style={styles.pillContainer}>
-                                <BlurView intensity={40} tint="dark" style={styles.pillBlur}>
-                                    <View style={styles.pillContent}>
-                                        <Text style={styles.pillRole}>ENCODER</Text>
-                                        <View style={[styles.pillStatus, { backgroundColor: encoder?.ready ? '#34C759' : '#FF3B30' }]}> 
-                                            <Text style={styles.pillStatusText}>{encoder?.ready ? 'READY' : 'NOT READY'}</Text>
-                                        </View>
+                {/* Main content area with flex layout */}
+                <View style={styles.mainContent}>
+                    <ScrollArea />
+                </View>
+                {/* Footer stack */}
+                <View style={styles.footerStack}>
+                    <View style={styles.pillsRow}>
+                        <View style={styles.pillContainer}>
+                            <BlurView intensity={40} tint="dark" style={styles.pillBlur}>
+                                <View style={styles.pillContent}>
+                                    <Text style={styles.pillRole}>ENCODER</Text>
+                                    <View style={[styles.pillStatus, { backgroundColor: encoder?.ready ? '#34C759' : '#FF3B30' }]}> 
+                                        <Text style={styles.pillStatusText}>{encoder?.ready ? 'READY' : 'NOT READY'}</Text>
                                     </View>
-                                </BlurView>
-                            </View>
-                            <View style={styles.pillContainer}>
-                                <BlurView intensity={40} tint="dark" style={styles.pillBlur}>
-                                    <View style={styles.pillContent}>
-                                        <Text style={styles.pillRole}>DECODER</Text>
-                                        <View style={[styles.pillStatus, { backgroundColor: decoder?.ready ? '#34C759' : '#FF3B30' }]}> 
-                                            <Text style={styles.pillStatusText}>{decoder?.ready ? 'READY' : 'NOT READY'}</Text>
-                                        </View>
-                                    </View>
-                                </BlurView>
-                            </View>
+                                </View>
+                            </BlurView>
                         </View>
-                        <BlurView intensity={40} tint="dark" style={styles.readyButtonBlur}>
-                            <TouchableOpacity
-                                style={[styles.readyButton, isReady && styles.readyButtonActive]}
-                                onPress={handleReadyToggle}
-                                disabled={loading}
-                            >
-                                <Text style={styles.readyButtonText}>{isReady ? 'UNREADY' : 'READY'}</Text>
-                            </TouchableOpacity>
-                        </BlurView>
+                        <View style={styles.pillContainer}>
+                            <BlurView intensity={40} tint="dark" style={styles.pillBlur}>
+                                <View style={styles.pillContent}>
+                                    <Text style={styles.pillRole}>DECODER</Text>
+                                    <View style={[styles.pillStatus, { backgroundColor: decoder?.ready ? '#34C759' : '#FF3B30' }]}> 
+                                        <Text style={styles.pillStatusText}>{decoder?.ready ? 'READY' : 'NOT READY'}</Text>
+                                    </View>
+                                </View>
+                            </BlurView>
+                        </View>
                     </View>
+                    <BlurView intensity={40} tint="dark" style={styles.readyButtonBlur}>
+                        <TouchableOpacity
+                            style={[styles.readyButton, isReady && styles.readyButtonActive]}
+                            onPress={handleReadyToggle}
+                            disabled={loading}
+                        >
+                            <Text style={styles.readyButtonText}>{isReady ? 'UNREADY' : 'READY'}</Text>
+                        </TouchableOpacity>
+                    </BlurView>
                 </View>
             </View>
             
         </View>
     );
 };
+
+const HEADER_HEIGHT = 80; // Move header height to a constant
 
 const styles = StyleSheet.create({
     overlay: {
@@ -123,7 +124,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        height: 80, // fixed height for header
+        height: HEADER_HEIGHT, // Use constant instead
         paddingHorizontal: 16,
         marginBottom: 8,
         padding: 16,
@@ -258,6 +259,12 @@ const styles = StyleSheet.create({
     },
     headerBlur: {
         overflow: 'hidden',
+    },
+    mainContent: {
+        flex: 1,
+        paddingTop: HEADER_HEIGHT + 55, // Use constant instead
+        paddingBottom: 0,
+        justifyContent: 'center',
     },
 });
 export default RoomScreen; 
