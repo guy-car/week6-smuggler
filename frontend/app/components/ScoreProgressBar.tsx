@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 interface ScoreProgressBarProps {
     score: number;
@@ -43,11 +43,6 @@ const ScoreProgressBar: React.FC<ScoreProgressBarProps> = ({
             {/* Background overlay - only show when not in modal */}
 
             <View style={styles.container}>
-                {/* Top labels */}
-                <View style={styles.labelsRow}>
-                    <Text style={[styles.label, styles.leftLabel]} numberOfLines={1} ellipsizeMode="clip">AI WINS</Text>
-                    <Text style={[styles.label, styles.rightLabel]} numberOfLines={1} ellipsizeMode="clip">HUMANS WIN</Text>
-                </View>
                 {/* Stepper */}
                 <View style={styles.stepperRow}>
                     {stepValues.map((val, idx) => {
@@ -74,6 +69,7 @@ const ScoreProgressBar: React.FC<ScoreProgressBarProps> = ({
                         );
                     })}
                 </View>
+                {/* Labels removed */}
             </View>
         </View>
     );
@@ -82,16 +78,15 @@ const ScoreProgressBar: React.FC<ScoreProgressBarProps> = ({
 const styles = StyleSheet.create({
     wrapper: {
         position: 'relative',
-        width: '60%',
+        width: '80%',
         alignSelf: 'center',
         backgroundColor: 'transparent',
     },
     container: {
-        paddingTop: 10,
+        marginTop: 4,
         paddingHorizontal: 8,
         backgroundColor: 'transparent',
         alignItems: 'stretch',
-        marginTop: 6,
     },
     labelsRow: {
         flexDirection: 'row',
@@ -145,13 +140,13 @@ const styles = StyleSheet.create({
         marginBottom: 2,
     },
     circle: {
-        width: 16,
-        height: 16,
+        width: 18,
+        height: 18,
         borderRadius: 16,
         borderWidth: 3,
         borderColor: '#fff',
         backgroundColor: 'transparent',
-        marginHorizontal: 3,
+        marginHorizontal: 6,
         shadowColor: 'transparent',
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 0,
