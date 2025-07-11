@@ -448,9 +448,11 @@ export class GameStateManager {
      */
     public startRoundTimer(gameState: GameState): GameState {
         const expiresAt = Date.now() + (this.ROUND_DURATION * 1000);
+        const { pausedRemainingTime, ...rest } = gameState;
         return {
-            ...gameState,
-            roundExpiresAt: expiresAt
+            ...rest,
+            roundExpiresAt: expiresAt,
+            timerState: 'running'
         };
     }
 
@@ -458,7 +460,7 @@ export class GameStateManager {
      * Clear round timer
      */
     public clearRoundTimer(gameState: GameState): GameState {
-        const { roundExpiresAt, pausedRemainingTime, ...rest } = gameState;
+        const { roundExpiresAt, pausedRemainingTime, timerState, ...rest } = gameState;
         return rest;
     }
 
@@ -519,7 +521,8 @@ export class GameStateManager {
         const { roundExpiresAt, ...rest } = gameState;
         return {
             ...rest,
-            pausedRemainingTime: remainingTime
+            pausedRemainingTime: remainingTime,
+            timerState: 'paused'
         };
     }
 
@@ -538,7 +541,8 @@ export class GameStateManager {
             const { pausedRemainingTime, ...rest } = gameState;
             return {
                 ...rest,
-                roundExpiresAt: expiresAt
+                roundExpiresAt: expiresAt,
+                timerState: 'running'
             };
         }
 

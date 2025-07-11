@@ -24,6 +24,7 @@ describe('Round Timer Tests', () => {
 
             expect(gameState.roundExpiresAt).toBeDefined();
             expect(gameState.pausedRemainingTime).toBeUndefined();
+            expect(gameState.timerState).toBe('running');
 
             // Check that the timer expires in approximately 3 minutes (180 seconds)
             const expiresAt = gameState.roundExpiresAt!;
@@ -46,6 +47,7 @@ describe('Round Timer Tests', () => {
 
             expect(gameState.roundExpiresAt).toBeUndefined();
             expect(gameState.pausedRemainingTime).toBeDefined();
+            expect(gameState.timerState).toBe('paused');
             expect(gameState.pausedRemainingTime).toBeGreaterThan(0);
             expect(gameState.pausedRemainingTime).toBeLessThanOrEqual(180);
         });
@@ -60,6 +62,7 @@ describe('Round Timer Tests', () => {
             gameState = gameStateManager.pauseRoundTimer(gameState);
 
             expect(gameState.pausedRemainingTime).toBe(pausedTime);
+            expect(gameState.timerState).toBe('paused');
         });
     });
 
@@ -77,6 +80,7 @@ describe('Round Timer Tests', () => {
 
             expect(gameState.roundExpiresAt).toBeDefined();
             expect(gameState.pausedRemainingTime).toBeUndefined();
+            expect(gameState.timerState).toBe('running');
 
             // Check that the new expiration time accounts for the paused time
             const newExpiresAt = gameState.roundExpiresAt!;
@@ -94,6 +98,7 @@ describe('Round Timer Tests', () => {
 
             expect(gameState.roundExpiresAt).toBeDefined();
             expect(gameState.pausedRemainingTime).toBeUndefined();
+            expect(gameState.timerState).toBe('running');
 
             // Should be approximately 3 minutes
             const expiresAt = gameState.roundExpiresAt!;
@@ -113,6 +118,7 @@ describe('Round Timer Tests', () => {
             gameState = gameStateManager.resumeRoundTimer(gameState);
 
             expect(gameState.roundExpiresAt).toBe(originalExpiresAt);
+            expect(gameState.timerState).toBe('running');
         });
     });
 
@@ -186,6 +192,7 @@ describe('Round Timer Tests', () => {
 
             expect(gameState.roundExpiresAt).toBeUndefined();
             expect(gameState.pausedRemainingTime).toBeUndefined();
+            expect(gameState.timerState).toBeUndefined();
         });
     });
 
@@ -214,6 +221,7 @@ describe('Round Timer Tests', () => {
             expect(gameState.currentTurn).toBe('ai');
             expect(gameState.roundExpiresAt).toBeUndefined();
             expect(gameState.pausedRemainingTime).toBeDefined();
+            expect(gameState.timerState).toBe('paused');
         });
 
         it('should resume timer when advancing from AI to human turn', () => {
@@ -226,6 +234,7 @@ describe('Round Timer Tests', () => {
             expect(gameState.currentTurn).toBe('decoder');
             expect(gameState.roundExpiresAt).toBeDefined();
             expect(gameState.pausedRemainingTime).toBeUndefined();
+            expect(gameState.timerState).toBe('running');
         });
     });
 }); 

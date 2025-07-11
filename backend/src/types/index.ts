@@ -46,6 +46,8 @@ export interface GameState {
     roundExpiresAt?: number;
     /** Remaining time in seconds when timer is paused (null when timer is running) */
     pausedRemainingTime?: number;
+    /** Timer state for round timer */
+    timerState?: 'running' | 'paused';
 }
 
 // Re-export Zod schemas and types

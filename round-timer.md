@@ -71,21 +71,21 @@ game:
 - [x] Update `advanceTurn()` method to pause/resume round timer based on turn type
 
 ### Phase 2: Timer Pause/Resume Logic
-- [ ] Implement `pauseRoundTimer()` method for AI turns
-- [ ] Implement `resumeRoundTimer()` method for human turns
-- [ ] Update `advanceTurn()` to pause timer during AI turns
-- [ ] Update `advanceTurn()` to resume timer during human turns
-- [ ] Add timer state tracking (paused/resumed) to GameState
-- [ ] Update `getRemainingTime()` to account for paused time
+- [x] Implement `pauseRoundTimer()` method for AI turns
+- [x] Implement `resumeRoundTimer()` method for human turns
+- [x] Update `advanceTurn()` to pause timer during AI turns
+- [x] Update `advanceTurn()` to resume timer during human turns
+- [x] Add timer state tracking (paused/resumed) to GameState
+- [x] Update `getRemainingTime()` to account for paused time
 
 ### Phase 3: Frontend Timer Display Updates
-- [ ] Update `AISectionComponent.tsx` timer styling thresholds
-- [ ] Change green threshold from 20s to 120s (>2 minutes)
-- [ ] Change yellow threshold from 10s to 60s (>1 minute)
-- [ ] Change red threshold from 5s to 60s (<1 minute)
-- [ ] Change flashing threshold from 5s to 30s (<30 seconds)
-- [ ] Update timer color logic in `getTimerStyle()` function
-- [ ] Verify timer display shows correct remaining time format
+- [x] Update `AISectionComponent.tsx` timer styling thresholds
+- [x] Change green threshold from 20s to 120s (>2 minutes)
+- [x] Change yellow threshold from 10s to 60s (>1 minute)
+- [x] Change red threshold from 5s to 60s (<1 minute)
+- [x] Change flashing threshold from 5s to 30s (<30 seconds)
+- [x] Update timer color logic in `getTimerStyle()` function
+- [x] Verify timer display shows correct remaining time format
 
 ### Phase 4: Timer Expiration Handling
 - [ ] Update `checkTimerExpiration()` method for round-based expiration
