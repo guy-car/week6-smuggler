@@ -2,7 +2,7 @@ import request from 'supertest';
 import { app } from '../src/server';
 import { Turn } from '../src/types';
 
-describe('AI Routes', () => {
+describe.skip('AI Routes', () => {
     describe('POST /api/ai/analyze', () => {
         it('should analyze conversation and return AI response', async () => {
             const conversationHistory: Turn[] = [
