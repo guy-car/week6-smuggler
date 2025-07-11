@@ -444,7 +444,7 @@ export class GameStateManager {
     }
 
     /**
-     * Start timer for round
+     * Start the round timer (3 minutes). Sets roundExpiresAt and timerState to 'running'.
      */
     public startRoundTimer(gameState: GameState): GameState {
         const expiresAt = Date.now() + (this.ROUND_DURATION * 1000);
@@ -457,7 +457,7 @@ export class GameStateManager {
     }
 
     /**
-     * Clear round timer
+     * Clear all timer state (used at round end or game end).
      */
     public clearRoundTimer(gameState: GameState): GameState {
         const { roundExpiresAt, pausedRemainingTime, timerState, ...rest } = gameState;
@@ -465,7 +465,7 @@ export class GameStateManager {
     }
 
     /**
-     * Check if current round timer has expired
+     * Check if the round timer has expired (either running or paused with 0 time left).
      */
     public isRoundExpired(gameState: GameState): boolean {
         if (gameState.roundExpiresAt) {
@@ -480,18 +480,17 @@ export class GameStateManager {
     }
 
     /**
-     * Handle timer expiration - AI wins the round
+     * Handle timer expiration: AI wins the round, score is updated, timer is cleared.
      */
     public handleTimerExpiration(gameState: GameState): GameState {
         // AI wins the round - update score
         const scoreUpdated = this.updateScore(gameState, false); // false = AI wins
-
         // Clear the timer
         return this.clearRoundTimer(scoreUpdated);
     }
 
     /**
-     * Get remaining time in seconds for current round
+     * Get remaining time in seconds for the current round (running or paused).
      */
     public getRemainingTime(gameState: GameState): number {
         if (gameState.roundExpiresAt) {
@@ -507,17 +506,15 @@ export class GameStateManager {
     }
 
     /**
-     * Pause round timer during AI turns
+     * Pause the round timer (for AI turns). Stores remaining time and sets timerState to 'paused'.
      */
     public pauseRoundTimer(gameState: GameState): GameState {
         if (!gameState.roundExpiresAt) {
             // Timer is already paused or doesn't exist
             return gameState;
         }
-
         // Calculate remaining time and store it
         const remainingTime = this.getRemainingTime(gameState);
-
         const { roundExpiresAt, ...rest } = gameState;
         return {
             ...rest,
@@ -527,14 +524,13 @@ export class GameStateManager {
     }
 
     /**
-     * Resume round timer during human turns
+     * Resume the round timer (for human turns). Restores timer from pausedRemainingTime or starts new timer.
      */
     public resumeRoundTimer(gameState: GameState): GameState {
         if (gameState.roundExpiresAt) {
             // Timer is already running
             return gameState;
         }
-
         // If we have paused time, resume from there
         if (gameState.pausedRemainingTime !== undefined && gameState.pausedRemainingTime > 0) {
             const expiresAt = Date.now() + (gameState.pausedRemainingTime * 1000);
@@ -545,7 +541,6 @@ export class GameStateManager {
                 timerState: 'running'
             };
         }
-
         // If no paused time, start a new round timer
         return this.startRoundTimer(gameState);
     }

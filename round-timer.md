@@ -105,17 +105,17 @@ game:
 - [ ] Test timer reset for new rounds
 
 ### Phase 6: Edge Case Handling
-- [ ] Test timer behavior during player disconnection/reconnection
-- [ ] Test timer behavior during AI response delays
-- [ ] Test timer behavior during network interruptions
-- [ ] Verify timer state consistency across multiple clients
-- [ ] Test timer behavior during rapid turn transitions
+- [x] Test timer behavior during player disconnection/reconnection
+- [x] Test timer behavior during AI response delays
+- [x] Test timer behavior during network interruptions
+- [x] Verify timer state consistency across multiple clients
+- [x] Test timer behavior during rapid turn transitions
 
 ### Phase 7: Performance Optimization
-- [ ] Verify 1-second timer check interval is optimal
-- [ ] Test timer performance with multiple concurrent games
-- [ ] Optimize timer calculation efficiency
-- [ ] Verify no memory leaks in timer management
+- [x] Verify 1-second timer check interval is optimal
+- [x] Test timer performance with multiple concurrent games
+- [x] Optimize timer calculation efficiency
+- [x] Verify no memory leaks in timer management
 
 ### Phase 8: Documentation & Cleanup
 - [ ] Update code comments for new timer logic

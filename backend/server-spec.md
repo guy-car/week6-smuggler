@@ -116,6 +116,10 @@ backend/
   - **Data**: `{ roomId: string, message: string }`
 - `player_guess` - Submit a word guess
   - **Data**: `{ roomId: string, guess: string }`
+- `timer_update` - Timer update for the round
+  - **Data**: `{ roomId: string, remainingTime: number, currentTurn: string }`
+- `round_end` - Round ends due to timer expiration or correct guess
+  - **Data**: `{ roomId: string, correct: boolean, score: number, reason: 'timer_expired' | 'guessed' }`
 
 ### Response Events
 - `join_room_success` - Successfully joined a room
@@ -168,6 +172,9 @@ interface GameState {
   conversationHistory: Turn[];  // Game conversation
   currentTurn: 'encoder' | 'ai' | 'decoder';  // Whose turn
   gameStatus: 'waiting' | 'active' | 'ended';     // Game status
+  roundExpiresAt?: number; // Unix timestamp when current round expires (null if paused)
+  pausedRemainingTime?: number; // Remaining time in seconds when timer is paused
+  timerState?: 'running' | 'paused'; // Timer state for round timer
 }
 ```
 

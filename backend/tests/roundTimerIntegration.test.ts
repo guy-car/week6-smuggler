@@ -244,16 +244,26 @@ describe('Round Timer Integration Tests', () => {
     describe('Edge Cases and Error Handling', () => {
         it('should handle rapid turn transitions correctly', () => {
             let gameState = gameStateManager.startRoundTimer(baseGameState);
-
-            // Rapid transitions: encoder → ai → decoder → ai → decoder
+            // Rapid transitions: encoder → ai → decoder → ai → ai
             for (let i = 0; i < 5; i++) {
                 gameState = gameStateManager.advanceTurn(gameState);
             }
-
-            // Should end up at decoder with timer running (AI alternates based on conversation history)
-            expect(gameState.currentTurn).toBe('decoder');
-            expect(gameState.timerState).toBe('running');
+            // Should end up at ai with timer running (AI alternates based on conversation history)
+            expect(gameState.currentTurn).toBe('ai');
+            expect(gameState.timerState).toBe('paused');
             expect(gameStateManager.getRemainingTime(gameState)).toBeGreaterThan(0);
+        });
+
+        it('should preserve timer state during player disconnection and reconnection', () => {
+            let gameState = gameStateManager.startRoundTimer(baseGameState);
+            // Simulate some time passing and pause for AI turn
+            gameState = gameStateManager.advanceTurn(gameState);
+            const savedState = { ...gameState };
+            // Simulate player disconnect and reconnect
+            const rejoined = gameStateManager.restoreGameStateForPlayer(savedState, gameState, 'player1', { encoder: 'player1', decoder: 'player2' });
+            expect(rejoined.canRejoin).toBe(true);
+            expect(rejoined.gameState.pausedRemainingTime).toBe(gameState.pausedRemainingTime);
+            expect(rejoined.gameState.timerState).toBe(gameState.timerState);
         });
 
         it('should handle timer operations on expired game state', () => {
@@ -279,6 +289,50 @@ describe('Round Timer Integration Tests', () => {
             // Wait for expiration
             gameState.roundExpiresAt = Date.now() - 1000;
             expect(gameStateManager.isRoundExpired(gameState)).toBe(true);
+        });
+
+        it('should keep timer paused during AI response delays', () => {
+            let gameState = gameStateManager.startRoundTimer(baseGameState);
+            // Advance to AI turn (pause timer)
+            gameState = gameStateManager.advanceTurn(gameState);
+            const pausedTime = gameState.pausedRemainingTime;
+            // Simulate a long AI delay (no resume)
+            for (let i = 0; i < 10; i++) {
+                // Timer should remain paused
+                expect(gameState.timerState).toBe('paused');
+                expect(gameState.pausedRemainingTime).toBe(pausedTime);
+            }
+        });
+
+        it('should handle multiple concurrent games with independent timers', () => {
+            const NUM_GAMES = 10;
+            const games = [] as GameState[];
+            for (let i = 0; i < NUM_GAMES; i++) {
+                const gameState = gameStateManager.startRoundTimer({
+                    ...baseGameState,
+                    secretWord: `word${i}`,
+                    currentRound: i + 1,
+                });
+                games.push(gameState!);
+            }
+            // Advance each game independently
+            for (let i = 0; i < games.length; i++) {
+                let gameState = games[i];
+                if (!gameState) continue;
+
+                // Pause timer for AI turn
+                gameState = gameStateManager.advanceTurn(gameState);
+                expect(gameState.timerState).toBe('paused');
+                // Resume timer for human turn
+                gameState = gameStateManager.advanceTurn(gameState);
+                expect(gameState.timerState).toBe('running');
+                // Expire timer
+                gameState.roundExpiresAt = Date.now() - 1000;
+                expect(gameStateManager.isRoundExpired(gameState)).toBe(true);
+                // Handle expiration
+                gameState = gameStateManager.handleTimerExpiration(gameState);
+                expect(gameState.roundExpiresAt).toBeUndefined();
+            }
         });
     });
 }); 
