@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, StyleSheet, Text, View } from 'react-native';
 import { Turn, useGameStore } from '../../store/gameStore';
 import AIGuessSection from './AIGuessSection';
 import AIThinkingSection from './AIThinkingSection';
@@ -94,19 +94,7 @@ const AISectionComponent: React.FC<AISectionProps> = ({
     return (
         <View style={styles.container}>
             <View style={styles.headerRow}>
-                {onQuit ? (
-                    <TouchableOpacity style={styles.quitButton} onPress={onQuit}>
-                        <Text style={styles.quitButtonText}>Abort</Text>
-                    </TouchableOpacity>
-                ) : (
-                    <View style={{ width: 60 }} />
-                )}
                 <Text style={styles.title} numberOfLines={1} ellipsizeMode="clip">AI is Listening</Text>
-                {showTimer && (
-                    <Animated.View style={[getTimerStyle(), { opacity: flashAnim }]}>
-                        <Text style={styles.timerText}>{formatTimerDisplay(remainingTime)}</Text>
-                    </Animated.View>
-                )}
             </View>
 
             {isAITurn ? (
