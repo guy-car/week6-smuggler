@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
         borderWidth: 3,
         borderColor: '#fff',
         backgroundColor: 'transparent',
-        marginHorizontal: 6,
+        marginHorizontal: 3,
         shadowColor: 'transparent',
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 0,
