@@ -48,11 +48,13 @@ return (
             <SafeAreaView style={{ flex: 1 }}>
                 <View style={styles.container}>
                     {/* Top bar: Title and Connection Status */}
-                    <View style={{ width: '100%', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <View style={{ width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
                         <Text style={styles.title}>SMUGGLER</Text>
-                        <ConnectionStatusIndicator compact showDetails />
                     </View>
                     <Text style={styles.subheader}>PASS A SECRET TO SAVE THE WORLD</Text>
+                    <View style={styles.connectionStatus}>
+                        <ConnectionStatusIndicator compact showDetails />
+                    </View>
 
                     {/* New Game Button */}
                     <BlurView intensity={40} tint="dark" style={styles.blurButtonBg}>
@@ -117,6 +119,10 @@ const styles = StyleSheet.create({
         textShadowColor: '#000',
         textShadowOffset: { width: 1, height: 1 },
         textShadowRadius: 4,
+    },
+    connectionStatus: {
+        marginTop: -10,
+        marginBottom: 20,
     },
     blurButtonBg: {
         width: '90%',

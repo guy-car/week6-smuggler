@@ -42,7 +42,7 @@ const ConnectionStatusIndicator: React.FC<ConnectionStatusIndicatorProps> = ({
         if (connected) {
             return {
                 color: '#34C759',
-                text: 'Connected',
+                text: 'Connected to the AI server',
                 icon: '🟢',
                 details: socketId ? `Socket ID: ${socketId.slice(0, 8)}...` : 'Connected to server',
             };
