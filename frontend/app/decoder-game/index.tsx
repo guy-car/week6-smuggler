@@ -266,11 +266,12 @@ const styles = StyleSheet.create({
     abortButtonText: {
         color: '#FFFFFF',
         fontWeight: '600',
+        fontFamily: 'Audiowide',
     },
     timerContainer: {
         width: 60, // Fixed width for timer
         paddingHorizontal: 10,
-        paddingVertical: 5,
+        paddingVertical: 10,
         borderRadius: 8,
         marginLeft: 10,
         textAlign: 'center',
@@ -294,14 +295,15 @@ const styles = StyleSheet.create({
         shadowColor: '#FF3B30',
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 1,
-        shadowRadius: 12,
+        shadowRadius: 14,
         elevation: 8,
     },
     timerText: {
         color: '#FFFFFF',
-        fontSize: 16,
+        fontSize: 12,
         fontWeight: 'bold',
         textAlign: 'center',
+        fontFamily: 'Audiowide',
     },
 });
 

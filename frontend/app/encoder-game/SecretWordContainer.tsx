@@ -33,11 +33,13 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: '#8E8E93',
         marginBottom: 4,
+        fontFamily: 'Audiowide',
     },
     secretWordTextUnified: {
-        fontSize: 20,
+        fontSize: 40,
         fontWeight: 'bold',
         color: '#fff',
+        fontFamily: 'VT323',
     },
 });
 

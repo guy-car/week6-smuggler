@@ -243,10 +243,12 @@ const styles = StyleSheet.create({
         paddingVertical: 8,
         backgroundColor: '#FF3B30',
         borderRadius: 8,
+        fontFamily: 'Audiowide',
     },
     quitButtonText: {
         color: '#FFFFFF',
         fontWeight: '600',
+        fontFamily: 'Audiowide',
     },
     content: {
         flex: 1,
@@ -290,6 +292,7 @@ const styles = StyleSheet.create({
     aiThinkingText: {
         color: '#1976D2',
         fontSize: 14,
+        fontFamily: 'Audiowide',
     },
     inputContainer: {
         flexDirection: 'row',
@@ -306,6 +309,8 @@ const styles = StyleSheet.create({
         maxHeight: 100,
         color: '#fff',
         backgroundColor: 'rgba(0,0,0,0.5)',
+        fontFamily: 'Audiowide',
+
     },
     messageInputDisabled: {
         borderColor: '#C7C7CC',
@@ -325,6 +330,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.8,
         shadowRadius: 16,
         elevation: 10,
+        fontFamily: 'Audiowide',
     },
     sendButtonDisabled: {
     },
@@ -471,11 +477,12 @@ const styles = StyleSheet.create({
     abortButtonText: {
         color: '#FFFFFF',
         fontWeight: '600',
+        fontFamily: 'Audiowide',
     },
     timerContainer: {
         width: 60, // Fixed width for timer
         paddingHorizontal: 10,
-        paddingVertical: 5,
+        paddingVertical: 10,
         borderRadius: 8,
         marginLeft: 10,
         textAlign: 'center',
@@ -504,9 +511,10 @@ const styles = StyleSheet.create({
     },
     timerText: {
         color: '#FFFFFF',
-        fontSize: 16,
+        fontSize: 12,
         fontWeight: 'bold',
         textAlign: 'center',
+        fontFamily: 'Audiowide',
     },
 });
 
