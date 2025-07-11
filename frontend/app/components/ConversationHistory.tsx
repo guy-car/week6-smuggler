@@ -20,10 +20,9 @@ const ConversationHistory: React.FC<ConversationHistoryProps> = ({
     if (displayConversation.length === 0) {
         return (
             <View style={styles.container}>
-                <Text style={styles.title}>Human Chat</Text>
                 <View style={styles.emptyContainer}>
                     <Text style={styles.emptyText}>No messages yet</Text>
-                    <Text style={styles.emptySubtext}>{emptySubtext || 'Hello human, send a clue to start.'}</Text>
+                    <Text style={styles.emptySubtext}>{emptySubtext || 'Send a clue to the decoder to start.'}</Text>
                 </View>
             </View>
         );
@@ -31,7 +30,6 @@ const ConversationHistory: React.FC<ConversationHistoryProps> = ({
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Human Chat</Text>
             <View style={styles.listContent}>
                 {displayConversation.map((item) => (
                     <ConversationMessage key={item.id} item={item} currentPlayerId={currentPlayerId} />
@@ -44,20 +42,18 @@ const ConversationHistory: React.FC<ConversationHistoryProps> = ({
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        padding: 16,
         width: '100%',
         maxWidth: 500,
-        height: '100%',
         backgroundColor: 'rgba(0,0,0,0.5)',
         borderRadius: 12,
         marginHorizontal: 'auto',
-        borderWidth: 3,
         borderColor: 'blue',
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 0.7,
         shadowRadius: 16,
         elevation: 8,
-        marginTop: 16,
+        padding: 6,
+        paddingTop: 16,
     },
     title: {
         fontSize: 18,

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Animated, StyleSheet, Text, View } from 'react-native';
+import { Animated, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Turn, useGameStore } from '../../store/gameStore';
 import AIGuessSection from './AIGuessSection';
 import AIThinkingSection from './AIThinkingSection';
@@ -121,10 +121,20 @@ const AISectionComponent: React.FC<AISectionProps> = ({
                     </Text>
                 </View>
             )} */}
-            {/* Conversation history inside AI section */}
-            <ConversationHistory conversation={conversationHistory} currentPlayerId={currentPlayerId} {...(conversationHistoryProps || {})} />
-
-
+            {/* Scrollable conversation history */}
+            <View style={styles.conversationContainer}>
+                <ScrollView 
+                    style={styles.scrollView}
+                    showsVerticalScrollIndicator={true}
+                    contentContainerStyle={styles.scrollContent}
+                >
+                    <ConversationHistory 
+                        conversation={conversationHistory} 
+                        currentPlayerId={currentPlayerId} 
+                        {...(conversationHistoryProps || {})} 
+                    />
+                </ScrollView>
+            </View>
         </View>
     );
 };
@@ -315,6 +325,16 @@ const styles = StyleSheet.create({
         color: '#fff',
         textAlign: 'center',
         lineHeight: 20,
+    },
+    conversationContainer: {
+        flex: 1,
+        marginTop: 12,
+    },
+    scrollView: {
+        flex: 1,
+    },
+    scrollContent: {
+        flexGrow: 1,
     },
 });
 

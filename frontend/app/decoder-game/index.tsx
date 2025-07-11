@@ -5,12 +5,11 @@ import {
     ImageBackground,
     KeyboardAvoidingView,
     Platform,
-    ScrollView,
     StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
-    View,
+    View
 } from 'react-native';
 import decoderBg from '../../assets/images/decoder.png';
 import { leaveRoom, submitGuess } from '../../services/websocket';
@@ -140,14 +139,14 @@ const DecoderGameScreen = () => {
                             <Text style={styles.timerText}>{formatTimerDisplay(remainingTime)}</Text>
                         </Animated.View>
                     </View>
-                    <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+                    <View style={styles.content}>
                         <AISectionComponent
                             currentTurn={currentTurn}
                             conversationHistory={conversationHistory}
                             currentPlayerId={player?.id}
-                            conversationHistoryProps={{ emptySubtext: 'Waiting for your ally to send a clue' }}
+                            conversationHistoryProps={{ emptySubtext: 'Waiting for the encoder to send a clue' }}
                         />
-                    </ScrollView>
+                    </View>
                     <View style={styles.inputContainer}>
                         <TextInput
                             style={[

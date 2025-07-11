@@ -71,7 +71,7 @@ return (
                         {loading && <ActivityIndicator style={{ marginVertical: 16 }} />}
                         {error && <Text style={styles.errorText}>{error}</Text>}
                         {availableRooms.length === 0 && !loading && (
-                            <Text style={styles.noRoomsText}>No rooms available.</Text>
+                            <Text style={styles.noRoomsText}>No games available.</Text>
                         )}
                         {availableRooms.map((item) => (
                             <BlurView key={item.id} intensity={40} tint="dark" style={styles.blurButtonBg}>
