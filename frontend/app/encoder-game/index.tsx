@@ -3,17 +3,16 @@ import {
     Alert,
     Animated,
     ImageBackground,
-    Keyboard,
     KeyboardAvoidingView,
     Platform,
     StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
-    TouchableWithoutFeedback,
-    View
+    View,
 } from 'react-native';
 import encoderBg from '../../assets/images/encoder.png';
+import { useButtonSound } from '../../hooks/useButtonSound';
 import { useActionHaptics, useButtonHaptics } from '../../hooks/useHaptics';
 import { useSendSound } from '../../hooks/useSendSound';
 import { leaveRoom, sendMessage } from '../../services/websocket';
@@ -41,6 +40,7 @@ const EncoderGameScreen = () => {
 
     const [messageInput, setMessageInput] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const playButtonSound = useButtonSound();
     const playSendSound = useSendSound();
     const triggerActionHaptics = useActionHaptics();
     const triggerButtonHaptics = useButtonHaptics();
@@ -49,6 +49,25 @@ const EncoderGameScreen = () => {
     const isMyTurn = currentTurn === playerRole;
 
     const flashAnim = useRef(new Animated.Value(1)).current;
+
+    // Initialize audio and load sound
+    useEffect(() => {
+        const setup = async () => {
+            // await initializeAudio(); // This line is removed as per the new_code
+            // const loadedSound = await loadSound( // This line is removed as per the new_code
+            //     require('../../assets/sound-FX/send_button_v1.mp3') // This line is removed as per the new_code
+            // ); // This line is removed as per the new_code
+            // setSound(loadedSound); // This line is removed as per the new_code
+        };
+
+        setup();
+
+        return () => {
+            // if (sound) { // This line is removed as per the new_code
+            //     sound.unloadAsync(); // This line is removed as per the new_code
+            // } // This line is removed as per the new_code
+        };
+    }, []);
 
     // Flashing animation for last 30 seconds
     useEffect(() => {
@@ -94,16 +113,6 @@ const EncoderGameScreen = () => {
         return [styles.timerContainer, styles.timerContainerNormal];
     };
 
-    useEffect(() => {
-        const setup = async () => {
-            // No-op for now, placeholder for future audio setup
-        };
-        setup();
-        return () => {
-            // No-op for now, placeholder for future cleanup
-        };
-    }, []);
-
     const handleSendMessage = async () => {
         if (!messageInput.trim() || !canSendMessage || isSubmitting) {
             return;
@@ -119,11 +128,11 @@ const EncoderGameScreen = () => {
             return;
         }
 
+        setIsSubmitting(true);
         // Play sound and haptics immediately without awaiting
         playSendSound();
         triggerActionHaptics();
-
-        setIsSubmitting(true);
+        
         try {
             await sendMessage(messageInput.trim());
             setMessageInput('');
@@ -135,6 +144,7 @@ const EncoderGameScreen = () => {
     };
 
     const handleQuit = () => {
+        playButtonSound();
         triggerButtonHaptics();
         leaveRoom();
         // Use state-based navigation to return to lobby
@@ -157,38 +167,37 @@ const EncoderGameScreen = () => {
         >
             <View style={styles.overlay}>
                 <KeyboardAvoidingView
+
                     style={styles.container}
                     behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 >
-                    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+                    <View style={styles.topRow}>
+                        <TouchableOpacity style={styles.abortButton} onPress={handleQuit}>
+                            <Text style={styles.abortButtonText}>Abort</Text>
+                        </TouchableOpacity>
                         <View style={{ flex: 1 }}>
-                            <View style={styles.topRow}>
-                                <TouchableOpacity style={styles.abortButton} onPress={handleQuit}>
-                                    <Text style={styles.abortButtonText}>Abort</Text>
-                                </TouchableOpacity>
-                                <View style={{ flex: 1 }}>
-                                    <ScoreProgressBar
-                                        score={score}
-                                        maxScore={6}
-                                        aiWinsScore={0}
-                                        humansWinScore={6}
-                                    />
-                                </View>
-                                <Animated.View style={[getTimerStyle(), { opacity: flashAnim }]}>
-                                    <Text style={styles.timerText}>{formatTimerDisplay(remainingTime)}</Text>
-                                </Animated.View>
-                            </View>
-                            <View style={styles.content}>
-                                <AISectionComponent
-                                    currentTurn={currentTurn}
-                                    conversationHistory={conversationHistory}
-                                    currentPlayerId={player?.id}
-                                />
-                            </View>
-                            {/* Secret word above input field */}
-                            <SecretWordContainer secretWord={secretWord || undefined} />
+                            <ScoreProgressBar
+                                score={score}
+                                maxScore={6}
+                                aiWinsScore={0}
+                                humansWinScore={6}
+                            />
                         </View>
-                    </TouchableWithoutFeedback>
+                        <Animated.View style={[getTimerStyle(), { opacity: flashAnim }]}>
+                            <Text style={styles.timerText}>{formatTimerDisplay(remainingTime)}</Text>
+                        </Animated.View>
+                    </View>
+                    <View style={styles.content}>
+                        <AISectionComponent
+                            currentTurn={currentTurn}
+                            conversationHistory={conversationHistory}
+                            currentPlayerId={player?.id}
+                        />
+                    </View>
+
+                    {/* Secret word above input field */}
+                    <SecretWordContainer secretWord={secretWord || undefined} />
+
                     <View style={styles.inputContainer}>
                         <TextInput
                             style={[
@@ -223,6 +232,7 @@ const EncoderGameScreen = () => {
                     </View>
                 </KeyboardAvoidingView>
             </View>
+
             <RoundModal />
         </ImageBackground>
     );
@@ -453,6 +463,7 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontWeight: 'bold',
         color: '#007AFF',
+        fontFamily: 'VT323',
     },
     topRow: {
         flexDirection: 'row',

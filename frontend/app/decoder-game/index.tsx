@@ -3,17 +3,16 @@ import {
     Alert,
     Animated,
     ImageBackground,
-    Keyboard,
     KeyboardAvoidingView,
     Platform,
     StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
-    TouchableWithoutFeedback,
     View
 } from 'react-native';
 import decoderBg from '../../assets/images/decoder.png';
+import { useButtonSound } from '../../hooks/useButtonSound';
 import { useActionHaptics, useButtonHaptics } from '../../hooks/useHaptics';
 import { useSendSound } from '../../hooks/useSendSound';
 import { leaveRoom, submitGuess } from '../../services/websocket';
@@ -38,6 +37,7 @@ const DecoderGameScreen = () => {
 
     const [guessInput, setGuessInput] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const playButtonSound = useButtonSound();
     const playSendSound = useSendSound();
     const triggerActionHaptics = useActionHaptics();
     const triggerButtonHaptics = useButtonHaptics();
@@ -63,6 +63,7 @@ const DecoderGameScreen = () => {
     };
 
     const handleAbort = () => {
+        playButtonSound();
         triggerButtonHaptics();
         leaveRoom();
         useGameStore.getState().setCurrentScreen('lobby');
@@ -135,34 +136,30 @@ const DecoderGameScreen = () => {
                     style={styles.container}
                     behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 >
-                    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+                    <View style={styles.topRow}>
+                        <TouchableOpacity style={styles.abortButton} onPress={handleAbort}>
+                            <Text style={styles.abortButtonText}>Abort</Text>
+                        </TouchableOpacity>
                         <View style={{ flex: 1 }}>
-                            <View style={styles.topRow}>
-                                <TouchableOpacity style={styles.abortButton} onPress={handleAbort}>
-                                    <Text style={styles.abortButtonText}>Abort</Text>
-                                </TouchableOpacity>
-                                <View style={{ flex: 1 }}>
-                                    <ScoreProgressBar
-                                        score={score}
-                                        maxScore={6}
-                                        aiWinsScore={0}
-                                        humansWinScore={6}
-                                    />
-                                </View>
-                                <Animated.View style={[getTimerStyle(), { opacity: flashAnim }]}>
-                                    <Text style={styles.timerText}>{formatTimerDisplay(remainingTime)}</Text>
-                                </Animated.View>
-                            </View>
-                            <View style={styles.content}>
-                                <AISectionComponent
-                                    currentTurn={currentTurn}
-                                    conversationHistory={conversationHistory}
-                                    currentPlayerId={player?.id}
-                                    conversationHistoryProps={{ emptySubtext: 'Waiting for the encoder to send a clue' }}
-                                />
-                            </View>
+                            <ScoreProgressBar
+                                score={score}
+                                maxScore={6}
+                                aiWinsScore={0}
+                                humansWinScore={6}
+                            />
                         </View>
-                    </TouchableWithoutFeedback>
+                        <Animated.View style={[getTimerStyle(), { opacity: flashAnim }]}>
+                            <Text style={styles.timerText}>{formatTimerDisplay(remainingTime)}</Text>
+                        </Animated.View>
+                    </View>
+                    <View style={styles.content}>
+                        <AISectionComponent
+                            currentTurn={currentTurn}
+                            conversationHistory={conversationHistory}
+                            currentPlayerId={player?.id}
+                            conversationHistoryProps={{ emptySubtext: 'Waiting for the encoder to send a clue' }}
+                        />
+                    </View>
                     <View style={styles.inputContainer}>
                         <TextInput
                             style={[
