@@ -2,7 +2,6 @@ import React, { useEffect, useRef } from 'react';
 import { Animated, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Turn, useGameStore } from '../../store/gameStore';
 import AIGuessSection from './AIGuessSection';
-import AIThinkingSection from './AIThinkingSection';
 import ConversationHistory from './ConversationHistory';
 
 interface AISectionProps {
@@ -108,7 +107,7 @@ const AISectionComponent: React.FC<AISectionProps> = ({
 
             {aiAnalysis && (
                 <View style={styles.latestAnalysisContainer}>
-                    {aiAnalysis.thinking && <AIThinkingSection thinking={aiAnalysis.thinking} />}
+                    {/* {aiAnalysis.thinking && <AIThinkingSection thinking={aiAnalysis.thinking} />} */}
                     {aiAnalysis.guess && <AIGuessSection guess={aiAnalysis.guess} />}
                 </View>
             )}

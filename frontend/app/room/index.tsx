@@ -4,7 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useButtonSound } from '../../hooks/useButtonSound';
+import { useButtonHaptics, useGameHaptics } from '../../hooks/useHaptics';
 import { leaveRoom, setPlayerReady } from '../../services/websocket';
 import { useGameStore } from '../../store/gameStore';
 import ScrollArea from '../components/ScrollArea';
@@ -17,14 +17,15 @@ const RoomScreen = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const insets = useSafeAreaInsets();
-    const playButtonSound = useButtonSound();
+    const triggerGameHaptics = useGameHaptics();
+    const triggerButtonHaptics = useButtonHaptics();
 
     // Assign encoder and decoder based on join order
     const encoder = players[0];
     const decoder = players[1];
 
     const handleReadyToggle = () => {
-        playButtonSound();
+        triggerGameHaptics();
         setLoading(true);
         setError(null);
         try {
@@ -37,7 +38,7 @@ const RoomScreen = () => {
     };
 
     const handleLeave = () => {
-        playButtonSound();
+        triggerButtonHaptics();
         leaveRoom();
         useGameStore.getState().setCurrentScreen('lobby');
         useGameStore.getState().setRoomId(null);

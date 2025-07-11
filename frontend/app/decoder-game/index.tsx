@@ -3,15 +3,18 @@ import {
     Alert,
     Animated,
     ImageBackground,
+    Keyboard,
     KeyboardAvoidingView,
     Platform,
     StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
+    TouchableWithoutFeedback,
     View
 } from 'react-native';
 import decoderBg from '../../assets/images/decoder.png';
+import { useActionHaptics, useButtonHaptics } from '../../hooks/useHaptics';
 import { useSendSound } from '../../hooks/useSendSound';
 import { emitTypingStart, emitTypingStop, leaveRoom, submitGuess } from '../../services/websocket';
 import { useGameStore } from '../../store/gameStore';
@@ -38,6 +41,8 @@ const DecoderGameScreen = () => {
     const [guessInput, setGuessInput] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const playSendSound = useSendSound();
+    const triggerActionHaptics = useActionHaptics();
+    const triggerButtonHaptics = useButtonHaptics();
 
     const handleSubmitGuess = async () => {
         if (!guessInput.trim() || !canSubmitGuess || isSubmitting) {
@@ -45,8 +50,10 @@ const DecoderGameScreen = () => {
         }
 
         setIsSubmitting(true);
-        // Play sound immediately without awaiting
+        // Play sound and haptics immediately without awaiting
         playSendSound();
+
+        triggerActionHaptics();
 
         try {
             await submitGuess(guessInput.trim());
@@ -59,6 +66,7 @@ const DecoderGameScreen = () => {
     };
 
     const handleAbort = () => {
+        triggerButtonHaptics();
         leaveRoom();
         useGameStore.getState().setCurrentScreen('lobby');
         useGameStore.getState().setRoomId(null);
@@ -144,18 +152,34 @@ const DecoderGameScreen = () => {
                     style={styles.container}
                     behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 >
-                    <View style={styles.topRow}>
-                        <TouchableOpacity style={styles.abortButton} onPress={handleAbort}>
-                            <Text style={styles.abortButtonText}>Abort</Text>
-                        </TouchableOpacity>
+                    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
                         <View style={{ flex: 1 }}>
-                            <ScoreProgressBar
-                                score={score}
-                                maxScore={6}
-                                aiWinsScore={0}
-                                humansWinScore={6}
-                            />
+                            <View style={styles.topRow}>
+                                <TouchableOpacity style={styles.abortButton} onPress={handleAbort}>
+                                    <Text style={styles.abortButtonText}>Abort</Text>
+                                </TouchableOpacity>
+                                <View style={{ flex: 1 }}>
+                                    <ScoreProgressBar
+                                        score={score}
+                                        maxScore={6}
+                                        aiWinsScore={0}
+                                        humansWinScore={6}
+                                    />
+                                </View>
+                                <Animated.View style={[getTimerStyle(), { opacity: flashAnim }]}>
+                                    <Text style={styles.timerText}>{formatTimerDisplay(remainingTime)}</Text>
+                                </Animated.View>
+                            </View>
+                            <View style={styles.content}>
+                                <AISectionComponent
+                                    currentTurn={currentTurn}
+                                    conversationHistory={conversationHistory}
+                                    currentPlayerId={player?.id}
+                                    conversationHistoryProps={{ emptySubtext: 'Waiting for the encoder to send a clue' }}
+                                />
+                            </View>
                         </View>
+
                         <Animated.View style={[getTimerStyle(), { opacity: flashAnim }]}>
                             <Text style={styles.timerText}>{formatTimerDisplay(remainingTime)}</Text>
                         </Animated.View>
@@ -176,6 +200,9 @@ const DecoderGameScreen = () => {
                             isVisible={!!(typingIndicator && typingIndicator.isTyping && typingIndicator.role !== playerRole)}
                         />
                     </View>
+
+
+                    </TouchableWithoutFeedback>
 
                     <View style={styles.inputContainer}>
                         <TextInput

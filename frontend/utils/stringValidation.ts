@@ -50,21 +50,7 @@ export function levenshteinDistance(str1: string, str2: string): number {
 export function isMessageTooSimilar(message: string, secretWord: string, maxDistance: number = 2): boolean {
     if (!secretWord || !message.trim()) return false;
     
-    // Check if the message contains the exact secret word
-    if (message.toLowerCase().includes(secretWord.toLowerCase())) {
-        return true;
-    }
-    
-    // Check each word in the message against the secret word
-    const words = message.toLowerCase().split(/\s+/);
-    for (const word of words) {
-        if (word.length >= 3) { // Only check words with 3+ characters
-            const distance = levenshteinDistance(word, secretWord);
-            if (distance <= maxDistance) {
-                return true;
-            }
-        }
-    }
-    
-    return false;
+    // Check Levenshtein distance between the entire message and the secret word
+    const distance = levenshteinDistance(message.trim().toLowerCase(), secretWord.toLowerCase());
+    return distance <= maxDistance;
 } 
