@@ -178,30 +178,15 @@ const DecoderGameScreen = () => {
                                     conversationHistoryProps={{ emptySubtext: 'Waiting for the encoder to send a clue' }}
                                 />
                             </View>
+
+                            {/* Typing indicator above input field */}
+                            <View style={styles.typingIndicatorContainer}>
+                                <TypingIndicator
+                                    role={(typingIndicator?.role || 'decoder') as 'encoder' | 'decoder'}
+                                    isVisible={!!(typingIndicator && typingIndicator.isTyping && typingIndicator.role !== playerRole)}
+                                />
+                            </View>
                         </View>
-
-                        <Animated.View style={[getTimerStyle(), { opacity: flashAnim }]}>
-                            <Text style={styles.timerText}>{formatTimerDisplay(remainingTime)}</Text>
-                        </Animated.View>
-                    </View>
-                    <View style={styles.content}>
-                        <AISectionComponent
-                            currentTurn={currentTurn}
-                            conversationHistory={conversationHistory}
-                            currentPlayerId={player?.id}
-                            conversationHistoryProps={{ emptySubtext: 'Waiting for the encoder to send a clue' }}
-                        />
-                    </View>
-
-                    {/* Typing indicator above input field */}
-                    <View style={styles.typingIndicatorContainer}>
-                        <TypingIndicator
-                            role={(typingIndicator?.role || 'decoder') as 'encoder' | 'decoder'}
-                            isVisible={!!(typingIndicator && typingIndicator.isTyping && typingIndicator.role !== playerRole)}
-                        />
-                    </View>
-
-
                     </TouchableWithoutFeedback>
 
                     <View style={styles.inputContainer}>

@@ -203,31 +203,15 @@ const EncoderGameScreen = () => {
                             </View>
                             {/* Secret word above input field */}
                             <SecretWordContainer secretWord={secretWord || undefined} />
+
+                            {/* Typing indicator above input field */}
+                            <View style={styles.typingIndicatorContainer}>
+                                <TypingIndicator
+                                    role={(typingIndicator?.role || 'encoder') as 'encoder' | 'decoder'}
+                                    isVisible={!!(typingIndicator && typingIndicator.isTyping && typingIndicator.role !== playerRole)}
+                                />
+                            </View>
                         </View>
-                      
-                        <Animated.View style={[getTimerStyle(), { opacity: flashAnim }]}>
-                            <Text style={styles.timerText}>{formatTimerDisplay(remainingTime)}</Text>
-                        </Animated.View>
-                    </View>
-                    <View style={styles.content}>
-                        <AISectionComponent
-                            currentTurn={currentTurn}
-                            conversationHistory={conversationHistory}
-                            currentPlayerId={player?.id}
-                        />
-                    </View>
-
-                    {/* Secret word above input field */}
-                    <SecretWordContainer secretWord={secretWord || undefined} />
-
-                    {/* Typing indicator above input field */}
-                    <View style={styles.typingIndicatorContainer}>
-                        <TypingIndicator
-                            role={(typingIndicator?.role || 'encoder') as 'encoder' | 'decoder'}
-                            isVisible={!!(typingIndicator && typingIndicator.isTyping && typingIndicator.role !== playerRole)}
-                        />
-                    </View>
-
                     </TouchableWithoutFeedback>
 
                     <View style={styles.inputContainer}>
