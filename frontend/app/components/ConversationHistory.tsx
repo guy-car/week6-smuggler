@@ -66,6 +66,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         color: '#fff',
         textAlign: 'center',
+        fontFamily: 'Audiowide',
     },
     listContent: {
         paddingHorizontal: 16,

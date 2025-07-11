@@ -104,10 +104,10 @@ const styles = StyleSheet.create({
         color: '#fff',
         letterSpacing: 2,
         marginTop: 24,
-        fontFamily: 'monospace',
         textShadowColor: '#000',
         textShadowOffset: { width: 2, height: 2 },
         textShadowRadius: 8,
+        fontFamily: 'Audiowide',
     },
     subheader: {
         fontSize: 16,

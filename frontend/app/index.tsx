@@ -10,6 +10,7 @@ import LobbyScreen from './lobby';
 import RoomScreen from './room';
 
 const App = () => {
+    // --- All original websocket/app logic below ---
     const {
         currentScreen,
         connected,
@@ -43,7 +44,7 @@ const App = () => {
         return (
             <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color="#007AFF" />
-                <Text style={styles.loadingText}>Connecting to server...</Text>
+                <Text style={[styles.loadingText, { fontFamily: 'Audiowide' }]}>Connecting to server...</Text>
             </View>
         );
     }

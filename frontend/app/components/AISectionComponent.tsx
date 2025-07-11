@@ -170,6 +170,8 @@ const styles = StyleSheet.create({
         color: '#fff',
         textAlign: 'center',
         flex: 1,
+        fontFamily: 'Audiowide',
+        marginBottom: 4,
     },
     timerContainer: {
         paddingHorizontal: 10,
@@ -221,7 +223,7 @@ const styles = StyleSheet.create({
     thinkingText: {
         fontSize: 15,
         color: '#00FFF0',
-        fontFamily: 'monospace',
+        fontFamily: 'VT323',
         textShadowColor: '#00FFF0',
         textShadowOffset: { width: 0, height: 0 },
         textShadowRadius: 8,
