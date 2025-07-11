@@ -80,9 +80,9 @@ const DecoderGameScreen = () => {
                     <View style={{ flex: 1, marginTop: 30 }}>
                         <ScoreProgressBar
                             score={score}
-                            maxScore={10}
+                            maxScore={6}
                             aiWinsScore={0}
-                            humansWinScore={10}
+                            humansWinScore={6}
                         />
                     </View>
                 </View>

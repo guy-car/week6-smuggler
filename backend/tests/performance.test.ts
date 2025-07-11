@@ -83,7 +83,7 @@ describe('Performance Validation Tests', () => {
             // Verify game state is created
             const room = roomManager.getRoom(roomId);
             expect(room?.gameState).toBeDefined();
-            expect(room?.gameState?.score).toBe(5); // Initial score
+            expect(room?.gameState?.score).toBe(3); // Initial score
             expect(room?.gameState?.currentTurn).toBe('encoder');
 
             // Send a message

@@ -11,7 +11,7 @@ describe('Game Logic Validation', () => {
     describe('validateConversationFlow', () => {
         it('should return valid for proper conversation flow', () => {
             const gameState: GameState = {
-                score: 5,
+                score: 3,
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [
@@ -31,7 +31,7 @@ describe('Game Logic Validation', () => {
 
         it('should return invalid when game is not active', () => {
             const gameState: GameState = {
-                score: 5,
+                score: 3,
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [],
@@ -47,7 +47,7 @@ describe('Game Logic Validation', () => {
 
         it('should return invalid when conversation has not started', () => {
             const gameState: GameState = {
-                score: 5,
+                score: 3,
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [],
@@ -63,7 +63,7 @@ describe('Game Logic Validation', () => {
 
         it('should return invalid when AI has not made guesses', () => {
             const gameState: GameState = {
-                score: 5,
+                score: 3,
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [
@@ -81,7 +81,7 @@ describe('Game Logic Validation', () => {
 
         it('should return invalid when not enough messages', () => {
             const gameState: GameState = {
-                score: 5,
+                score: 3,
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [
@@ -106,7 +106,7 @@ describe('Game Logic Validation', () => {
 
         it('should return valid for encoder sending message on their turn', () => {
             const gameState: GameState = {
-                score: 5,
+                score: 3,
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [],
@@ -122,7 +122,7 @@ describe('Game Logic Validation', () => {
 
         it('should return invalid when encoder tries to send message on wrong turn', () => {
             const gameState: GameState = {
-                score: 5,
+                score: 3,
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [],
@@ -138,7 +138,7 @@ describe('Game Logic Validation', () => {
 
         it('should return invalid when wrong player tries to send message', () => {
             const gameState: GameState = {
-                score: 5,
+                score: 3,
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [],
@@ -154,7 +154,7 @@ describe('Game Logic Validation', () => {
 
         it('should return valid for decoder making guess on their turn', () => {
             const gameState: GameState = {
-                score: 5,
+                score: 3,
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [],
@@ -170,7 +170,7 @@ describe('Game Logic Validation', () => {
 
         it('should return invalid when decoder tries to guess on wrong turn', () => {
             const gameState: GameState = {
-                score: 5,
+                score: 3,
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [],
@@ -186,7 +186,7 @@ describe('Game Logic Validation', () => {
 
         it('should return invalid when wrong player tries to guess', () => {
             const gameState: GameState = {
-                score: 5,
+                score: 3,
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [],
@@ -204,7 +204,7 @@ describe('Game Logic Validation', () => {
     describe('validateGameStateConsistency', () => {
         it('should return valid for consistent game state', () => {
             const gameState: GameState = {
-                score: 5,
+                score: 3,
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [
@@ -223,7 +223,7 @@ describe('Game Logic Validation', () => {
 
         it('should return invalid when score is out of range', () => {
             const gameState: GameState = {
-                score: 15,
+                score: 7,
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [],
@@ -234,12 +234,12 @@ describe('Game Logic Validation', () => {
 
             const result = gameLogic.validateGameStateConsistency(gameState);
             expect(result.valid).toBe(false);
-            expect(result.errors).toContain('Score is out of bounds (0-10)');
+            expect(result.errors).toContain('Score is out of bounds (0-6)');
         });
 
         it('should return invalid when current round is invalid', () => {
             const gameState: GameState = {
-                score: 5,
+                score: 3,
                 currentRound: 0,
                 secretWord: 'apple',
                 conversationHistory: [],
@@ -255,7 +255,7 @@ describe('Game Logic Validation', () => {
 
         it('should return invalid when secret word is empty', () => {
             const gameState: GameState = {
-                score: 5,
+                score: 3,
                 currentRound: 1,
                 secretWord: '',
                 conversationHistory: [],
@@ -270,7 +270,7 @@ describe('Game Logic Validation', () => {
 
         it('should return invalid when turn order is inconsistent', () => {
             const gameState: GameState = {
-                score: 5,
+                score: 3,
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [
@@ -288,7 +288,7 @@ describe('Game Logic Validation', () => {
 
         it('should return invalid when turn numbers are not sequential', () => {
             const gameState: GameState = {
-                score: 5,
+                score: 3,
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [
@@ -308,7 +308,7 @@ describe('Game Logic Validation', () => {
     describe('getConversationHistory', () => {
         it('should return conversation history as Turn array', () => {
             const gameState: GameState = {
-                score: 5,
+                score: 3,
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [
@@ -330,7 +330,7 @@ describe('Game Logic Validation', () => {
     describe('getAITurns', () => {
         it('should return only AI turns from conversation history', () => {
             const gameState: GameState = {
-                score: 5,
+                score: 3,
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [

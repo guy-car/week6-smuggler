@@ -321,8 +321,8 @@ export class GameLogic {
         const errors: string[] = [];
 
         // Check score bounds
-        if (gameState.score < 0 || gameState.score > 10) {
-            errors.push('Score is out of bounds (0-10)');
+        if (gameState.score < 0 || gameState.score > 6) {
+            errors.push('Score is out of bounds (0-6)');
         }
 
         // Check round number
@@ -331,12 +331,12 @@ export class GameLogic {
         }
 
         // Check if game ended but status is still active
-        if ((gameState.score >= 10 || gameState.score <= 0) && gameState.gameStatus === 'active') {
+        if ((gameState.score >= 6 || gameState.score <= 0) && gameState.gameStatus === 'active') {
             errors.push('Game should be ended but status is still active');
         }
 
         // Check if game is ended but score is in valid range
-        if (gameState.gameStatus === 'ended' && gameState.score > 0 && gameState.score < 10) {
+        if (gameState.gameStatus === 'ended' && gameState.score > 0 && gameState.score < 6) {
             errors.push('Game is ended but score is not at win/lose condition');
         }
 

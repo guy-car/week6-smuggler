@@ -27,7 +27,7 @@ router.post('/analyze', async (req: Request, res: Response) => {
         const aiResponse = await aiService.analyzeConversation(
             conversationHistory,
             'mock-secret-word', // Mock secret word for now
-            { currentRound: 1, score: 5, gameStatus: 'active' }
+            { currentRound: 1, score: 3, gameStatus: 'active' }
         );
 
         // Validate AI response using Zod schema

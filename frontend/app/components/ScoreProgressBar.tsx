@@ -22,8 +22,8 @@ const getCircleColor = (score: number, aiWinsScore: number, humansWinScore: numb
 const ScoreProgressBar: React.FC<ScoreProgressBarProps> = ({
     score,
     maxScore,
-    aiWinsScore,
-    humansWinScore,
+    aiWinsScore = 0,
+    humansWinScore = 6,
     isInModal = false,
 }) => {
     // Dynamic range based on aiWinsScore and humansWinScore
@@ -41,7 +41,7 @@ const ScoreProgressBar: React.FC<ScoreProgressBarProps> = ({
     return (
         <View style={styles.wrapper}>
             {/* Background overlay - only show when not in modal */}
-            
+
             <View style={styles.container}>
                 {/* Top labels */}
                 <View style={styles.labelsRow}>
