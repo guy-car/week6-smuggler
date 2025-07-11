@@ -4,8 +4,8 @@ import { GameStatus } from '../../store/gameStore';
 
 interface GameStatusIndicatorProps {
     gameStatus: GameStatus;
-    currentTurn: 'encryptor' | 'ai' | 'decryptor' | null;
-    playerRole: 'encryptor' | 'decryptor' | null;
+    currentTurn: 'encoder' | 'ai' | 'decoder' | null;
+    playerRole: 'encoder' | 'decoder' | null;
     round: number;
     maxRounds: number;
     isLoading?: boolean;

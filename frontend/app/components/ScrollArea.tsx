@@ -8,8 +8,8 @@ const introText: TextPart[] = [
   'Resistance hackers have discovered ultra secret exploit codes.',
   'They\'re disguised as everyday words, 3-12 characters long.',
   'The AI monitors every communication, analyzing for threats.',
-  ['', 'Outsider', ': Send hints about your secret word.'],
-  ['', 'Insider', ': Decode the word before the AI does.'],
+  ['', 'Encoder', ': Send hints about your secret word.'],
+  ['', 'Decoder', ': Decode the word before the AI does.'],
   'Each point pulls the battle your way—or theirs.'
 ];
 

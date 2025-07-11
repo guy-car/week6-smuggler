@@ -3,8 +3,8 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { getSocket } from '../services/websocket';
 import { useGameStore } from '../store/gameStore';
 import ConnectionErrorScreen from './components/ConnectionErrorScreen';
-import DecryptorGameScreen from './decryptor-game';
-import EncryptorGameScreen from './encryptor-game';
+import DecoderGameScreen from './decoder-game';
+import EncoderGameScreen from './encoder-game';
 import GameEndScreen from './game-end';
 import LobbyScreen from './lobby';
 import RoomScreen from './room';
@@ -59,10 +59,10 @@ const App = () => {
             return <LobbyScreen />;
         case 'room':
             return <RoomScreen />;
-        case 'encryptor-game':
-            return <EncryptorGameScreen />;
-        case 'decryptor-game':
-            return <DecryptorGameScreen />;
+        case 'encoder-game':
+            return <EncoderGameScreen />;
+        case 'decoder-game':
+            return <DecoderGameScreen />;
         case 'game-end':
             return <GameEndScreen />;
         default:

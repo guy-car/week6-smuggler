@@ -143,7 +143,7 @@ interface Player {
   id: string;           // Unique player identifier
   name: string;         // Display name
   ready: boolean;       // Ready status
-  role: 'encryptor' | 'decryptor' | null;  // Game role
+  role: 'encoder' | 'decoder' | null;  // Game role
   socketId: string;     // Socket.IO connection ID
 }
 ```
@@ -166,7 +166,7 @@ interface GameState {
   currentRound: number; // Current round number
   secretWord: string;   // Word to be guessed
   conversationHistory: Turn[];  // Game conversation
-  currentTurn: 'encryptor' | 'ai' | 'decryptor';  // Whose turn
+  currentTurn: 'encoder' | 'ai' | 'decoder';  // Whose turn
   gameStatus: 'waiting' | 'active' | 'ended';     // Game status
 }
 ```
@@ -259,10 +259,10 @@ The game implements a ready-up system where both players must mark themselves as
 3. **Player Ready**: Players mark themselves ready using the ready-up mechanic
 4. **Room Ready**: When all players ready, room becomes ready state
 5. **Game Start**: First player can start game when room is ready
-6. **Role Assignment**: Players assigned encryptor/decryptor roles
+6. **Role Assignment**: Players assigned encoder/decoder roles
 7. **Word Selection**: Secret word chosen from word list
-8. **Turn-based Play**: Alternating turns between encryptor, AI, decryptor
-9. **Game End**: When decryptor guesses correctly or round limit reached
+8. **Turn-based Play**: Alternating turns between encoder, AI, decoder
+9. **Game End**: When decoder guesses correctly or round limit reached
 
 ## Error Handling
 

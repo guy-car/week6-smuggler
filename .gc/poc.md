@@ -33,11 +33,11 @@ Response: { thinking: string[], guess: string }
 // Using Zod for runtime schema validation
 import { z } from 'zod';
 
-const TurnTypeSchema = z.enum(['outsider_hint', 'ai_analysis', 'insider_guess']);
+const TurnTypeSchema = z.enum(['encoder_hint', 'ai_analysis', 'decoder_guess']);
 
-// Outsider's hint
-const OutsiderTurnSchema = z.object({
-  type: z.literal('outsider_hint'),
+// Encoder's hint
+const EncoderTurnSchema = z.object({
+  type: z.literal('encoder_hint'),
   content: z.string(),
   turnNumber: z.number().int().positive().optional()
     .describe('Optional: Sequential turn number (being phased out)')
@@ -52,9 +52,9 @@ const AITurnSchema = z.object({
     .describe('Optional: Sequential turn number (being phased out)')
 });
 
-// Insider's guess (only failed guesses appear in history)
-const InsiderTurnSchema = z.object({
-  type: z.literal('insider_guess'),
+// Decoder's guess (only failed guesses appear in history)
+const DecoderTurnSchema = z.object({
+  type: z.literal('decoder_guess'),
   guess: z.string().min(3).max(12),
   turnNumber: z.number().int().positive().optional()
     .describe('Optional: Sequential turn number (being phased out)')
@@ -64,27 +64,27 @@ const InsiderTurnSchema = z.object({
 const AnalyzeRequestSchema = z.object({
   gameId: z.string(),
   conversationHistory: z.array(z.discriminatedUnion('type', [
-    OutsiderTurnSchema,
+    EncoderTurnSchema,
     AITurnSchema,
-    InsiderTurnSchema
+    DecoderTurnSchema
   ]))
   .refine(
     turns => {
-      // Verify turns alternate correctly: outsider -> ai -> insider -> ai -> outsider
+      // Verify turns alternate correctly: encoder -> ai -> decoder -> ai -> encoder
       return turns.every((turn, idx) => {
-        if (idx === 0) return turn.type === 'outsider_hint';
+        if (idx === 0) return turn.type === 'encoder_hint';
         const prevType = turns[idx - 1].type;
         switch (turn.type) {
-          case 'outsider_hint':
+          case 'encoder_hint':
             return prevType === 'ai_analysis';
           case 'ai_analysis':
-            return prevType === 'outsider_hint' || prevType === 'insider_guess';
-          case 'insider_guess':
+            return prevType === 'encoder_hint' || prevType === 'decoder_guess';
+          case 'decoder_guess':
             return prevType === 'ai_analysis';
         }
       });
     },
-    { message: "Turns must follow pattern: outsider -> ai -> insider -> ai -> outsider" }
+    { message: "Turns must follow pattern: encoder -> ai -> decoder -> ai -> encoder" }
   )
 });
 ```
@@ -96,14 +96,14 @@ const AnalyzeRequestSchema = z.object({
 - **Response**: Guaranteed schema compliance via Zod validation
 
 ### 4. Game Flow
-1. **Outsider Turn**: Sends hint
+1. **Encoder Turn**: Sends hint
 2. **AI Turn**: Analyzes and guesses
    - If correct → Game Over
    - If incorrect → Continue
-3. **Insider Turn**: Makes guess
+3. **Decoder Turn**: Makes guess
    - If correct → Game Over
    - If incorrect → Guess added to history
-4. Loop back to Outsider Turn
+4. Loop back to Encoder Turn
 
 ---
 
@@ -147,7 +147,7 @@ const AnalyzeRequestSchema = z.object({
    - Update game handlers to use real OpenAI service
    - Convert game state to use Turn[] format  
    - Implement turn sequence logic in game handlers
-   - Update role mapping: encryptor→outsider, decryptor→insider
+   - Update role mapping: encryptor→encoder, decryptor→decoder
    - Remove complex game state persistence
 
 ### Example Game Flow
@@ -155,7 +155,7 @@ const AnalyzeRequestSchema = z.object({
 // Example conversation history
 const mockHistory = [
   { 
-    type: 'outsider_hint',
+    type: 'encoder_hint',
     content: 'It grows in gardens'
   },
   {
@@ -169,7 +169,7 @@ const mockHistory = [
     guess: "tomato"
   },
   {
-    type: 'insider_guess',
+    type: 'decoder_guess',
     guess: "carrot"
   }
 ];

@@ -4,8 +4,8 @@
 This checklist covers the implementation of the correct 4-step turn cycle for the Smuggler word-guessing game. The current implementation has a bug where the turn advancement logic uses a 3-step cycle instead of the required 4-step cycle.
 
 ## Current Problem
-- **Current turn cycle**: `encryptor → ai → decryptor → encryptor` (3-step cycle)
-- **Required turn cycle**: `encryptor → ai → decryptor → ai → encryptor` (4-step cycle)
+- **Current turn cycle**: `encoder → ai → decoder → encoder` (3-step cycle)
+- **Required turn cycle**: `encoder → ai → decoder → ai → encoder` (4-step cycle)
 - **Root cause**: The `advanceTurn` method in `GameStateManager` uses a simple array rotation instead of implementing the correct 4-step logic
 
 ## Implementation Checklist
@@ -19,7 +19,7 @@ This checklist covers the implementation of the correct 4-step turn cycle for th
 **Current Implementation**:
 ```typescript
 public advanceTurn(gameState: GameState): GameState {
-    const turnOrder: ('encryptor' | 'ai' | 'decryptor')[] = ['encryptor', 'ai', 'decryptor'];
+    const turnOrder: ('encoder' | 'ai' | 'decoder')[] = ['encoder', 'ai', 'decoder'];
     const currentIndex = turnOrder.indexOf(gameState.currentTurn);
     const nextIndex = (currentIndex + 1) % turnOrder.length;
 
@@ -33,26 +33,26 @@ public advanceTurn(gameState: GameState): GameState {
 **Required Changes**:
 - [ ] Replace the simple array rotation with explicit 4-step cycle logic
 - [ ] Implement the correct turn progression:
-  - `encryptor` → `ai`
-  - `ai` → `decryptor` 
-  - `decryptor` → `ai`
-  - `ai` → `encryptor`
+  - `encoder` → `ai`
+  - `ai` → `decoder` 
+  - `decoder` → `ai`
+  - `ai` → `encoder`
 - [ ] Add comprehensive logging for turn transitions
 - [ ] Add validation to ensure turn progression follows the 4-step cycle
 
 **New Implementation**:
 ```typescript
 public advanceTurn(gameState: GameState): GameState {
-    let nextTurn: 'encryptor' | 'ai' | 'decryptor';
+    let nextTurn: 'encoder' | 'ai' | 'decoder';
     
     switch (gameState.currentTurn) {
-        case 'encryptor':
+        case 'encoder':
             nextTurn = 'ai';
             break;
         case 'ai':
-            nextTurn = 'decryptor';
+            nextTurn = 'decoder';
             break;
-        case 'decryptor':
+        case 'decoder':
             nextTurn = 'ai';
             break;
         default:
@@ -68,13 +68,13 @@ public advanceTurn(gameState: GameState): GameState {
 }
 ```
 
-#### 2. Update GameLogic.handleDecryptorGuess Method
+#### 2. Update GameLogic.handleDecoderGuess Method
 **File**: `backend/src/game/logic.ts`
 **Status**: ❌ **NOT STARTED**
 
 **Current Implementation**:
 ```typescript
-// For incorrect decryptor guess, we want to go back to AI, not to encryptor
+// For incorrect decoder guess, we want to go back to AI, not to encoder
 const updatedGameState = {
     ...messageAdded,
     currentTurn: 'ai' as const
@@ -105,7 +105,7 @@ const nextGameState = this.gameStateManager.advanceTurn(updatedGameState);
 **Required Changes**:
 - [ ] Verify that the advanceTurn method now correctly advances to the next player in the 4-step cycle
 - [ ] Add logging to track turn transitions
-- [ ] Ensure AI responses after decryptor guesses advance to encryptor (not decryptor)
+- [ ] Ensure AI responses after decoder guesses advance to encoder (not decoder)
 
 #### 4. Update GameHandlers.handleAIFallback Method
 **File**: `backend/src/socket/handlers/gameHandlers.ts`
@@ -123,7 +123,7 @@ const nextGameState = this.gameStateManager.advanceTurn(updatedGameState);
 
 **Required Changes**:
 - [ ] Update `advanceTurn` tests to verify 4-step cycle instead of 3-step cycle
-- [ ] Add test cases for the complete 4-step cycle: `encryptor → ai → decryptor → ai → encryptor`
+- [ ] Add test cases for the complete 4-step cycle: `encoder → ai → decoder → ai → encoder`
 - [ ] Add test cases for edge cases and error conditions
 - [ ] Verify that turn progression is correct after each step
 
@@ -133,24 +133,24 @@ describe('advanceTurn', () => {
     it('should follow 4-step cycle correctly', () => {
         const gameState = gameStateManager.createGameState('TestWord', []);
         
-        // Start with encryptor
-        expect(gameState.currentTurn).toBe('encryptor');
+        // Start with encoder
+        expect(gameState.currentTurn).toBe('encoder');
         
-        // encryptor → ai
+        // encoder → ai
         let currentState = gameStateManager.advanceTurn(gameState);
         expect(currentState.currentTurn).toBe('ai');
         
-        // ai → decryptor
+        // ai → decoder
         currentState = gameStateManager.advanceTurn(currentState);
-        expect(currentState.currentTurn).toBe('decryptor');
+        expect(currentState.currentTurn).toBe('decoder');
         
-        // decryptor → ai
+        // decoder → ai
         currentState = gameStateManager.advanceTurn(currentState);
         expect(currentState.currentTurn).toBe('ai');
         
-        // ai → encryptor (cycle repeats)
+        // ai → encoder (cycle repeats)
         currentState = gameStateManager.advanceTurn(currentState);
-        expect(currentState.currentTurn).toBe('encryptor');
+        expect(currentState.currentTurn).toBe('encoder');
     });
 });
 ```
@@ -160,9 +160,9 @@ describe('advanceTurn', () => {
 **Status**: ❌ **NOT STARTED**
 
 **Required Changes**:
-- [ ] Update `handleDecryptorGuess` tests to verify correct turn advancement
+- [ ] Update `handleDecoderGuess` tests to verify correct turn advancement
 - [ ] Add test cases for the complete game flow with 4-step cycle
-- [ ] Verify that AI responses after decryptor guesses advance to encryptor
+- [ ] Verify that AI responses after decoder guesses advance to encoder
 
 #### 7. Update Integration Tests
 **File**: `backend/tests/integration.test.ts`
@@ -170,8 +170,8 @@ describe('advanceTurn', () => {
 
 **Required Changes**:
 - [ ] Add comprehensive integration tests for the complete 4-step cycle
-- [ ] Test the full game flow: encryptor → ai → decryptor → ai → encryptor
-- [ ] Verify that AI responses are triggered correctly after both encryptor messages and decryptor guesses
+- [ ] Test the full game flow: encoder → ai → decoder → ai → encoder
+- [ ] Verify that AI responses are triggered correctly after both encoder messages and decoder guesses
 - [ ] Test edge cases and error conditions
 
 ### 🔍 Frontend Verification
@@ -195,8 +195,8 @@ describe('advanceTurn', () => {
 
 **Required Changes**:
 - [ ] Test the complete game flow manually
-- [ ] Verify that AI responds after both encryptor messages and decryptor guesses
-- [ ] Ensure the turn cycle repeats correctly: encryptor → ai → decryptor → ai → encryptor
+- [ ] Verify that AI responds after both encoder messages and decoder guesses
+- [ ] Ensure the turn cycle repeats correctly: encoder → ai → decoder → ai → encoder
 - [ ] Test edge cases like correct guesses and round transitions
 
 ### 📋 Validation Checklist

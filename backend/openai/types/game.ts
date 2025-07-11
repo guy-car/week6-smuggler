@@ -2,25 +2,25 @@ import { z } from 'zod';
 
 /**
  * Type of turn in the conversation:
- * - outsider_hint: A hint message from the outsider trying to communicate the secret
+ * - encoder_hint: A hint message from the encoder trying to communicate the secret
  * - ai_analysis: AI's analysis of the conversation with thinking and guess
- * - insider_guess: Insider's attempt to guess the secret word (only failed guesses appear in history)
+ * - decoder_guess: Decoder's attempt to guess the secret word (only failed guesses appear in history)
  */
-export const TurnTypeSchema = z.enum(['outsider_hint', 'ai_analysis', 'insider_guess']);
+export const TurnTypeSchema = z.enum(['encoder_hint', 'ai_analysis', 'decoder_guess']);
 export type TurnType = z.infer<typeof TurnTypeSchema>;
 
 /**
- * Outsider's hint in the conversation
+ * Encoder's hint in the conversation
  */
-export const OutsiderTurnSchema = z.object({
-  type: z.literal('outsider_hint'),
+export const EncoderTurnSchema = z.object({
+  type: z.literal('encoder_hint'),
   content: z.string()
-    .describe('The hint message from the outsider'),
+    .describe('The hint message from the encoder'),
   turnNumber: z.number().int().positive()
     .describe('Sequential turn number')
     .optional()
 });
-export type OutsiderTurn = z.infer<typeof OutsiderTurnSchema>;
+export type EncoderTurn = z.infer<typeof EncoderTurnSchema>;
 
 /**
  * AI's analysis of the conversation
@@ -42,27 +42,27 @@ export const AITurnSchema = z.object({
 export type AITurn = z.infer<typeof AITurnSchema>;
 
 /**
- * Insider's guess attempt
+ * Decoder's guess attempt
  * Note: Only failed guesses appear in conversation history
  * as correct guesses end the game
  */
-export const InsiderTurnSchema = z.object({
-  type: z.literal('insider_guess'),
+export const DecoderTurnSchema = z.object({
+  type: z.literal('decoder_guess'),
   guess: z.string()
-    .describe('Insider\'s guess attempt'),
+    .describe('Decoder\'s guess attempt'),
   turnNumber: z.number().int().positive()
     .describe('Sequential turn number')
     .optional()
 });
-export type InsiderTurn = z.infer<typeof InsiderTurnSchema>;
+export type DecoderTurn = z.infer<typeof DecoderTurnSchema>;
 
 /**
  * Union type for all possible turns
  */
 export const TurnSchema = z.discriminatedUnion('type', [
-  OutsiderTurnSchema,
+  EncoderTurnSchema,
   AITurnSchema,
-  InsiderTurnSchema
+  DecoderTurnSchema
 ]);
 export type Turn = z.infer<typeof TurnSchema>;
 
@@ -75,14 +75,14 @@ export type Turn = z.infer<typeof TurnSchema>;
  * const request = {
  *   gameId: "room123",
  *   conversationHistory: [
- *     // Outsider sends hint
- *     { type: 'outsider_hint', content: "It's red and sweet" },
+ *     // Encoder sends hint
+ *     { type: 'encoder_hint', content: "It's red and sweet" },
  *     
  *     // AI analyzes and guesses
  *     { type: 'ai_analysis', thinking: ["...", "...", "...", "..."], guess: "cherry" },
  *     
- *     // Insider makes wrong guess
- *     { type: 'insider_guess', guess: "apple" }
+ *     // Decoder makes wrong guess
+ *     { type: 'decoder_guess', guess: "apple" }
  *   ]
  * }
  * ```
@@ -108,28 +108,28 @@ export const AIResponseSchema = z.object({
   guess: z.string()
     .min(3).max(12)
 });
-export type AIResponse = z.infer<typeof AIResponseSchema>; 
+export type AIResponse = z.infer<typeof AIResponseSchema>;
 
 export interface RoundSummary {
-    winner: 'players' | 'ai';
-    secretWord: string;
-    conversation: Turn[];
-    round: number;
+  winner: 'players' | 'ai';
+  secretWord: string;
+  conversation: Turn[];
+  round: number;
 }
 
 export interface RoundAnalysis {
-    analysis: string;
-    comment: string;  // Not optional anymore
+  analysis: string;
+  comment: string;  // Not optional anymore
 }
 
 export const RoundSummarySchema = z.object({
-    winner: z.enum(['players', 'ai']),
-    secretWord: z.string(),
-    conversation: z.array(TurnSchema),
-    round: z.number()
+  winner: z.enum(['players', 'ai']),
+  secretWord: z.string(),
+  conversation: z.array(TurnSchema),
+  round: z.number()
 });
 
 export const RoundAnalysisSchema = z.object({
-    analysis: z.string(),
-    comment: z.string()
+  analysis: z.string(),
+  comment: z.string()
 }); 

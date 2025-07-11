@@ -19,7 +19,7 @@ import RoundModal from '../components/RoundModal';
 import ScoreProgressBar from '../components/ScoreProgressBar';
 import SecretWordContainer from './SecretWordContainer';
 
-const EncryptorGameScreen = () => {
+const EncoderGameScreen = () => {
     const {
         conversationHistory,
         currentTurn,
@@ -36,7 +36,7 @@ const EncryptorGameScreen = () => {
     const [messageInput, setMessageInput] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const canSendMessage = currentTurn === 'encryptor' && gameStatus === 'active';
+    const canSendMessage = currentTurn === 'encoder' && gameStatus === 'active';
     const isMyTurn = currentTurn === playerRole;
 
     const handleSendMessage = async () => {
@@ -399,4 +399,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default EncryptorGameScreen; 
+export default EncoderGameScreen; 

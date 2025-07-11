@@ -6,7 +6,7 @@ import AIThinkingSection from './AIThinkingSection';
 import ConversationHistory from './ConversationHistory';
 
 interface AISectionProps {
-    currentTurn: 'encryptor' | 'ai' | 'decryptor' | null;
+    currentTurn: 'encoder' | 'ai' | 'decoder' | null;
     conversationHistory: Turn[];
     currentPlayerId?: string;
     onQuit?: () => void;
@@ -69,7 +69,7 @@ const AISectionComponent: React.FC<AISectionProps> = ({
     const aiAnalysis = latestAITurn ? parseAIContent(latestAITurn.content) : null;
 
     // Only show timer for human turns
-    const showTimer = currentTurn === 'encryptor' || currentTurn === 'decryptor';
+    const showTimer = currentTurn === 'encoder' || currentTurn === 'decoder';
 
     // Timer styling based on remaining time
     const getTimerStyle = () => {

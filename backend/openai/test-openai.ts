@@ -5,13 +5,13 @@ import { Turn } from './types/game';
 const TEST_SCENARIOS = {
   'simple_hint': [
     {
-      type: 'outsider_hint' as const,
+      type: 'encoder_hint' as const,
       content: 'It grows in gardens and is red when ripe'
     }
   ],
   'conversation_with_failed_guesses': [
     {
-      type: 'outsider_hint' as const,
+      type: 'encoder_hint' as const,
       content: 'It grows in gardens and is red when ripe'
     },
     {
@@ -25,17 +25,17 @@ const TEST_SCENARIOS = {
       guess: 'strawberry'
     },
     {
-      type: 'insider_guess' as const,
+      type: 'decoder_guess' as const,
       guess: 'apple'
     },
     {
-      type: 'outsider_hint' as const,
+      type: 'encoder_hint' as const,
       content: 'It has seeds on the inside, not outside'
     }
   ],
   'multiple_rounds': [
     {
-      type: 'outsider_hint' as const,
+      type: 'encoder_hint' as const,
       content: 'You drink it hot in the morning'
     },
     {
@@ -49,11 +49,11 @@ const TEST_SCENARIOS = {
       guess: 'coffee'
     },
     {
-      type: 'insider_guess' as const,
+      type: 'decoder_guess' as const,
       guess: 'tea'
     },
     {
-      type: 'outsider_hint' as const,
+      type: 'encoder_hint' as const,
       content: 'It comes from beans that are roasted'
     },
     {
@@ -67,7 +67,7 @@ const TEST_SCENARIOS = {
       guess: 'coffee'
     },
     {
-      type: 'insider_guess' as const,
+      type: 'decoder_guess' as const,
       guess: 'espresso'
     }
   ]
@@ -106,7 +106,7 @@ async function runTest(scenarioName: string, conversation: Turn[]) {
 
 async function testOpenAIIntegration() {
   console.log('🚀 Starting OpenAI Integration Tests...\n');
-  
+
   let passedTests = 0;
   const totalTests = Object.keys(TEST_SCENARIOS).length;
 
@@ -119,13 +119,13 @@ async function testOpenAIIntegration() {
 
   // Print summary
   console.log(`📊 Test Summary: ${passedTests}/${totalTests} scenarios passed\n`);
-  
+
   // Exit with appropriate code
   if (passedTests !== totalTests) {
     console.error('❌ Some tests failed');
     process.exit(1);
   }
-  
+
   console.log('✅ All tests passed successfully!');
 }
 

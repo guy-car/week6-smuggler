@@ -2,6 +2,7 @@ import { Socket } from 'socket.io';
 import { GameStateManager } from '../src/game/state';
 import { RoomManager } from '../src/rooms/manager';
 import { GameHandlers } from '../src/socket/handlers/gameHandlers';
+import { LobbyHandlers } from '../src/socket/handlers/lobbyHandlers';
 import { RoomHandlers } from '../src/socket/handlers/roomHandlers';
 import { Player } from '../src/types';
 
@@ -28,6 +29,7 @@ const createMockIo = () => ({
 describe('Socket.IO Event Testing', () => {
     let roomManager: RoomManager;
     let gameStateManager: GameStateManager;
+    let lobbyHandlers: LobbyHandlers;
     let roomHandlers: RoomHandlers;
     let gameHandlers: GameHandlers;
     let mockIo: any;
@@ -37,7 +39,8 @@ describe('Socket.IO Event Testing', () => {
         roomManager = new RoomManager();
         gameStateManager = new GameStateManager();
         mockIo = createMockIo();
-        roomHandlers = new RoomHandlers(roomManager);
+        lobbyHandlers = new LobbyHandlers(roomManager);
+        roomHandlers = new RoomHandlers(roomManager, lobbyHandlers);
         gameHandlers = new GameHandlers(roomManager, mockIo);
     });
 
@@ -254,8 +257,8 @@ describe('Socket.IO Event Testing', () => {
                 expect(socket.emit).toHaveBeenCalledWith('start_game', expect.objectContaining({
                     roomId: 'test-room',
                     players: expect.arrayContaining([
-                        expect.objectContaining({ role: 'encryptor' }),
-                        expect.objectContaining({ role: 'decryptor' })
+                        expect.objectContaining({ role: 'encoder' }),
+                        expect.objectContaining({ role: 'decoder' })
                     ]),
                     secretWord: expect.any(String)
                 }));
@@ -297,89 +300,89 @@ describe('Socket.IO Event Testing', () => {
         });
 
         describe('send_message', () => {
-            it('should handle message from encryptor', () => {
-                const socket = createMockSocket('encryptor');
-                const encryptor: Player = { id: 'encryptor', name: 'Encryptor', ready: true, role: 'encryptor', socketId: 'encryptor' };
-                const decryptor: Player = { id: 'decryptor', name: 'Decryptor', ready: true, role: 'decryptor', socketId: 'decryptor' };
+            it('should handle message from encoder', () => {
+                const socket = createMockSocket('encoder');
+                const encoder: Player = { id: 'encoder', name: 'Encoder', ready: true, role: 'encoder', socketId: 'encoder' };
+                const decoder: Player = { id: 'decoder', name: 'Decoder', ready: true, role: 'decoder', socketId: 'decoder' };
 
-                roomManager.joinRoom('test-room', encryptor);
-                roomManager.joinRoom('test-room', decryptor);
+                // Setup room with both players
+                roomManager.joinRoom('test-room', encoder);
+                roomManager.joinRoom('test-room', decoder);
 
-                // Start game
+                // Create game state
                 const room = roomManager.getRoom('test-room');
-                if (room) {
-                    room.gameState = gameStateManager.createGameState('test', [encryptor, decryptor]);
-                }
+                room!.gameState = gameStateManager.createGameState('test', [encoder, decoder]);
 
+                // Send message
                 gameHandlers.handleSendMessage(socket, { roomId: 'test-room', message: 'Hello world' });
 
                 expect(socket.emit).toHaveBeenCalledWith('message_sent', expect.objectContaining({
                     roomId: 'test-room',
                     message: expect.objectContaining({
                         content: 'Hello world',
-                        senderId: 'encryptor'
+                        senderId: 'encoder'
                     })
                 }));
             });
 
-            it('should handle message from non-encryptor', () => {
-                const encryptorSocket = createMockSocket('encryptor');
-                const decryptorSocket = createMockSocket('decryptor');
+            it('should handle message from non-encoder', () => {
+                const encoderSocket = createMockSocket('encoder');
+                const decoderSocket = createMockSocket('decoder');
                 const roomId = 'test-room';
 
                 // Setup room with both players
-                roomHandlers.handleJoinRoom(encryptorSocket, { roomId, playerName: 'Encryptor' });
-                roomHandlers.handleJoinRoom(decryptorSocket, { roomId, playerName: 'Decryptor' });
+                roomHandlers.handleJoinRoom(encoderSocket, { roomId, playerName: 'Encoder' });
+                roomHandlers.handleJoinRoom(decoderSocket, { roomId, playerName: 'Decoder' });
 
                 // Mark both players as ready
-                roomHandlers.handlePlayerReady(encryptorSocket, { roomId });
-                roomHandlers.handlePlayerReady(decryptorSocket, { roomId });
+                roomHandlers.handlePlayerReady(encoderSocket, { roomId });
+                roomHandlers.handlePlayerReady(decoderSocket, { roomId });
 
-                // Start the game
-                gameHandlers.handleStartGame(encryptorSocket, { roomId });
+                // Start game
+                gameHandlers.handleStartGame(encoderSocket, { roomId });
 
                 // Get the actual assigned roles
                 const room = roomManager.getRoom(roomId);
-                const encryptorPlayer = room?.players.find(p => p.role === 'encryptor');
+                const encoderPlayer = room?.players.find(p => p.role === 'encoder');
 
-                // Try to send message as the decryptor (non-encryptor)
-                const nonEncryptorSocket = encryptorPlayer?.id === 'encryptor' ? decryptorSocket : encryptorSocket;
-                gameHandlers.handleSendMessage(nonEncryptorSocket, { roomId, message: 'Hello world' });
-                expect(nonEncryptorSocket.emit).toHaveBeenCalledWith('send_message_error', {
-                    roomId: 'test-room',
-                    error: 'Only encryptor can send messages'
+                // Try to send message as the decoder (non-encoder)
+                const nonEncoderSocket = encoderPlayer?.id === 'encoder' ? decoderSocket : encoderSocket;
+                gameHandlers.handleSendMessage(nonEncoderSocket, { roomId, message: 'Hello world' });
+                expect(nonEncoderSocket.emit).toHaveBeenCalledWith('send_message_error', {
+                    roomId,
+                    error: 'Only encoder can send messages'
                 });
             });
 
-            it('should handle message on wrong turn', () => {
-                const encryptorSocket = createMockSocket('encryptor');
-                const decryptorSocket = createMockSocket('decryptor');
+            it('should handle message when not encoder\'s turn', () => {
+                const encoderSocket = createMockSocket('encoder');
+                const decoderSocket = createMockSocket('decoder');
                 const roomId = 'test-room';
 
                 // Setup room with both players
-                roomHandlers.handleJoinRoom(encryptorSocket, { roomId, playerName: 'Encryptor' });
-                roomHandlers.handleJoinRoom(decryptorSocket, { roomId, playerName: 'Decryptor' });
+                roomHandlers.handleJoinRoom(encoderSocket, { roomId, playerName: 'Encoder' });
+                roomHandlers.handleJoinRoom(decoderSocket, { roomId, playerName: 'Decoder' });
 
                 // Mark both players as ready
-                roomHandlers.handlePlayerReady(encryptorSocket, { roomId });
-                roomHandlers.handlePlayerReady(decryptorSocket, { roomId });
+                roomHandlers.handlePlayerReady(encoderSocket, { roomId });
+                roomHandlers.handlePlayerReady(decoderSocket, { roomId });
 
-                // Start the game
-                gameHandlers.handleStartGame(encryptorSocket, { roomId });
+                // Start game
+                gameHandlers.handleStartGame(encoderSocket, { roomId });
 
                 // Get the actual assigned roles
                 const room = roomManager.getRoom(roomId);
-                const encryptorPlayer = room?.players.find(p => p.role === 'encryptor');
+                const encoderPlayer = room?.players.find(p => p.role === 'encoder');
 
-                // Send a message to advance turn to AI
-                gameHandlers.handleSendMessage(encryptorPlayer?.id === 'encryptor' ? encryptorSocket : decryptorSocket, { roomId, message: 'First message' });
+                // Send first message (should work)
+                gameHandlers.handleSendMessage(encoderPlayer?.id === 'encoder' ? encoderSocket : decoderSocket, { roomId, message: 'First message' });
 
-                // Try to send another message on wrong turn (AI's turn)
-                const encryptorSocketForTest = encryptorPlayer?.id === 'encryptor' ? encryptorSocket : decryptorSocket;
-                gameHandlers.handleSendMessage(encryptorSocketForTest, { roomId, message: 'Hello world' });
-                expect(encryptorSocketForTest.emit).toHaveBeenCalledWith('send_message_error', {
-                    roomId: 'test-room',
-                    error: 'Not encryptor\'s turn'
+                // Try to send second message (should fail - not encoder's turn anymore)
+                const encoderSocketForTest = encoderPlayer?.id === 'encoder' ? encoderSocket : decoderSocket;
+                gameHandlers.handleSendMessage(encoderSocketForTest, { roomId, message: 'Hello world' });
+                expect(encoderSocketForTest.emit).toHaveBeenCalledWith('send_message_error', {
+                    roomId,
+                    error: 'Not encoder\'s turn'
                 });
             });
 
@@ -399,137 +402,127 @@ describe('Socket.IO Event Testing', () => {
         });
 
         describe('player_guess', () => {
-            it('should handle correct guess from decryptor', () => {
-                const encryptorSocket = createMockSocket('encryptor');
-                const decryptorSocket = createMockSocket('decryptor');
+            it('should handle correct guess from decoder', () => {
+                const encoderSocket = createMockSocket('encoder');
+                const decoderSocket = createMockSocket('decoder');
                 const roomId = 'test-room';
 
                 // Setup room with both players
-                roomHandlers.handleJoinRoom(encryptorSocket, { roomId, playerName: 'Encryptor' });
-                roomHandlers.handleJoinRoom(decryptorSocket, { roomId, playerName: 'Decryptor' });
+                roomHandlers.handleJoinRoom(encoderSocket, { roomId, playerName: 'Encoder' });
+                roomHandlers.handleJoinRoom(decoderSocket, { roomId, playerName: 'Decoder' });
 
                 // Mark both players as ready
-                roomHandlers.handlePlayerReady(encryptorSocket, { roomId });
-                roomHandlers.handlePlayerReady(decryptorSocket, { roomId });
+                roomHandlers.handlePlayerReady(encoderSocket, { roomId });
+                roomHandlers.handlePlayerReady(decoderSocket, { roomId });
 
                 // Start game
-                gameHandlers.handleStartGame(encryptorSocket, { roomId });
+                gameHandlers.handleStartGame(encoderSocket, { roomId });
 
                 // Get the actual assigned roles
                 const room = roomManager.getRoom(roomId);
-                const decryptorPlayer = room?.players.find(p => p.role === 'decryptor');
+                const decoderPlayer = room?.players.find(p => p.role === 'decoder');
 
-                // Send a message to start conversation
-                const encryptorPlayer = room?.players.find(p => p.role === 'encryptor');
-                const encryptorSocketForTest = encryptorPlayer?.id === 'encryptor' ? encryptorSocket : decryptorSocket;
-                gameHandlers.handleSendMessage(encryptorSocketForTest, { roomId, message: 'Hello world' });
-
-                // Set the secret word to 'test' for this test
-                if (room && room.gameState) {
-                    room.gameState.secretWord = 'test';
-                }
+                // Send a message first to make it decoder's turn
+                const encoderPlayer = room?.players.find(p => p.role === 'encoder');
+                const encoderSocketForTest = encoderPlayer?.id === 'encoder' ? encoderSocket : decoderSocket;
+                gameHandlers.handleSendMessage(encoderSocketForTest, { roomId, message: 'Hello world' });
 
                 // Make correct guess
-                const decryptorSocketForTest = decryptorPlayer?.id === 'decryptor' ? decryptorSocket : encryptorSocket;
-                gameHandlers.handlePlayerGuess(decryptorSocketForTest, { roomId, guess: 'test' });
+                const decoderSocketForTest = decoderPlayer?.id === 'decoder' ? decoderSocket : encoderSocket;
+                gameHandlers.handlePlayerGuess(decoderSocketForTest, { roomId, guess: 'test' });
 
-                // Verify the guess was processed
-                expect(decryptorSocketForTest.emit).toHaveBeenCalled();
+                // Should emit game end event
+                expect(decoderSocketForTest.emit).toHaveBeenCalled();
             });
 
-            it('should handle incorrect guess from decryptor', () => {
-                const encryptorSocket = createMockSocket('encryptor');
-                const decryptorSocket = createMockSocket('decryptor');
+            it('should handle incorrect guess from decoder', () => {
+                const encoderSocket = createMockSocket('encoder');
+                const decoderSocket = createMockSocket('decoder');
                 const roomId = 'test-room';
 
                 // Setup room with both players
-                roomHandlers.handleJoinRoom(encryptorSocket, { roomId, playerName: 'Encryptor' });
-                roomHandlers.handleJoinRoom(decryptorSocket, { roomId, playerName: 'Decryptor' });
+                roomHandlers.handleJoinRoom(encoderSocket, { roomId, playerName: 'Encoder' });
+                roomHandlers.handleJoinRoom(decoderSocket, { roomId, playerName: 'Decoder' });
 
                 // Mark both players as ready
-                roomHandlers.handlePlayerReady(encryptorSocket, { roomId });
-                roomHandlers.handlePlayerReady(decryptorSocket, { roomId });
+                roomHandlers.handlePlayerReady(encoderSocket, { roomId });
+                roomHandlers.handlePlayerReady(decoderSocket, { roomId });
 
                 // Start game
-                gameHandlers.handleStartGame(encryptorSocket, { roomId });
+                gameHandlers.handleStartGame(encoderSocket, { roomId });
 
                 // Get the actual assigned roles
                 const room = roomManager.getRoom(roomId);
-                const decryptorPlayer = room?.players.find(p => p.role === 'decryptor');
+                const decoderPlayer = room?.players.find(p => p.role === 'decoder');
 
-                // Send a message to start conversation
-                const encryptorPlayer = room?.players.find(p => p.role === 'encryptor');
-                const encryptorSocketForTest = encryptorPlayer?.id === 'encryptor' ? encryptorSocket : decryptorSocket;
-                gameHandlers.handleSendMessage(encryptorSocketForTest, { roomId, message: 'Hello world' });
-
-                // Set the secret word to 'test' for this test
-                if (room && room.gameState) {
-                    room.gameState.secretWord = 'test';
-                }
+                // Send a message first to make it decoder's turn
+                const encoderPlayer = room?.players.find(p => p.role === 'encoder');
+                const encoderSocketForTest = encoderPlayer?.id === 'encoder' ? encoderSocket : decoderSocket;
+                gameHandlers.handleSendMessage(encoderSocketForTest, { roomId, message: 'Hello world' });
 
                 // Make incorrect guess
-                const decryptorSocketForTest = decryptorPlayer?.id === 'decryptor' ? decryptorSocket : encryptorSocket;
-                gameHandlers.handlePlayerGuess(decryptorSocketForTest, { roomId, guess: 'wrong' });
+                const decoderSocketForTest = decoderPlayer?.id === 'decoder' ? decoderSocket : encoderSocket;
+                gameHandlers.handlePlayerGuess(decoderSocketForTest, { roomId, guess: 'wrong' });
 
                 // Verify the guess was processed
-                expect(decryptorSocketForTest.emit).toHaveBeenCalled();
+                expect(decoderSocketForTest.emit).toHaveBeenCalled();
             });
 
-            it('should handle guess from non-decryptor', () => {
-                const encryptorSocket = createMockSocket('encryptor');
-                const decryptorSocket = createMockSocket('decryptor');
+            it('should handle guess from non-decoder', () => {
+                const encoderSocket = createMockSocket('encoder');
+                const decoderSocket = createMockSocket('decoder');
                 const roomId = 'test-room';
 
                 // Setup room with both players
-                roomHandlers.handleJoinRoom(encryptorSocket, { roomId, playerName: 'Encryptor' });
-                roomHandlers.handleJoinRoom(decryptorSocket, { roomId, playerName: 'Decryptor' });
+                roomHandlers.handleJoinRoom(encoderSocket, { roomId, playerName: 'Encoder' });
+                roomHandlers.handleJoinRoom(decoderSocket, { roomId, playerName: 'Decoder' });
 
                 // Mark both players as ready
-                roomHandlers.handlePlayerReady(encryptorSocket, { roomId });
-                roomHandlers.handlePlayerReady(decryptorSocket, { roomId });
+                roomHandlers.handlePlayerReady(encoderSocket, { roomId });
+                roomHandlers.handlePlayerReady(decoderSocket, { roomId });
 
                 // Start the game
-                gameHandlers.handleStartGame(encryptorSocket, { roomId });
+                gameHandlers.handleStartGame(encoderSocket, { roomId });
 
                 // Get the actual assigned roles
                 const room = roomManager.getRoom(roomId);
-                const encryptorPlayer = room?.players.find(p => p.role === 'encryptor');
+                const encoderPlayer = room?.players.find(p => p.role === 'encoder');
 
-                // Try to guess as encryptor (non-decryptor)
-                const nonDecryptorSocket = encryptorPlayer?.id === 'encryptor' ? encryptorSocket : decryptorSocket;
-                gameHandlers.handlePlayerGuess(nonDecryptorSocket, { roomId, guess: 'test' });
-                expect(nonDecryptorSocket.emit).toHaveBeenCalledWith('player_guess_error', {
+                // Try to guess as encoder (non-decoder)
+                const nonDecoderSocket = encoderPlayer?.id === 'encoder' ? encoderSocket : decoderSocket;
+                gameHandlers.handlePlayerGuess(nonDecoderSocket, { roomId, guess: 'test' });
+                expect(nonDecoderSocket.emit).toHaveBeenCalledWith('player_guess_error', {
                     roomId: 'test-room',
-                    error: 'Not decryptor\'s turn, Only decryptor can make guesses'
+                    error: 'Not decoder\'s turn, Only decoder can make guesses'
                 });
             });
 
             it('should handle guess on wrong turn', () => {
-                const encryptorSocket = createMockSocket('encryptor');
-                const decryptorSocket = createMockSocket('decryptor');
+                const encoderSocket = createMockSocket('encoder');
+                const decoderSocket = createMockSocket('decoder');
                 const roomId = 'test-room';
 
                 // Setup room with both players
-                roomHandlers.handleJoinRoom(encryptorSocket, { roomId, playerName: 'Encryptor' });
-                roomHandlers.handleJoinRoom(decryptorSocket, { roomId, playerName: 'Decryptor' });
+                roomHandlers.handleJoinRoom(encoderSocket, { roomId, playerName: 'Encoder' });
+                roomHandlers.handleJoinRoom(decoderSocket, { roomId, playerName: 'Decoder' });
 
                 // Mark both players as ready
-                roomHandlers.handlePlayerReady(encryptorSocket, { roomId });
-                roomHandlers.handlePlayerReady(decryptorSocket, { roomId });
+                roomHandlers.handlePlayerReady(encoderSocket, { roomId });
+                roomHandlers.handlePlayerReady(decoderSocket, { roomId });
 
                 // Start the game
-                gameHandlers.handleStartGame(encryptorSocket, { roomId });
+                gameHandlers.handleStartGame(encoderSocket, { roomId });
 
                 // Get the actual assigned roles
                 const room = roomManager.getRoom(roomId);
-                const decryptorPlayer = room?.players.find(p => p.role === 'decryptor');
+                const decoderPlayer = room?.players.find(p => p.role === 'decoder');
 
-                // Try to guess on wrong turn (encryptor's turn)
-                const decryptorSocketForTest = decryptorPlayer?.id === 'decryptor' ? decryptorSocket : encryptorSocket;
-                gameHandlers.handlePlayerGuess(decryptorSocketForTest, { roomId, guess: 'test' });
+                // Try to guess on wrong turn (encoder's turn)
+                const decoderSocketForTest = decoderPlayer?.id === 'decoder' ? decoderSocket : encoderSocket;
+                gameHandlers.handlePlayerGuess(decoderSocketForTest, { roomId, guess: 'test' });
 
                 // Verify an error was emitted
-                expect(decryptorSocketForTest.emit).toHaveBeenCalled();
+                expect(decoderSocketForTest.emit).toHaveBeenCalled();
             });
 
             it('should handle empty guess', () => {

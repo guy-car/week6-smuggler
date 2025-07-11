@@ -4,7 +4,7 @@ export type Player = {
   id: string;
   name: string;
   ready: boolean;
-  role: 'encryptor' | 'decryptor' | null;
+  role: 'encoder' | 'decoder' | null;
   socketId: string;
 };
 
@@ -18,7 +18,7 @@ export type Message = {
 
 export type Turn = {
   id: string;
-  type: 'encryptor' | 'ai' | 'decryptor';
+  type: 'encoder' | 'ai' | 'decoder';
   content: string;
   timestamp: string;
   playerId?: string;
@@ -33,7 +33,7 @@ export type Room = {
 
 export type GameStatus = 'waiting' | 'active' | 'ended';
 
-export type GameScreen = 'lobby' | 'room' | 'encryptor-game' | 'decryptor-game' | 'game-end';
+export type GameScreen = 'lobby' | 'room' | 'encoder-game' | 'decoder-game' | 'game-end';
 
 interface GameState {
   // Connection state
@@ -42,7 +42,7 @@ interface GameState {
 
   // Player state
   player: Player | null;
-  playerRole: 'encryptor' | 'decryptor' | null;
+  playerRole: 'encoder' | 'decoder' | null;
 
   // Room state
   roomId: string | null;
@@ -52,7 +52,7 @@ interface GameState {
   // Game state
   gameStatus: GameStatus;
   conversationHistory: Turn[];
-  currentTurn: 'encryptor' | 'ai' | 'decryptor' | null;
+  currentTurn: 'encoder' | 'ai' | 'decoder' | null;
   secretWord: string | null;
   score: number;
   round: number;
@@ -82,14 +82,14 @@ interface GameState {
   setConnected: (connected: boolean) => void;
   setSocketId: (socketId: string | null) => void;
   setPlayer: (player: Player | null) => void;
-  setPlayerRole: (role: 'encryptor' | 'decryptor' | null) => void;
+  setPlayerRole: (role: 'encoder' | 'decoder' | null) => void;
   setRoomId: (roomId: string | null) => void;
   setPlayers: (players: Player[]) => void;
   setIsReady: (ready: boolean) => void;
   setGameStatus: (status: GameStatus) => void;
   setConversationHistory: (history: Turn[]) => void;
   addTurn: (turn: Turn) => void;
-  setCurrentTurn: (turn: 'encryptor' | 'ai' | 'decryptor' | null) => void;
+  setCurrentTurn: (turn: 'encoder' | 'ai' | 'decoder' | null) => void;
   setSecretWord: (word: string | null) => void;
   setScore: (score: number) => void;
   setRound: (round: number) => void;
@@ -204,8 +204,5 @@ export const useGameStore = create<GameState>((set) => ({
     showRoundModal: false,
     roundModalData: null,
     availableRooms: [],
-    // Keep connected and socketId as they are
-    connected: state.connected,
-    socketId: state.socketId,
   })),
 })); 

@@ -1,4 +1,4 @@
-import { AITurn, AnalyzeRequest, GameState, InsiderTurn, OutsiderTurn, Player, RoleAssignment } from '../types';
+import { AITurn, AnalyzeRequest, DecoderTurn, EncoderTurn, GameState, Player, RoleAssignment } from '../types';
 import { fuzzyStringMatch, getMaxLevenshteinDistance } from '../utils/helpers';
 
 export class GameStateManager {
@@ -20,43 +20,43 @@ export class GameStateManager {
             secretWord: secretWord.toLowerCase(),
             conversationHistory: [], // Now uses Turn[] instead of Message[]
             previousRoundsAnalysis: [], // Initialize empty array for round analysis
-            currentTurn: 'encryptor' as const,
+            currentTurn: 'encoder' as const,
             gameStatus: 'active'
         };
 
-        // Start timer for the first turn (encryptor)
+        // Start timer for the first turn (encoder)
         return this.startHumanTurnTimer(baseGameState);
     }
 
     /**
      * Assign roles to players based on join order
-     * First player (index 0) becomes Encryptor, second player (index 1) becomes Decryptor
+     * First player (index 0) becomes Encoder, second player (index 1) becomes Decoder
      */
     public assignRoles(players: Player[]): RoleAssignment {
         if (players.length !== 2) {
             throw new Error('Exactly 2 players required for role assignment');
         }
 
-        // Assign roles based on join order (first player = Encryptor, second = Decryptor)
+        // Assign roles based on join order (first player = Encoder, second = Decoder)
         return {
-            encryptor: players[0]!.id,
-            decryptor: players[1]!.id
+            encoder: players[0]!.id,
+            decoder: players[1]!.id
         };
     }
 
     /**
-     * Add an outsider turn to conversation history
+     * Add an encoder turn to conversation history
      */
-    public addOutsiderTurn(gameState: GameState, content: string): GameState {
-        const outsiderTurn: OutsiderTurn = {
-            type: 'outsider_hint',
+    public addEncoderTurn(gameState: GameState, content: string): GameState {
+        const encoderTurn: EncoderTurn = {
+            type: 'encoder_hint',
             content,
             turnNumber: this.getNextTurnNumber(gameState)
         };
 
         return {
             ...gameState,
-            conversationHistory: [...gameState.conversationHistory, outsiderTurn]
+            conversationHistory: [...gameState.conversationHistory, encoderTurn]
         };
     }
 
@@ -78,18 +78,18 @@ export class GameStateManager {
     }
 
     /**
-     * Add an insider turn to conversation history
+     * Add a decoder turn to conversation history
      */
-    public addInsiderTurn(gameState: GameState, guess: string): GameState {
-        const insiderTurn: InsiderTurn = {
-            type: 'insider_guess',
+    public addDecoderTurn(gameState: GameState, guess: string): GameState {
+        const decoderTurn: DecoderTurn = {
+            type: 'decoder_guess',
             guess,
             turnNumber: this.getNextTurnNumber(gameState)
         };
 
         return {
             ...gameState,
-            conversationHistory: [...gameState.conversationHistory, insiderTurn]
+            conversationHistory: [...gameState.conversationHistory, decoderTurn]
         };
     }
 
@@ -99,12 +99,12 @@ export class GameStateManager {
     public addMessage(gameState: GameState, message: any): GameState {
         // This method is kept for backward compatibility but should be replaced
         // with specific turn methods in new code
-        if (message.type === 'outsider_hint') {
-            return this.addOutsiderTurn(gameState, message.content);
+        if (message.type === 'encoder_hint') {
+            return this.addEncoderTurn(gameState, message.content);
         } else if (message.type === 'ai_analysis') {
             return this.addAITurn(gameState, message.thinking, message.guess);
-        } else if (message.type === 'insider_guess') {
-            return this.addInsiderTurn(gameState, message.guess);
+        } else if (message.type === 'decoder_guess') {
+            return this.addDecoderTurn(gameState, message.guess);
         }
 
         throw new Error('Invalid message type for addMessage');
@@ -142,10 +142,10 @@ export class GameStateManager {
             ...gameState,
             currentRound: gameState.currentRound + 1,
             conversationHistory: [],
-            currentTurn: 'encryptor' as const
+            currentTurn: 'encoder' as const
         };
 
-        // Start timer for the first turn (encryptor)
+        // Start timer for the first turn (encoder)
         const newGameState = this.startHumanTurnTimer(baseGameState);
 
         return { newGameState, newRoles };
@@ -153,12 +153,12 @@ export class GameStateManager {
 
     /**
      * Switch roles between players for next round
-     * Encryptor becomes Decryptor, Decryptor becomes Encryptor
+     * Encoder becomes Decoder, Decoder becomes Encoder
      */
     public switchRoles(players: Player[], roles: RoleAssignment): RoleAssignment {
         return {
-            encryptor: roles.decryptor,
-            decryptor: roles.encryptor
+            encoder: roles.decoder,
+            decoder: roles.encoder
         };
     }
 
@@ -204,7 +204,7 @@ export class GameStateManager {
     /**
      * Get current turn
      */
-    public getCurrentTurn(gameState: GameState): 'encryptor' | 'ai' | 'decryptor' {
+    public getCurrentTurn(gameState: GameState): 'encoder' | 'ai' | 'decoder' {
         return gameState.currentTurn;
     }
 
@@ -212,31 +212,31 @@ export class GameStateManager {
      * Advance turn
      */
     public advanceTurn(gameState: GameState): GameState {
-        let nextTurn: 'encryptor' | 'ai' | 'decryptor';
+        let nextTurn: 'encoder' | 'ai' | 'decoder';
 
         switch (gameState.currentTurn) {
-            case 'encryptor':
+            case 'encoder':
                 nextTurn = 'ai';
                 break;
             case 'ai':
-                // AI should go to decryptor if the last non-AI turn was from encryptor
-                // AI should go to encryptor if the last non-AI turn was from decryptor
+                // AI should go to decoder if the last non-AI turn was from encoder
+                // AI should go to encoder if the last non-AI turn was from decoder
                 const lastNonAITurn = gameState.conversationHistory
-                    .reverse()
-                    .find(turn => turn.type === 'outsider_hint' || turn.type === 'insider_guess');
+                    .slice().reverse()
+                    .find(turn => turn.type === 'encoder_hint' || turn.type === 'decoder_guess');
 
-                if (lastNonAITurn?.type === 'outsider_hint') {
-                    // Last turn was from encryptor, AI should go to decryptor
-                    nextTurn = 'decryptor';
-                } else if (lastNonAITurn?.type === 'insider_guess') {
-                    // Last turn was from decryptor, AI should go to encryptor
-                    nextTurn = 'encryptor';
+                if (lastNonAITurn?.type === 'encoder_hint') {
+                    // Last turn was from encoder, AI should go to decoder
+                    nextTurn = 'decoder';
+                } else if (lastNonAITurn?.type === 'decoder_guess') {
+                    // Last turn was from decoder, AI should go to encoder
+                    nextTurn = 'encoder';
                 } else {
-                    // Fallback: go to decryptor
-                    nextTurn = 'decryptor';
+                    // Fallback: go to decoder
+                    nextTurn = 'decoder';
                 }
                 break;
-            case 'decryptor':
+            case 'decoder':
                 nextTurn = 'ai';
                 break;
             default:
@@ -248,7 +248,7 @@ export class GameStateManager {
         // Clear timer for current turn and start timer for next turn if it's a human turn
         let updatedGameState = this.clearTurnTimer(gameState);
 
-        if (nextTurn === 'encryptor' || nextTurn === 'decryptor') {
+        if (nextTurn === 'encoder' || nextTurn === 'decoder') {
             // Start timer for human turn
             updatedGameState = this.startHumanTurnTimer(updatedGameState);
         }
@@ -264,10 +264,10 @@ export class GameStateManager {
      * Check if it's a player's turn
      */
     public isPlayerTurn(gameState: GameState, playerId: string, roles: RoleAssignment): boolean {
-        if (gameState.currentTurn === 'encryptor') {
-            return roles.encryptor === playerId;
-        } else if (gameState.currentTurn === 'decryptor') {
-            return roles.decryptor === playerId;
+        if (gameState.currentTurn === 'encoder') {
+            return roles.encoder === playerId;
+        } else if (gameState.currentTurn === 'decoder') {
+            return roles.decoder === playerId;
         }
         return false;
     }
@@ -282,11 +282,11 @@ export class GameStateManager {
     /**
      * Get player role
      */
-    public getPlayerRole(playerId: string, roles: RoleAssignment): 'encryptor' | 'decryptor' | null {
-        if (roles.encryptor === playerId) {
-            return 'encryptor';
-        } else if (roles.decryptor === playerId) {
-            return 'decryptor';
+    public getPlayerRole(playerId: string, roles: RoleAssignment): 'encoder' | 'decoder' | null {
+        if (roles.encoder === playerId) {
+            return 'encoder';
+        } else if (roles.decoder === playerId) {
+            return 'decoder';
         }
         return null;
     }
@@ -327,7 +327,7 @@ export class GameStateManager {
         gameState: GameState,
         playerId: string,
         roles: RoleAssignment
-    ): { gameState: GameState; playerRole: 'encryptor' | 'decryptor' | null } {
+    ): { gameState: GameState; playerRole: 'encoder' | 'decoder' | null } {
         // Create a copy of the game state for the player
         const savedGameState = { ...gameState };
 
@@ -428,7 +428,7 @@ export class GameStateManager {
     public getGameStateSummary(gameState: GameState): {
         score: number;
         round: number;
-        currentTurn: 'encryptor' | 'ai' | 'decryptor';
+        currentTurn: 'encoder' | 'ai' | 'decoder';
         messageCount: number;
         gameStatus: 'waiting' | 'active' | 'ended';
     } {

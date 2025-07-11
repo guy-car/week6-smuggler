@@ -7,7 +7,7 @@ describe('AI Routes', () => {
         it('should analyze conversation and return AI response', async () => {
             const conversationHistory: Turn[] = [
                 {
-                    type: 'outsider_hint',
+                    type: 'encoder_hint',
                     content: 'This is a test message about animals',
                     turnNumber: 1
                 },
@@ -18,7 +18,7 @@ describe('AI Routes', () => {
                     turnNumber: 2
                 },
                 {
-                    type: 'insider_guess',
+                    type: 'decoder_guess',
                     guess: 'cherry',
                     turnNumber: 3
                 }
@@ -76,7 +76,7 @@ describe('AI Routes', () => {
         it('should handle request without gameId', async () => {
             const conversationHistory: Turn[] = [
                 {
-                    type: 'outsider_hint',
+                    type: 'encoder_hint',
                     content: 'Test message',
                     turnNumber: 1
                 }
@@ -99,7 +99,7 @@ describe('AI Routes', () => {
         it('should validate turn structure correctly', async () => {
             const conversationHistory: Turn[] = [
                 {
-                    type: 'outsider_hint',
+                    type: 'encoder_hint',
                     content: 'Test message',
                     turnNumber: 1
                 },
@@ -145,7 +145,7 @@ describe('AI Routes', () => {
         it('should validate turn numbers are sequential', async () => {
             const conversationHistory: Turn[] = [
                 {
-                    type: 'outsider_hint',
+                    type: 'encoder_hint',
                     content: 'Test message',
                     turnNumber: 1
                 },
@@ -174,12 +174,12 @@ describe('AI Routes', () => {
         it('should validate turn order is correct', async () => {
             const conversationHistory: Turn[] = [
                 {
-                    type: 'outsider_hint',
+                    type: 'encoder_hint',
                     content: 'Test message',
                     turnNumber: 1
                 },
                 {
-                    type: 'outsider_hint', // Invalid: two outsider turns in a row
+                    type: 'encoder_hint', // Invalid: two encoder turns in a row
                     content: 'Another message',
                     turnNumber: 2
                 }
@@ -204,7 +204,7 @@ describe('AI Routes', () => {
         it('should generate thinking process', async () => {
             const conversationHistory: Turn[] = [
                 {
-                    type: 'outsider_hint',
+                    type: 'encoder_hint',
                     content: 'This is a test message',
                     turnNumber: 1
                 }
@@ -246,7 +246,7 @@ describe('AI Routes', () => {
         it('should generate AI guess', async () => {
             const conversationHistory: Turn[] = [
                 {
-                    type: 'outsider_hint',
+                    type: 'encoder_hint',
                     content: 'I love eating pizza',
                     turnNumber: 1
                 }

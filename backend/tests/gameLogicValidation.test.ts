@@ -15,11 +15,12 @@ describe('Game Logic Validation', () => {
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [
-                    { type: 'outsider_hint', content: 'Hello', turnNumber: 1 },
+                    { type: 'encoder_hint', content: 'Hello', turnNumber: 1 },
                     { type: 'ai_analysis', thinking: ['Thought 1', 'Thought 2', 'Thought 3', 'Thought 4'], guess: 'banana', turnNumber: 2 },
-                    { type: 'insider_guess', guess: 'cherry', turnNumber: 3 }
+                    { type: 'decoder_guess', guess: 'cherry', turnNumber: 3 }
                 ],
-                currentTurn: 'decryptor',
+                previousRoundsAnalysis: [],
+                currentTurn: 'decoder',
                 gameStatus: 'active'
             };
 
@@ -34,7 +35,8 @@ describe('Game Logic Validation', () => {
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [],
-                currentTurn: 'encryptor',
+                previousRoundsAnalysis: [],
+                currentTurn: 'encoder',
                 gameStatus: 'ended'
             };
 
@@ -49,7 +51,8 @@ describe('Game Logic Validation', () => {
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [],
-                currentTurn: 'encryptor',
+                previousRoundsAnalysis: [],
+                currentTurn: 'encoder',
                 gameStatus: 'active'
             };
 
@@ -64,8 +67,9 @@ describe('Game Logic Validation', () => {
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [
-                    { type: 'outsider_hint', content: 'Hello', turnNumber: 1 }
+                    { type: 'encoder_hint', content: 'Hello', turnNumber: 1 }
                 ],
+                previousRoundsAnalysis: [],
                 currentTurn: 'ai',
                 gameStatus: 'active'
             };
@@ -81,8 +85,9 @@ describe('Game Logic Validation', () => {
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [
-                    { type: 'outsider_hint', content: 'Hello', turnNumber: 1 }
+                    { type: 'encoder_hint', content: 'Hello', turnNumber: 1 }
                 ],
+                previousRoundsAnalysis: [],
                 currentTurn: 'ai',
                 gameStatus: 'active'
             };
@@ -95,17 +100,18 @@ describe('Game Logic Validation', () => {
 
     describe('validateTurnOrder', () => {
         const roles: RoleAssignment = {
-            encryptor: 'player1',
-            decryptor: 'player2'
+            encoder: 'player1',
+            decoder: 'player2'
         };
 
-        it('should return valid for encryptor sending message on their turn', () => {
+        it('should return valid for encoder sending message on their turn', () => {
             const gameState: GameState = {
                 score: 5,
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [],
-                currentTurn: 'encryptor',
+                previousRoundsAnalysis: [],
+                currentTurn: 'encoder',
                 gameStatus: 'active'
             };
 
@@ -114,19 +120,20 @@ describe('Game Logic Validation', () => {
             expect(result.errors).toHaveLength(0);
         });
 
-        it('should return invalid when encryptor tries to send message on wrong turn', () => {
+        it('should return invalid when encoder tries to send message on wrong turn', () => {
             const gameState: GameState = {
                 score: 5,
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [],
-                currentTurn: 'decryptor',
+                previousRoundsAnalysis: [],
+                currentTurn: 'decoder',
                 gameStatus: 'active'
             };
 
             const result = gameLogic.validateTurnOrder(gameState, 'player1', 'send_message', roles);
             expect(result.valid).toBe(false);
-            expect(result.errors).toContain('Not encryptor\'s turn');
+            expect(result.errors).toContain('Not encoder\'s turn');
         });
 
         it('should return invalid when wrong player tries to send message', () => {
@@ -135,22 +142,24 @@ describe('Game Logic Validation', () => {
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [],
-                currentTurn: 'encryptor',
+                previousRoundsAnalysis: [],
+                currentTurn: 'encoder',
                 gameStatus: 'active'
             };
 
             const result = gameLogic.validateTurnOrder(gameState, 'player2', 'send_message', roles);
             expect(result.valid).toBe(false);
-            expect(result.errors).toContain('Only encryptor can send messages');
+            expect(result.errors).toContain('Only encoder can send messages');
         });
 
-        it('should return valid for decryptor making guess on their turn', () => {
+        it('should return valid for decoder making guess on their turn', () => {
             const gameState: GameState = {
                 score: 5,
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [],
-                currentTurn: 'decryptor',
+                previousRoundsAnalysis: [],
+                currentTurn: 'decoder',
                 gameStatus: 'active'
             };
 
@@ -159,19 +168,20 @@ describe('Game Logic Validation', () => {
             expect(result.errors).toHaveLength(0);
         });
 
-        it('should return invalid when decryptor tries to guess on wrong turn', () => {
+        it('should return invalid when decoder tries to guess on wrong turn', () => {
             const gameState: GameState = {
                 score: 5,
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [],
-                currentTurn: 'encryptor',
+                previousRoundsAnalysis: [],
+                currentTurn: 'encoder',
                 gameStatus: 'active'
             };
 
             const result = gameLogic.validateTurnOrder(gameState, 'player2', 'guess', roles);
             expect(result.valid).toBe(false);
-            expect(result.errors).toContain('Not decryptor\'s turn');
+            expect(result.errors).toContain('Not decoder\'s turn');
         });
 
         it('should return invalid when wrong player tries to guess', () => {
@@ -180,13 +190,14 @@ describe('Game Logic Validation', () => {
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [],
-                currentTurn: 'decryptor',
+                previousRoundsAnalysis: [],
+                currentTurn: 'decoder',
                 gameStatus: 'active'
             };
 
             const result = gameLogic.validateTurnOrder(gameState, 'player1', 'guess', roles);
             expect(result.valid).toBe(false);
-            expect(result.errors).toContain('Only decryptor can make guesses');
+            expect(result.errors).toContain('Only decoder can make guesses');
         });
     });
 
@@ -197,10 +208,11 @@ describe('Game Logic Validation', () => {
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [
-                    { type: 'outsider_hint', content: 'Hello', turnNumber: 1 },
+                    { type: 'encoder_hint', content: 'Hello', turnNumber: 1 },
                     { type: 'ai_analysis', thinking: ['Thought 1', 'Thought 2', 'Thought 3', 'Thought 4'], guess: 'banana', turnNumber: 2 }
                 ],
-                currentTurn: 'decryptor',
+                previousRoundsAnalysis: [],
+                currentTurn: 'decoder',
                 gameStatus: 'active'
             };
 
@@ -215,7 +227,8 @@ describe('Game Logic Validation', () => {
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [],
-                currentTurn: 'encryptor',
+                previousRoundsAnalysis: [],
+                currentTurn: 'encoder',
                 gameStatus: 'active'
             };
 
@@ -230,7 +243,8 @@ describe('Game Logic Validation', () => {
                 currentRound: 0,
                 secretWord: 'apple',
                 conversationHistory: [],
-                currentTurn: 'encryptor',
+                previousRoundsAnalysis: [],
+                currentTurn: 'encoder',
                 gameStatus: 'active'
             };
 
@@ -245,7 +259,8 @@ describe('Game Logic Validation', () => {
                 currentRound: 1,
                 secretWord: '',
                 conversationHistory: [],
-                currentTurn: 'encryptor',
+                previousRoundsAnalysis: [],
+                currentTurn: 'encoder',
                 gameStatus: 'active'
             };
 
@@ -259,9 +274,10 @@ describe('Game Logic Validation', () => {
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [
-                    { type: 'outsider_hint', content: 'Hello', turnNumber: 1 },
-                    { type: 'outsider_hint', content: 'Hello again', turnNumber: 2 } // Invalid: two outsider turns in a row
+                    { type: 'encoder_hint', content: 'Hello', turnNumber: 1 },
+                    { type: 'encoder_hint', content: 'Hello again', turnNumber: 2 } // Invalid: two encoder turns in a row
                 ],
+                previousRoundsAnalysis: [],
                 currentTurn: 'ai',
                 gameStatus: 'active'
             };
@@ -276,10 +292,11 @@ describe('Game Logic Validation', () => {
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [
-                    { type: 'outsider_hint', content: 'Hello', turnNumber: 1 },
+                    { type: 'encoder_hint', content: 'Hello', turnNumber: 1 },
                     { type: 'ai_analysis', thinking: ['Thought 1', 'Thought 2', 'Thought 3', 'Thought 4'], guess: 'banana', turnNumber: 3 } // Invalid: should be 2
                 ],
-                currentTurn: 'decryptor',
+                previousRoundsAnalysis: [],
+                currentTurn: 'decoder',
                 gameStatus: 'active'
             };
 
@@ -295,16 +312,17 @@ describe('Game Logic Validation', () => {
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [
-                    { type: 'outsider_hint', content: 'Hello', turnNumber: 1 },
+                    { type: 'encoder_hint', content: 'Hello', turnNumber: 1 },
                     { type: 'ai_analysis', thinking: ['Thought 1', 'Thought 2', 'Thought 3', 'Thought 4'], guess: 'banana', turnNumber: 2 }
                 ],
-                currentTurn: 'decryptor',
+                previousRoundsAnalysis: [],
+                currentTurn: 'decoder',
                 gameStatus: 'active'
             };
 
             const history = gameLogic.getConversationHistory(gameState);
             expect(history).toHaveLength(2);
-            expect(history[0]?.type).toBe('outsider_hint');
+            expect(history[0]?.type).toBe('encoder_hint');
             expect(history[1]?.type).toBe('ai_analysis');
         });
     });
@@ -316,12 +334,13 @@ describe('Game Logic Validation', () => {
                 currentRound: 1,
                 secretWord: 'apple',
                 conversationHistory: [
-                    { type: 'outsider_hint', content: 'Hello', turnNumber: 1 },
+                    { type: 'encoder_hint', content: 'Hello', turnNumber: 1 },
                     { type: 'ai_analysis', thinking: ['Thought 1', 'Thought 2', 'Thought 3', 'Thought 4'], guess: 'banana', turnNumber: 2 },
-                    { type: 'insider_guess', guess: 'cherry', turnNumber: 3 },
+                    { type: 'decoder_guess', guess: 'cherry', turnNumber: 3 },
                     { type: 'ai_analysis', thinking: ['Thought 5', 'Thought 6', 'Thought 7', 'Thought 8'], guess: 'orange', turnNumber: 4 }
                 ],
-                currentTurn: 'encryptor',
+                previousRoundsAnalysis: [],
+                currentTurn: 'encoder',
                 gameStatus: 'active'
             };
 

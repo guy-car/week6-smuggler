@@ -18,7 +18,7 @@ import AISectionComponent from '../components/AISectionComponent';
 import RoundModal from '../components/RoundModal';
 import ScoreProgressBar from '../components/ScoreProgressBar';
 
-const DecryptorGameScreen = () => {
+const DecoderGameScreen = () => {
     const {
         conversationHistory,
         currentTurn,
@@ -34,7 +34,7 @@ const DecryptorGameScreen = () => {
     const [guessInput, setGuessInput] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const canSubmitGuess = currentTurn === 'decryptor' && gameStatus === 'active';
+    const canSubmitGuess = currentTurn === 'decoder' && gameStatus === 'active';
     const isMyTurn = currentTurn === playerRole;
 
     const handleSubmitGuess = async () => {
@@ -198,4 +198,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default DecryptorGameScreen; 
+export default DecoderGameScreen; 
