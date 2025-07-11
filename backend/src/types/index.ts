@@ -42,8 +42,10 @@ export interface GameState {
     previousRoundsAnalysis: string[];
     currentTurn: 'encoder' | 'ai' | 'decoder';
     gameStatus: 'waiting' | 'active' | 'ended';
-    /** Unix timestamp when current human turn expires (null for AI turns) */
-    turnExpiresAt?: number;
+    /** Unix timestamp when current round expires (null when paused) */
+    roundExpiresAt?: number;
+    /** Remaining time in seconds when timer is paused (null when timer is running) */
+    pausedRemainingTime?: number;
 }
 
 // Re-export Zod schemas and types

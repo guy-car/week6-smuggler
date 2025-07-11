@@ -51,17 +51,12 @@ export class GameHandlers {
             return;
         }
 
-        // Only check timer for human turns
-        if (room.gameState.currentTurn === 'ai') {
-            return;
-        }
-
-        // Emit timer update
+        // Emit timer update for all turns (timer is paused during AI turns)
         this.emitTimerUpdate(roomId);
 
         // Check if timer has expired
-        if (this.gameStateManager.isHumanTurnExpired(room.gameState)) {
-            console.log(`[TIMER] Human turn expired in room ${roomId}. AI wins the round.`);
+        if (this.gameStateManager.isRoundExpired(room.gameState)) {
+            console.log(`[TIMER] Round timer expired in room ${roomId}. AI wins the round.`);
 
             // Handle timer expiration - AI wins
             const updatedGameState = this.gameStateManager.handleTimerExpiration(room.gameState);
