@@ -14,6 +14,7 @@ import {
     View
 } from 'react-native';
 import encoderBg from '../../assets/images/encoder.png';
+import { useButtonSound } from '../../hooks/useButtonSound';
 import { useActionHaptics, useButtonHaptics } from '../../hooks/useHaptics';
 import { useSendSound } from '../../hooks/useSendSound';
 import { emitTypingStart, emitTypingStop, leaveRoom, sendMessage } from '../../services/websocket';
@@ -43,6 +44,7 @@ const EncoderGameScreen = () => {
 
     const [messageInput, setMessageInput] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const playButtonSound = useButtonSound();
     const playSendSound = useSendSound();
     const triggerActionHaptics = useActionHaptics();
     const triggerButtonHaptics = useButtonHaptics();
@@ -52,6 +54,25 @@ const EncoderGameScreen = () => {
 
     const flashAnim = useRef(new Animated.Value(1)).current;
     const typingTimeoutRef = useRef<any>(null);
+
+    // Initialize audio and load sound
+    useEffect(() => {
+        const setup = async () => {
+            // await initializeAudio(); // This line is removed as per the new_code
+            // const loadedSound = await loadSound( // This line is removed as per the new_code
+            //     require('../../assets/sound-FX/send_button_v1.mp3') // This line is removed as per the new_code
+            // ); // This line is removed as per the new_code
+            // setSound(loadedSound); // This line is removed as per the new_code
+        };
+
+        setup();
+
+        return () => {
+            // if (sound) { // This line is removed as per the new_code
+            //     sound.unloadAsync(); // This line is removed as per the new_code
+            // } // This line is removed as per the new_code
+        };
+    }, []);
 
     // Flashing animation for last 30 seconds
     useEffect(() => {
@@ -97,16 +118,6 @@ const EncoderGameScreen = () => {
         return [styles.timerContainer, styles.timerContainerNormal];
     };
 
-    useEffect(() => {
-        const setup = async () => {
-            // No-op for now, placeholder for future audio setup
-        };
-        setup();
-        return () => {
-            // No-op for now, placeholder for future cleanup
-        };
-    }, []);
-
     const handleSendMessage = async () => {
         if (!messageInput.trim() || !canSendMessage || isSubmitting) {
             return;
@@ -122,12 +133,12 @@ const EncoderGameScreen = () => {
             return;
         }
 
+        setIsSubmitting(true);
         // Play sound and haptics immediately without awaiting
         playSendSound();
 
         triggerActionHaptics();
-
-        setIsSubmitting(true);
+        
         try {
             await sendMessage(messageInput.trim());
             setMessageInput('');
@@ -151,6 +162,7 @@ const EncoderGameScreen = () => {
     };
 
     const handleQuit = () => {
+        playButtonSound();
         triggerButtonHaptics();
         leaveRoom();
         // Use state-based navigation to return to lobby
@@ -478,6 +490,7 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontWeight: 'bold',
         color: '#007AFF',
+        fontFamily: 'VT323',
     },
     topRow: {
         flexDirection: 'row',
