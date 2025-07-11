@@ -1,4 +1,4 @@
-import { Player, Room, RoomJoinResult } from '../types';
+import { Player, Room, RoomJoinResult, TypingState } from '../types';
 
 export class RoomManager {
     private rooms: Map<string, Room> = new Map();
@@ -243,7 +243,8 @@ export class RoomManager {
             gameState: null,
             roles: null, // Will be set when game starts
             createdAt: new Date(),
-            lastActivity: new Date()
+            lastActivity: new Date(),
+            typingState: null // Initialize typing state as null
         };
 
         this.rooms.set(roomId, room);
@@ -290,6 +291,61 @@ export class RoomManager {
      */
     public forceCleanupRoom(roomId: string): boolean {
         return this.rooms.delete(roomId);
+    }
+
+    /**
+     * Set typing state for a room
+     */
+    public setTypingState(roomId: string, role: 'encoder' | 'decoder', isTyping: boolean): boolean {
+        const room = this.rooms.get(roomId);
+        if (!room) {
+            return false;
+        }
+
+        room.typingState = {
+            role,
+            isTyping,
+            lastTypingTime: Date.now()
+        };
+
+        room.lastActivity = new Date();
+        return true;
+    }
+
+    /**
+     * Get typing state for a room
+     */
+    public getTypingState(roomId: string): TypingState | null {
+        const room = this.rooms.get(roomId);
+        return room ? room.typingState : null;
+    }
+
+    /**
+     * Clear typing state for a room
+     */
+    public clearTypingState(roomId: string): boolean {
+        const room = this.rooms.get(roomId);
+        if (!room) {
+            return false;
+        }
+
+        room.typingState = null;
+        room.lastActivity = new Date();
+        return true;
+    }
+
+    /**
+     * Check if typing state has expired (1 second timeout)
+     */
+    public isTypingStateExpired(roomId: string): boolean {
+        const room = this.rooms.get(roomId);
+        if (!room || !room.typingState) {
+            return true;
+        }
+
+        const now = Date.now();
+        const timeSinceLastTyping = now - room.typingState.lastTypingTime;
+        return timeSinceLastTyping > 1000; // 1 second timeout
     }
 
     /**

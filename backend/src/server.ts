@@ -9,6 +9,7 @@ import roomsRoutes from './routes/rooms';
 import { GameHandlers } from './socket/handlers/gameHandlers';
 import { LobbyHandlers } from './socket/handlers/lobbyHandlers';
 import { RoomHandlers } from './socket/handlers/roomHandlers';
+import { TypingHandlers } from './socket/handlers/typingHandlers';
 import { Room } from './types';
 
 // Load environment variables
@@ -22,6 +23,7 @@ const PORT = process.env['PORT'] || 3000;
 const roomManager = new RoomManager();
 const lobbyHandlers = new LobbyHandlers(roomManager);
 const roomHandlers = new RoomHandlers(roomManager, lobbyHandlers);
+const typingHandlers = new TypingHandlers(roomManager);
 
 // Set up room change callback for lobby broadcasting
 roomManager.setRoomChangeCallback(() => {
@@ -112,10 +114,15 @@ io.on('connection', (socket) => {
     socket.on('send_message', (data) => gameHandlers.handleSendMessage(socket, data));
     socket.on('player_guess', (data) => gameHandlers.handlePlayerGuess(socket, data));
 
+    // Typing events
+    socket.on('typing:start', (data) => typingHandlers.handleTypingStart(socket, data));
+    socket.on('typing:stop', (data) => typingHandlers.handleTypingStop(socket, data));
+
     socket.on('disconnect', () => {
         console.log(`Client disconnected: ${socket.id}`);
         roomHandlers.handleDisconnect(socket);
         lobbyHandlers.handleDisconnect(socket);
+        typingHandlers.handleDisconnect(socket);
     });
 
     // Basic ping/pong for connection testing
