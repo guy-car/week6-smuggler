@@ -140,7 +140,6 @@ const styles = StyleSheet.create({
         padding: 14,
         width: '100%',
         maxWidth: 500,
-        height: '100%',
         backgroundColor: 'rgba(0,0,0,0.5)',
         borderRadius: 12,
         marginHorizontal: 'auto',
@@ -151,7 +150,6 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.7,
         shadowRadius: 16,
         elevation: 8,
-        marginBottom: 16,
     },
     headerRow: {
         flexDirection: 'row',
@@ -256,7 +254,7 @@ const styles = StyleSheet.create({
         minHeight: 0,
     },
     scrollContent: {
-        flexGrow: 1,
+        // Removed flexGrow: 1 to allow proper shrinking
     },
 });
 
