@@ -12,6 +12,7 @@ import {
     View,
 } from 'react-native';
 import encoderBg from '../../assets/images/encoder.png';
+import { useActionHaptics, useButtonHaptics } from '../../hooks/useHaptics';
 import { useSendSound } from '../../hooks/useSendSound';
 import { leaveRoom, sendMessage } from '../../services/websocket';
 import { useGameStore } from '../../store/gameStore';
@@ -39,6 +40,8 @@ const EncoderGameScreen = () => {
     const [messageInput, setMessageInput] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const playSendSound = useSendSound();
+    const triggerActionHaptics = useActionHaptics();
+    const triggerButtonHaptics = useButtonHaptics();
 
     const canSendMessage = currentTurn === 'encoder' && gameStatus === 'active';
     const isMyTurn = currentTurn === playerRole;
@@ -124,8 +127,9 @@ const EncoderGameScreen = () => {
         }
 
         setIsSubmitting(true);
-        // Play sound immediately without awaiting
+        // Play sound and haptics immediately without awaiting
         playSendSound();
+        triggerActionHaptics();
         
         try {
             await sendMessage(messageInput.trim());
@@ -138,6 +142,7 @@ const EncoderGameScreen = () => {
     };
 
     const handleQuit = () => {
+        triggerButtonHaptics();
         leaveRoom();
         // Use state-based navigation to return to lobby
         useGameStore.getState().setCurrentScreen('lobby');

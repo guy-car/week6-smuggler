@@ -2,7 +2,7 @@ import { BlurView } from 'expo-blur';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, ImageBackground, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import lobbyBackground from '../../assets/images/lobby.png';
-import { useButtonSound } from '../../hooks/useButtonSound';
+import { useButtonHaptics, useGameHaptics } from '../../hooks/useHaptics';
 import { createRoom, getAvailableRooms, getSocket, joinRoom } from '../../services/websocket';
 import { useGameStore } from '../../store/gameStore';
 import ConnectionStatusIndicator from '../components/ConnectionStatusIndicator';
@@ -12,7 +12,8 @@ const LobbyScreen = () => {
     const connected = useGameStore((s) => s.connected);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const playButtonSound = useButtonSound();
+    const triggerGameHaptics = useGameHaptics();
+    const triggerButtonHaptics = useButtonHaptics();
 
     useEffect(() => {
         if (connected) {
@@ -30,7 +31,7 @@ const LobbyScreen = () => {
     }, [connected]);
 
     const handleCreateRoom = async () => {
-        playButtonSound();
+        triggerGameHaptics();
         setLoading(true);
         setError(null);
         try {
@@ -43,7 +44,7 @@ const LobbyScreen = () => {
     };
 
     const handleJoinRoom = (roomId: string) => {
-        playButtonSound();
+        triggerButtonHaptics();
         joinRoom(roomId);
     };
 
