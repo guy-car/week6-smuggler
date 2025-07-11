@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Animated, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, Keyboard, ScrollView, StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
 import { Turn, useGameStore } from '../../store/gameStore';
 import AIGuessSection from './AIGuessSection';
 import ConversationHistory from './ConversationHistory';
@@ -90,34 +90,36 @@ const AISectionComponent: React.FC<AISectionProps> = ({
 
     return (
         <View style={styles.container}>
-            <View style={styles.headerRow}>
-                <Text style={styles.title} numberOfLines={1} ellipsizeMode="clip">AI is Listening</Text>
-            </View>
-
-            {isAITurn ? (
-                <View style={styles.thinkingContainer}>
-                    <Text style={styles.thinkingText}>AI is analyzing the conversation...</Text>
-                    <View style={styles.loadingDots}>
-                        <Text style={styles.dot}>•</Text>
-                        <Text style={styles.dot}>•</Text>
-                        <Text style={styles.dot}>•</Text>
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+                <View>
+                    <View style={styles.headerRow}>
+                        <Text style={styles.title} numberOfLines={1} ellipsizeMode="clip">AI is Listening</Text>
                     </View>
+                    {isAITurn ? (
+                        <View style={styles.thinkingContainer}>
+                            <Text style={styles.thinkingText}>AI is analyzing the conversation...</Text>
+                            <View style={styles.loadingDots}>
+                                <Text style={styles.dot}>•</Text>
+                                <Text style={styles.dot}>•</Text>
+                                <Text style={styles.dot}>•</Text>
+                            </View>
+                        </View>
+                    ) : null}
+                    {aiAnalysis && (
+                        <View style={styles.latestAnalysisContainer}>
+                            {/* {aiAnalysis.thinking && <AIThinkingSection thinking={aiAnalysis.thinking} />} */}
+                            {aiAnalysis.guess && <AIGuessSection guess={aiAnalysis.guess} />}
+                        </View>
+                    )}
                 </View>
-            ) : null}
-
-            {aiAnalysis && (
-                <View style={styles.latestAnalysisContainer}>
-                    {/* {aiAnalysis.thinking && <AIThinkingSection thinking={aiAnalysis.thinking} />} */}
-                    {aiAnalysis.guess && <AIGuessSection guess={aiAnalysis.guess} />}
-                </View>
-            )}
-
+            </TouchableWithoutFeedback>
             {/* Scrollable conversation history */}
             <View style={styles.conversationContainer}>
                 <ScrollView
                     style={styles.scrollView}
                     contentContainerStyle={styles.scrollContent}
                     showsVerticalScrollIndicator={true}
+                    keyboardShouldPersistTaps="handled"
                 >
                     <ConversationHistory
                         conversation={conversationHistory}
