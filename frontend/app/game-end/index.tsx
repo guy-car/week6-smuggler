@@ -140,7 +140,6 @@ const styles = StyleSheet.create({
     },
     title: {
         fontSize: 28,
-        fontWeight: 'bold',
         color: '#fff',
         marginBottom: 24,
         fontFamily: 'Audiowide',
@@ -150,7 +149,6 @@ const styles = StyleSheet.create({
     },
     resultText: {
         fontSize: 24,
-        fontWeight: 'bold',
         textAlign: 'center',
         fontFamily: 'Audiowide',
     },
@@ -213,7 +211,6 @@ const styles = StyleSheet.create({
     returnButtonText: {
         color: '#fff',
         fontSize: 20,
-        fontWeight: 'bold',
         fontFamily: 'VT323',
         letterSpacing: 2,
         textAlign: 'center',

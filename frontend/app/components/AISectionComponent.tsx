@@ -167,11 +167,9 @@ const styles = StyleSheet.create({
     },
     quitButtonText: {
         color: '#FFFFFF',
-        fontWeight: '600',
     },
     title: {
         fontSize: 18,
-        fontWeight: 'bold',
         color: '#fff',
         textAlign: 'center',
         flex: 1,
@@ -209,7 +207,6 @@ const styles = StyleSheet.create({
     timerText: {
         color: '#FFFFFF',
         fontSize: 16,
-        fontWeight: 'bold',
     },
 
     waitingContainer: {
@@ -230,7 +227,6 @@ const styles = StyleSheet.create({
     },
     latestAnalysisTitle: {
         fontSize: 16,
-        fontWeight: '600',
         color: '#1976D2',
         marginBottom: 12,
         textAlign: 'center',

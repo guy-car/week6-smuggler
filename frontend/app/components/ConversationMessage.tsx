@@ -69,7 +69,6 @@ const styles = StyleSheet.create({
     },
     turnType: {
         fontSize: 18,
-        fontWeight: '700',
         textTransform: 'uppercase',
         fontFamily: 'VT323',
         textShadowColor: '#00FFF0',

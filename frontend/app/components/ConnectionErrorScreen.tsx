@@ -266,7 +266,6 @@ const styles = StyleSheet.create({
     },
     title: {
         fontSize: 24,
-        fontWeight: 'bold',
         color: '#FF3B30',
         marginBottom: 16,
         textAlign: 'center',
@@ -292,7 +291,6 @@ const styles = StyleSheet.create({
     },
     suggestionsTitle: {
         fontSize: 16,
-        fontWeight: '600',
         color: '#000000',
         marginBottom: 12,
     },
@@ -329,17 +327,14 @@ const styles = StyleSheet.create({
     buttonText: {
         color: '#FFFFFF',
         fontSize: 16,
-        fontWeight: '600',
     },
     secondaryButtonText: {
         color: '#007AFF',
         fontSize: 16,
-        fontWeight: '600',
     },
     tertiaryButtonText: {
         color: '#666666',
         fontSize: 16,
-        fontWeight: '600',
     },
     connectionTestResult: {
         width: '100%',
@@ -374,7 +369,6 @@ const styles = StyleSheet.create({
     },
     debugTitle: {
         fontSize: 14,
-        fontWeight: '600',
         color: '#666666',
         marginBottom: 8,
     },

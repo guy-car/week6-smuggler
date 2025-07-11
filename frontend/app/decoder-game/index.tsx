@@ -288,7 +288,6 @@ const styles = StyleSheet.create({
     },
     submitButtonText: {
         color: '#000',
-        fontWeight: '600',
     },
     abortButton: {
         paddingHorizontal: 16,
@@ -301,7 +300,6 @@ const styles = StyleSheet.create({
     },
     abortButtonText: {
         color: '#FFFFFF',
-        fontWeight: '600',
         fontFamily: 'Audiowide',
     },
     timerContainer: {
@@ -337,7 +335,6 @@ const styles = StyleSheet.create({
     timerText: {
         color: '#FFFFFF',
         fontSize: 12,
-        fontWeight: 'bold',
         textAlign: 'center',
         fontFamily: 'Audiowide',
     },

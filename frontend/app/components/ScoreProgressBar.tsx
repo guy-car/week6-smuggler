@@ -98,7 +98,6 @@ const styles = StyleSheet.create({
     },
     label: {
         color: '#fff',
-        fontWeight: 'bold',
         fontSize: 12,
         fontFamily: 'Impact', // fallback to system if not available
         textShadowColor: '#000',
@@ -118,7 +117,6 @@ const styles = StyleSheet.create({
     },
     centerLabel: {
         color: '#fff',
-        fontWeight: 'bold',
         fontSize: 14,
         fontFamily: 'Impact',
         textAlign: 'center',
