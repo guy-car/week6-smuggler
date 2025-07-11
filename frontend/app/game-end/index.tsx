@@ -87,6 +87,11 @@ const GameEndScreen = () => {
                     >
                         {getResultText()}
                     </Animated.Text>
+                    {secretWord && (
+                        <Text style={styles.secretWord}>
+                            Secret word: <Text style={styles.secretWordValue}>{secretWord}</Text>
+                        </Text>
+                    )}
                 </View>
 
                 <BlurView intensity={40} tint="dark" style={styles.blurButtonBackground}>
@@ -180,6 +185,15 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: 'bold',
         color: '#007AFF',
+        marginTop: 16,
+        textAlign: 'center',
+        fontFamily: 'VT323',
+    },
+    secretWordValue: {
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: 18,
+        fontFamily: 'VT323',
     },
     blurButtonBackground: {
         width: '90%',
