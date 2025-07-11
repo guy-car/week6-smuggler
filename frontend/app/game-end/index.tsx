@@ -182,9 +182,9 @@ const styles = StyleSheet.create({
         color: '#000000',
     },
     secretWord: {
-        fontSize: 18,
+        fontSize: 22,
         fontWeight: 'bold',
-        color: '#007AFF',
+        color: '#fff',
         marginTop: 16,
         textAlign: 'center',
         fontFamily: 'VT323',
@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
     secretWordValue: {
         color: '#fff',
         fontWeight: 'bold',
-        fontSize: 18,
+        fontSize: 22,
         fontFamily: 'VT323',
     },
     blurButtonBackground: {
