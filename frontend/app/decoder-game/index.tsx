@@ -16,11 +16,12 @@ import {
 import decoderBg from '../../assets/images/decoder.png';
 import { useActionHaptics, useButtonHaptics } from '../../hooks/useHaptics';
 import { useSendSound } from '../../hooks/useSendSound';
-import { leaveRoom, submitGuess } from '../../services/websocket';
+import { emitTypingStart, emitTypingStop, leaveRoom, submitGuess } from '../../services/websocket';
 import { useGameStore } from '../../store/gameStore';
 import AISectionComponent from '../components/AISectionComponent';
 import RoundModal from '../components/RoundModal';
 import ScoreProgressBar from '../components/ScoreProgressBar';
+import TypingIndicator from '../components/TypingIndicator';
 
 const DecoderGameScreen = () => {
     const {
@@ -34,6 +35,7 @@ const DecoderGameScreen = () => {
         player,
         roomId,
         remainingTime,
+        typingIndicator,
     } = useGameStore();
 
     const [guessInput, setGuessInput] = useState('');
@@ -50,8 +52,9 @@ const DecoderGameScreen = () => {
         setIsSubmitting(true);
         // Play sound and haptics immediately without awaiting
         playSendSound();
+
         triggerActionHaptics();
-        
+
         try {
             await submitGuess(guessInput.trim());
             setGuessInput('');
@@ -103,6 +106,20 @@ const DecoderGameScreen = () => {
             flashAnim.setValue(1);
         }
     }, [remainingTime, flashAnim]);
+
+    const typingTimeoutRef = useRef<any>(null);
+
+    const handleTyping = (text: string) => {
+        setGuessInput(text);
+        if (!canSubmitGuess || !playerRole) return;
+        emitTypingStart(playerRole);
+        if (typingTimeoutRef.current) {
+            clearTimeout(typingTimeoutRef.current);
+        }
+        typingTimeoutRef.current = setTimeout(() => {
+            emitTypingStop(playerRole);
+        }, 1500); // Changed from 1000 to 1500ms
+    };
 
     // Format timer display as MM:SS
     const formatTimerDisplay = (seconds: number): string => {
@@ -162,7 +179,31 @@ const DecoderGameScreen = () => {
                                 />
                             </View>
                         </View>
+
+                        <Animated.View style={[getTimerStyle(), { opacity: flashAnim }]}>
+                            <Text style={styles.timerText}>{formatTimerDisplay(remainingTime)}</Text>
+                        </Animated.View>
+                    </View>
+                    <View style={styles.content}>
+                        <AISectionComponent
+                            currentTurn={currentTurn}
+                            conversationHistory={conversationHistory}
+                            currentPlayerId={player?.id}
+                            conversationHistoryProps={{ emptySubtext: 'Waiting for the encoder to send a clue' }}
+                        />
+                    </View>
+
+                    {/* Typing indicator above input field */}
+                    <View style={styles.typingIndicatorContainer}>
+                        <TypingIndicator
+                            role={(typingIndicator?.role || 'decoder') as 'encoder' | 'decoder'}
+                            isVisible={!!(typingIndicator && typingIndicator.isTyping && typingIndicator.role !== playerRole)}
+                        />
+                    </View>
+
+
                     </TouchableWithoutFeedback>
+
                     <View style={styles.inputContainer}>
                         <TextInput
                             style={[
@@ -170,7 +211,7 @@ const DecoderGameScreen = () => {
                                 !canSubmitGuess && styles.guessInputDisabled,
                             ]}
                             value={guessInput}
-                            onChangeText={setGuessInput}
+                            onChangeText={handleTyping}
                             placeholder={
                                 canSubmitGuess
                                     ? "Guess the secret word..."
@@ -320,6 +361,10 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textAlign: 'center',
         fontFamily: 'Audiowide',
+    },
+    typingIndicatorContainer: {
+        height: 42, // Fixed height to prevent layout shifts (30 + 12 margin)
+        paddingHorizontal: 16,
     },
 });
 
