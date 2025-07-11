@@ -8,7 +8,7 @@ describe('Timer Expiration Tests', () => {
     beforeEach(() => {
         gameStateManager = new GameStateManager();
         baseGameState = {
-            score: 5,
+            score: 3,
             currentRound: 1,
             secretWord: 'test',
             conversationHistory: [],

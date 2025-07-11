@@ -131,9 +131,9 @@ const DecoderGameScreen = () => {
                         <View style={{ flex: 1 }}>
                             <ScoreProgressBar
                                 score={score}
-                                maxScore={10}
+                                maxScore={6}
                                 aiWinsScore={0}
-                                humansWinScore={10}
+                                humansWinScore={6}
                             />
                         </View>
                         <Animated.View style={[getTimerStyle(), { opacity: flashAnim }]}>

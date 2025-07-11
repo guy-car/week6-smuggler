@@ -148,8 +148,8 @@ The Express/Socket.IO server provides:
 - **Role Assignment**: Encoder/Decoder roles that switch each round
 - **Secret Words**: 37 curated words for smuggling
 - **AI Eavesdropper**: Mock AI that analyzes conversations and makes guesses
-- **Tug-of-War Scoring**: Score starts at 5, +1 for players, -1 for AI
-- **Win Conditions**: Score 10 (players win) or 0 (AI wins)
+- **Tug-of-War Scoring**: Score starts at 3, +1 for players, -1 for AI
+- **Win Conditions**: Score 6 (players win) or 0 (AI wins)
 
 ### Technical Features
 - **Real-time Communication**: WebSocket-based with Socket.IO
