@@ -140,6 +140,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#fff',
         marginBottom: 24,
+        fontFamily: 'Audiowide',
     },
     resultContainer: {
         marginBottom: 32,
@@ -148,6 +149,7 @@ const styles = StyleSheet.create({
         fontSize: 24,
         fontWeight: 'bold',
         textAlign: 'center',
+        fontFamily: 'Audiowide',
     },
     statsContainer: {
         width: '100%',
@@ -209,12 +211,13 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 20,
         fontWeight: 'bold',
-        fontFamily: 'monospace',
+        fontFamily: 'VT323',
         letterSpacing: 2,
         textAlign: 'center',
         textShadowColor: '#000',
         textShadowOffset: { width: 1, height: 1 },
         textShadowRadius: 4,
+
     },
     confettiContainer: {
         position: 'absolute',
