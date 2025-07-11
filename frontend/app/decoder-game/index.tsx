@@ -12,6 +12,7 @@ import {
     View
 } from 'react-native';
 import decoderBg from '../../assets/images/decoder.png';
+import { useButtonSound } from '../../hooks/useButtonSound';
 import { useActionHaptics, useButtonHaptics } from '../../hooks/useHaptics';
 import { useSendSound } from '../../hooks/useSendSound';
 import { emitTypingStart, emitTypingStop, leaveRoom, submitGuess } from '../../services/websocket';
@@ -38,6 +39,7 @@ const DecoderGameScreen = () => {
 
     const [guessInput, setGuessInput] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const playButtonSound = useButtonSound();
     const playSendSound = useSendSound();
     const triggerActionHaptics = useActionHaptics();
     const triggerButtonHaptics = useButtonHaptics();
@@ -64,6 +66,7 @@ const DecoderGameScreen = () => {
     };
 
     const handleAbort = () => {
+        playButtonSound();
         triggerButtonHaptics();
         leaveRoom();
         useGameStore.getState().setCurrentScreen('lobby');
@@ -150,7 +153,7 @@ const DecoderGameScreen = () => {
                     style={styles.container}
                     behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 >
-                    <View style={{ flex: 1 }}>
+                        <View style={{ flex: 1 }}>
                         <View style={styles.topRow}>
                             <TouchableOpacity style={styles.abortButton} onPress={handleAbort}>
                                 <Text style={styles.abortButtonText}>Abort</Text>
@@ -163,7 +166,6 @@ const DecoderGameScreen = () => {
                                     humansWinScore={6}
                                 />
                             </View>
-
                             <Animated.View style={[getTimerStyle(), { opacity: flashAnim }]}>
                                 <Text style={styles.timerText}>{formatTimerDisplay(remainingTime)}</Text>
                             </Animated.View>
@@ -178,17 +180,13 @@ const DecoderGameScreen = () => {
                         </View>
                     </View>
 
-
-                            {/* Typing indicator above input field */}
-                            <View style={styles.typingIndicatorContainer}>
-                                <TypingIndicator
-                                    role={(typingIndicator?.role || 'decoder') as 'encoder' | 'decoder'}
-                                    isVisible={!!(typingIndicator && typingIndicator.isTyping && typingIndicator.role !== playerRole)}
-                                />
-                            </View>
-
-
-
+                    {/* Typing indicator above input field */}
+                    <View style={styles.typingIndicatorContainer}>
+                        <TypingIndicator
+                            role={(typingIndicator?.role || 'decoder') as 'encoder' | 'decoder'}
+                            isVisible={!!(typingIndicator && typingIndicator.isTyping && typingIndicator.role !== playerRole)}
+                        />
+                    </View>
                     <View style={styles.inputContainer}>
                         <TextInput
                             style={[
