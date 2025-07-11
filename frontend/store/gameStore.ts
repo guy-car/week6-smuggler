@@ -73,6 +73,7 @@ interface GameState {
     winner: 'ai' | 'humans';
     correctGuess: string;
     pointsChange: number;
+    secretWord: string;
   } | null;
 
   // Available rooms for lobby
@@ -102,7 +103,7 @@ interface GameState {
   setShowSecretModal: (show: boolean) => void;
   setShowQuitConfirm: (show: boolean) => void;
   setShowRoundModal: (show: boolean) => void;
-  setRoundModalData: (data: { winner: 'ai' | 'humans'; correctGuess: string; pointsChange: number } | null) => void;
+  setRoundModalData: (data: { winner: 'ai' | 'humans'; correctGuess: string; pointsChange: number; secretWord: string } | null) => void;
   setAvailableRooms: (rooms: Room[]) => void;
   setLastAIGuess: (guess: string | null) => void;
   setRemainingTime: (time: number) => void;
