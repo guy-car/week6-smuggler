@@ -58,6 +58,7 @@ interface GameState {
   round: number;
   maxRounds: number;
   lastAIGuess: string | null;
+  remainingTime: number; // Timer for human turns
 
   // UI state
   currentScreen: GameScreen;
@@ -67,6 +68,12 @@ interface GameState {
   showCluesModal: boolean;
   showSecretModal: boolean;
   showQuitConfirm: boolean;
+  showRoundModal: boolean;
+  roundModalData: {
+    winner: 'ai' | 'humans';
+    correctGuess: string;
+    pointsChange: number;
+  } | null;
 
   // Available rooms for lobby
   availableRooms: Room[];
@@ -94,8 +101,11 @@ interface GameState {
   setShowCluesModal: (show: boolean) => void;
   setShowSecretModal: (show: boolean) => void;
   setShowQuitConfirm: (show: boolean) => void;
+  setShowRoundModal: (show: boolean) => void;
+  setRoundModalData: (data: { winner: 'ai' | 'humans'; correctGuess: string; pointsChange: number } | null) => void;
   setAvailableRooms: (rooms: Room[]) => void;
   setLastAIGuess: (guess: string | null) => void;
+  setRemainingTime: (time: number) => void;
   reset: () => void;
 }
 
@@ -122,6 +132,7 @@ export const useGameStore = create<GameState>((set) => ({
   round: 1,
   maxRounds: 5,
   lastAIGuess: null,
+  remainingTime: 0, // Timer for human turns
 
   // UI state
   currentScreen: 'lobby',
@@ -131,6 +142,8 @@ export const useGameStore = create<GameState>((set) => ({
   showCluesModal: false,
   showSecretModal: false,
   showQuitConfirm: false,
+  showRoundModal: false,
+  roundModalData: null,
 
   // Available rooms
   availableRooms: [],
@@ -160,8 +173,11 @@ export const useGameStore = create<GameState>((set) => ({
   setShowCluesModal: (show) => set({ showCluesModal: show }),
   setShowSecretModal: (show) => set({ showSecretModal: show }),
   setShowQuitConfirm: (show) => set({ showQuitConfirm: show }),
+  setShowRoundModal: (show) => set({ showRoundModal: show }),
+  setRoundModalData: (data) => set({ roundModalData: data }),
   setAvailableRooms: (rooms) => set({ availableRooms: rooms }),
   setLastAIGuess: (guess) => set({ lastAIGuess: guess }),
+  setRemainingTime: (time) => set({ remainingTime: time }),
   reset: () => set((state) => ({
     // Do NOT reset connected or socketId
     player: null,
@@ -177,6 +193,7 @@ export const useGameStore = create<GameState>((set) => ({
     round: 1,
     maxRounds: 5,
     lastAIGuess: null,
+    remainingTime: 0, // Reset timer
     currentScreen: 'lobby',
     isLoading: false,
     error: null,
@@ -184,6 +201,8 @@ export const useGameStore = create<GameState>((set) => ({
     showCluesModal: false,
     showSecretModal: false,
     showQuitConfirm: false,
+    showRoundModal: false,
+    roundModalData: null,
     availableRooms: [],
     // Keep connected and socketId as they are
     connected: state.connected,

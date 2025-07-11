@@ -7,20 +7,25 @@ export class GameStateManager {
     private readonly MIN_SCORE = 0;
     private readonly WIN_SCORE = 10;
     private readonly LOSE_SCORE = 0;
+    private readonly HUMAN_TURN_DURATION = 30; // 30 seconds for human turns
+    private readonly MAX_ROUNDS = 5; // Maximum rounds to prevent infinite games
 
     /**
      * Create a new game state
      */
     public createGameState(secretWord: string, players: Player[]): GameState {
-        return {
+        const baseGameState: GameState = {
             score: this.INITIAL_SCORE,
             currentRound: 1,
             secretWord: secretWord.toLowerCase(),
             conversationHistory: [], // Now uses Turn[] instead of Message[]
             previousRoundsAnalysis: [], // Initialize empty array for round analysis
-            currentTurn: 'encryptor',
+            currentTurn: 'encryptor' as const,
             gameStatus: 'active'
         };
+
+        // Start timer for the first turn (encryptor)
+        return this.startHumanTurnTimer(baseGameState);
     }
 
     /**
@@ -133,12 +138,15 @@ export class GameStateManager {
         newRoles: RoleAssignment;
     } {
         const newRoles = this.switchRoles([], roles);
-        const newGameState = {
+        const baseGameState: GameState = {
             ...gameState,
             currentRound: gameState.currentRound + 1,
             conversationHistory: [],
             currentTurn: 'encryptor' as const
         };
+
+        // Start timer for the first turn (encryptor)
+        const newGameState = this.startHumanTurnTimer(baseGameState);
 
         return { newGameState, newRoles };
     }
@@ -158,7 +166,9 @@ export class GameStateManager {
      * Check if game has ended
      */
     public isGameEnded(gameState: GameState): boolean {
-        return gameState.score >= this.WIN_SCORE || gameState.score <= this.LOSE_SCORE;
+        return gameState.score >= this.WIN_SCORE ||
+            gameState.score <= this.LOSE_SCORE ||
+            gameState.currentRound >= this.MAX_ROUNDS;
     }
 
     /**
@@ -169,6 +179,16 @@ export class GameStateManager {
             return 'players';
         } else if (gameState.score <= this.LOSE_SCORE) {
             return 'ai';
+        } else if (gameState.currentRound >= this.MAX_ROUNDS) {
+            // Game ended due to max rounds - determine winner by score
+            if (gameState.score > this.INITIAL_SCORE) {
+                return 'players';
+            } else if (gameState.score < this.INITIAL_SCORE) {
+                return 'ai';
+            } else {
+                // Exactly tied at initial score - AI wins as tiebreaker
+                return 'ai';
+            }
         }
         return null;
     }
@@ -189,8 +209,8 @@ export class GameStateManager {
     }
 
     /**
- * Advance turn
- */
+     * Advance turn
+     */
     public advanceTurn(gameState: GameState): GameState {
         let nextTurn: 'encryptor' | 'ai' | 'decryptor';
 
@@ -225,8 +245,17 @@ export class GameStateManager {
 
         console.log(`[DEBUG] advanceTurn: ${gameState.currentTurn} → ${nextTurn}`);
 
+        // Clear timer for current turn and start timer for next turn if it's a human turn
+        let updatedGameState = this.clearTurnTimer(gameState);
+
+        if (nextTurn === 'encryptor' || nextTurn === 'decryptor') {
+            // Start timer for human turn
+            updatedGameState = this.startHumanTurnTimer(updatedGameState);
+        }
+        // AI turns don't need timers
+
         return {
-            ...gameState,
+            ...updatedGameState,
             currentTurn: nextTurn
         };
     }
@@ -410,5 +439,56 @@ export class GameStateManager {
             messageCount: gameState.conversationHistory.length,
             gameStatus: gameState.gameStatus
         };
+    }
+
+    /**
+     * Start timer for human turn
+     */
+    public startHumanTurnTimer(gameState: GameState): GameState {
+        const expiresAt = Date.now() + (this.HUMAN_TURN_DURATION * 1000);
+        return {
+            ...gameState,
+            turnExpiresAt: expiresAt
+        };
+    }
+
+    /**
+     * Clear timer (for AI turns)
+     */
+    public clearTurnTimer(gameState: GameState): GameState {
+        const { turnExpiresAt, ...rest } = gameState;
+        return rest;
+    }
+
+    /**
+     * Check if current human turn timer has expired
+     */
+    public isHumanTurnExpired(gameState: GameState): boolean {
+        if (!gameState.turnExpiresAt) {
+            return false; // No timer means not expired
+        }
+        return Date.now() >= gameState.turnExpiresAt;
+    }
+
+    /**
+ * Handle timer expiration - AI wins the round
+ */
+    public handleTimerExpiration(gameState: GameState): GameState {
+        // AI wins the round - update score
+        const scoreUpdated = this.updateScore(gameState, false); // false = AI wins
+
+        // Clear the timer
+        return this.clearTurnTimer(scoreUpdated);
+    }
+
+    /**
+     * Get remaining time in seconds for current human turn
+     */
+    public getRemainingTime(gameState: GameState): number {
+        if (!gameState.turnExpiresAt) {
+            return 0;
+        }
+        const remaining = Math.max(0, Math.ceil((gameState.turnExpiresAt - Date.now()) / 1000));
+        return remaining;
     }
 } 

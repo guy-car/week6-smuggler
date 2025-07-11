@@ -1,69 +1,28 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useGameStore } from '../../store/gameStore';
 import ScoreProgressBar from './ScoreProgressBar';
 
-interface RoundModalProps {
-    visible?: boolean;
-    winner?: 'ai' | 'humans';
-    onDismiss?: () => void;
-}
+const RoundModal: React.FC = () => {
+    const {
+        showRoundModal,
+        roundModalData,
+        setShowRoundModal,
+        setRoundModalData,
+        score
+    } = useGameStore();
 
-const RoundModal: React.FC<RoundModalProps> = ({ visible: propVisible, winner: propWinner, onDismiss: propOnDismiss }) => {
-    const { score, setShowGuessesModal, conversationHistory, lastAIGuess } = useGameStore();
-    const [visible, setVisible] = useState(false);
-    const [winner, setWinner] = useState<'ai' | 'humans' | null>(null);
-    const [previousScore, setPreviousScore] = useState(score);
-    const [correctGuess, setCorrectGuess] = useState<string>('');
-    const [pointsChange, setPointsChange] = useState<number>(0);
+    const handleDismiss = () => {
+        setShowRoundModal(false);
+        setRoundModalData(null);
+    };
 
-    // Detect score changes and determine winner
-    useEffect(() => {
-        if (score !== previousScore) {
-            // Calculate points change
-            const change = score - previousScore;
-            setPointsChange(change);
-            
-            // Determine who won based on score change
-            let roundWinner: 'ai' | 'humans';
-            if (score > previousScore) {
-                roundWinner = 'humans';
-            } else {
-                roundWinner = 'ai';
-            }
-            setWinner(roundWinner);
-            setVisible(true);
-            setPreviousScore(score);
+    if (!showRoundModal || !roundModalData) {
+        return null;
+    }
 
-            // Find the correct guess for the modal
-            if (roundWinner === 'ai') {
-                setCorrectGuess(lastAIGuess || '');
-            } else {
-                // For human win, use the last non-AI guess
-                const lastHumanGuess = [...conversationHistory].reverse().find(turn => turn.type === 'decryptor');
-                if (lastHumanGuess && lastHumanGuess.content) {
-                    const guessMatch = lastHumanGuess.content.match(/guessed: (.+)$/i);
-                    if (guessMatch) {
-                        setCorrectGuess(guessMatch[1]);
-                    } else {
-                        setCorrectGuess(lastHumanGuess.content);
-                    }
-                } else {
-                    setCorrectGuess('');
-                }
-            }
-        }
-    }, [score, previousScore, conversationHistory, lastAIGuess]);
-
-    // Use props if provided, otherwise use internal state
-    const isVisible = propVisible !== undefined ? propVisible : visible;
-    const roundWinner = propWinner || winner || 'humans';
-    const handleDismiss = propOnDismiss || (() => {
-        setVisible(false);
-        setShowGuessesModal(false);
-    });
-
-    const isAI = roundWinner === 'ai';
+    const { winner, correctGuess, pointsChange } = roundModalData;
+    const isAI = winner === 'ai';
     const bgColor = isAI ? 'rgba(255, 59, 48, 0.95)' : 'rgba(76, 217, 100, 0.95)';
     const textColor = '#fff';
     const message = isAI ? 'AI WINS THE ROUND' : 'HUMANS WIN THE ROUND';
@@ -71,13 +30,13 @@ const RoundModal: React.FC<RoundModalProps> = ({ visible: propVisible, winner: p
 
     return (
         <Modal
-            visible={isVisible}
+            visible={showRoundModal}
             transparent
             animationType="fade"
             onRequestClose={handleDismiss}
         >
             <View style={styles.overlay}>
-                <View style={[styles.modalBox, { backgroundColor: bgColor }]}> 
+                <View style={[styles.modalBox, { backgroundColor: bgColor }]}>
                     {/* Score Progress Bar */}
                     <View style={styles.scoreBarContainer}>
                         <ScoreProgressBar
@@ -90,11 +49,11 @@ const RoundModal: React.FC<RoundModalProps> = ({ visible: propVisible, winner: p
                     </View>
 
                     <Text style={[styles.modalText, { color: textColor }]}>{message}</Text>
-                    
+
                     {correctGuess && (
                         <Text style={[styles.guessText, { color: textColor }]}>Correct guess: {correctGuess}</Text>
                     )}
-                    
+
                     <Text style={[styles.pointsText, { color: textColor }]}>Points: {pointsText}</Text>
 
                     <TouchableOpacity

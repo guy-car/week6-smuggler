@@ -422,6 +422,41 @@ export function getSocket() {
     socket.on('round_end', (data: any) => {
       console.log('[WebSocket] Round end:', data);
 
+      // Calculate points change and winner for modal
+      const currentScore = useGameStore.getState().score;
+      const pointsChange = data.score - currentScore;
+      const winner = data.correct ? 'humans' : 'ai';
+
+      // Get the correct guess for the modal
+      let correctGuess = '';
+      if (data.correct) {
+        // Human win - get the last decryptor guess
+        const conversationHistory = useGameStore.getState().conversationHistory;
+        const lastDecryptorTurn = conversationHistory
+          .filter(turn => turn.type === 'decryptor')
+          .pop();
+        if (lastDecryptorTurn) {
+          correctGuess = lastDecryptorTurn.content;
+        }
+      } else {
+        // AI win - use the last AI guess
+        correctGuess = useGameStore.getState().lastAIGuess || '';
+      }
+
+      // Show the modal with round end data
+      useGameStore.getState().setRoundModalData({
+        winner,
+        correctGuess,
+        pointsChange
+      });
+      useGameStore.getState().setShowRoundModal(true);
+
+      // Update score if provided (important for timer expiration)
+      if (data.score !== undefined) {
+        console.log('[WebSocket] Updating score from round_end:', data.score);
+        useGameStore.getState().setScore(data.score);
+      }
+
       // Update round number
       useGameStore.getState().setRound(data.round || 1);
 
@@ -454,9 +489,10 @@ export function getSocket() {
       // Clear conversation history and AI analysis for new round
       // (Do this last, after the modal has had a chance to access the data)
       setTimeout(() => {
+        console.log('[WebSocket] Clearing conversation history after round end');
         useGameStore.getState().setConversationHistory([]);
         useGameStore.getState().setLastAIGuess(null);
-      }, 100);
+      }, 2000); // Increased from 100ms to 2 seconds to give modal time to process
     });
 
     // Guess result event
@@ -464,8 +500,14 @@ export function getSocket() {
       console.log('[WebSocket] Guess result:', data);
       // Optionally update score
       if (data.score !== undefined) {
+        console.log('[WebSocket] Updating score from guess_result:', data.score);
         useGameStore.getState().setScore(data.score);
       }
+    });
+
+    // Timer update event
+    socket.on('timer_update', (data: { roomId: string; remainingTime: number; currentTurn: string }) => {
+      useGameStore.getState().setRemainingTime(data.remainingTime);
     });
 
     // Error events

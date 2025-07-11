@@ -9,6 +9,7 @@ import roomsRoutes from './routes/rooms';
 import { GameHandlers } from './socket/handlers/gameHandlers';
 import { LobbyHandlers } from './socket/handlers/lobbyHandlers';
 import { RoomHandlers } from './socket/handlers/roomHandlers';
+import { Room } from './types';
 
 // Load environment variables
 dotenv.config();
@@ -80,6 +81,16 @@ const io = new Server(server, {
 
 // Initialize game handlers with Socket.IO instance
 const gameHandlers = new GameHandlers(roomManager, io);
+
+// Set up periodic timer check for expired human turns
+setInterval(() => {
+    const rooms = roomManager.getAllRooms();
+    rooms.forEach((room: Room) => {
+        if (room.gameState && room.gameState.gameStatus === 'active') {
+            gameHandlers.checkTimerExpiration(room.id);
+        }
+    });
+}, 1000); // Check every second
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {
