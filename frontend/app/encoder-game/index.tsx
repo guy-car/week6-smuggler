@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
     Alert,
+    Animated,
     ImageBackground,
     KeyboardAvoidingView,
     Platform,
@@ -31,6 +32,7 @@ const EncoderGameScreen = () => {
         player,
         roomId,
         secretWord,
+        remainingTime,
     } = useGameStore();
 
     const [messageInput, setMessageInput] = useState('');
@@ -38,6 +40,52 @@ const EncoderGameScreen = () => {
 
     const canSendMessage = currentTurn === 'encoder' && gameStatus === 'active';
     const isMyTurn = currentTurn === playerRole;
+
+    const flashAnim = useRef(new Animated.Value(1)).current;
+
+    // Flashing animation for last 30 seconds
+    useEffect(() => {
+        if (remainingTime <= 30 && remainingTime > 0) {
+            const flashAnimation = Animated.loop(
+                Animated.sequence([
+                    Animated.timing(flashAnim, {
+                        toValue: 0.3,
+                        duration: 500,
+                        useNativeDriver: true,
+                    }),
+                    Animated.timing(flashAnim, {
+                        toValue: 1,
+                        duration: 500,
+                        useNativeDriver: true,
+                    }),
+                ])
+            );
+            flashAnimation.start();
+            return () => flashAnimation.stop();
+        } else {
+            flashAnim.setValue(1);
+        }
+    }, [remainingTime, flashAnim]);
+
+    // Format timer display as MM:SS
+    const formatTimerDisplay = (seconds: number): string => {
+        const totalSeconds = Math.floor(seconds);
+        const minutes = Math.floor(totalSeconds / 60);
+        const remainingSeconds = Math.abs(totalSeconds % 60);
+        return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+    };
+
+    // Timer styling based on remaining time
+    const getTimerStyle = () => {
+        if (remainingTime <= 30) {
+            return [styles.timerContainer, styles.timerContainerFlashing];
+        } else if (remainingTime <= 60) {
+            return [styles.timerContainer, styles.timerContainerWarning];
+        } else if (remainingTime <= 120) {
+            return [styles.timerContainer, styles.timerContainerLow];
+        }
+        return [styles.timerContainer, styles.timerContainerNormal];
+    };
 
     const handleSendMessage = async () => {
         if (!messageInput.trim() || !canSendMessage || isSubmitting) {
@@ -87,67 +135,69 @@ const EncoderGameScreen = () => {
         >
             <View style={styles.overlay}>
                 <KeyboardAvoidingView
-                style={styles.container}
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            >
-                {/* Score bar and quit button in a row at the very top */}
-                <View style={styles.topRow}>
-                    <View style={{ flex: 1, marginTop: 30 }}>
-                        <ScoreProgressBar
-                            score={score}
-                            maxScore={6}
-                            aiWinsScore={0}
-                            humansWinScore={6}
+
+                    style={styles.container}
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                >
+                    <View style={styles.topRow}>
+                        <TouchableOpacity style={styles.abortButton} onPress={handleQuit}>
+                            <Text style={styles.abortButtonText}>Abort</Text>
+                        </TouchableOpacity>
+                        <View style={{ flex: 1 }}>
+                            <ScoreProgressBar
+                                score={score}
+                                maxScore={6}
+                                aiWinsScore={0}
+                                humansWinScore={6}
+                            />
+                        </View>
+                        <Animated.View style={[getTimerStyle(), { opacity: flashAnim }]}>
+                            <Text style={styles.timerText}>{formatTimerDisplay(remainingTime)}</Text>
+                        </Animated.View>
+                    </View>
+                    <View style={styles.content}>
+                        <AISectionComponent
+                            currentTurn={currentTurn}
+                            conversationHistory={conversationHistory}
+                            currentPlayerId={player?.id}
                         />
                     </View>
 
-                </View>
+                    {/* Secret word above input field */}
+                    <SecretWordContainer secretWord={secretWord || undefined} />
 
-                {/* Remove ScrollView, use View instead */}
-                <View style={styles.content}>
-                    <AISectionComponent
-                        currentTurn={currentTurn}
-                        conversationHistory={conversationHistory}
-                        currentPlayerId={player?.id}
-                        onQuit={handleQuit}
-                    />
-                </View>
-
-                {/* Secret word above input field */}
-                <SecretWordContainer secretWord={secretWord || undefined} />
-
-                <View style={styles.inputContainer}>
-                    <TextInput
-                        style={[
-                            styles.messageInput,
-                            !canSendMessage && styles.messageInputDisabled,
-                        ]}
-                        value={messageInput}
-                        onChangeText={setMessageInput}
-                        placeholder={
-                            canSendMessage
-                                ? "Send a clue to your ally..."
-                                : "Waiting for AI response..."
-                        }
-                        multiline
-                        maxLength={200}
-                        editable={canSendMessage}
-                        placeholderTextColor="white"
-                    />
-                    <TouchableOpacity
-                        style={[
-                            styles.sendButton,
-                            (!canSendMessage || !messageInput.trim() || isSubmitting) &&
-                            styles.sendButtonDisabled,
-                        ]}
-                        onPress={handleSendMessage}
-                        disabled={!canSendMessage || !messageInput.trim() || isSubmitting}
-                    >
-                        <Text style={styles.sendButtonText}>
-                            {isSubmitting ? 'Sending...' : 'Send'}
-                        </Text>
-                    </TouchableOpacity>
-                </View>
+                    <View style={styles.inputContainer}>
+                        <TextInput
+                            style={[
+                                styles.messageInput,
+                                !canSendMessage && styles.messageInputDisabled,
+                            ]}
+                            value={messageInput}
+                            onChangeText={setMessageInput}
+                            placeholder={
+                                canSendMessage
+                                    ? "Send a clue to your ally..."
+                                    : "Waiting for AI response..."
+                            }
+                            multiline
+                            maxLength={200}
+                            editable={canSendMessage}
+                            placeholderTextColor="white"
+                        />
+                        <TouchableOpacity
+                            style={[
+                                styles.sendButton,
+                                (!canSendMessage || !messageInput.trim() || isSubmitting) &&
+                                styles.sendButtonDisabled,
+                            ]}
+                            onPress={handleSendMessage}
+                            disabled={!canSendMessage || !messageInput.trim() || isSubmitting}
+                        >
+                            <Text style={styles.sendButtonText}>
+                                {isSubmitting ? 'Sending...' : 'Send'}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
                 </KeyboardAvoidingView>
             </View>
 
@@ -373,10 +423,10 @@ const styles = StyleSheet.create({
     },
     topRow: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
         alignItems: 'center',
-        paddingHorizontal: 16, // match decoder
-        paddingVertical: 16,    // match decoder
+        paddingHorizontal: 16,
+        paddingVertical: 16,
+        marginTop: 40, // Move marginTop here for spacing above header
     },
     secretWordContainerUnified: {
         backgroundColor: '#FFFFFF',
@@ -403,6 +453,52 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontWeight: 'bold',
         color: '#007AFF',
+    },
+    abortButton: {
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: 'white',
+        marginRight: 8,
+        backgroundColor: 'rgba(0, 0, 0, 0.15)',
+    },
+    abortButtonText: {
+        color: '#FFFFFF',
+        fontWeight: '600',
+    },
+    timerContainer: {
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 8,
+        marginLeft: 10,
+    },
+    timerContainerNormal: {
+        backgroundColor: '#34C759', // Green for normal time (>2 minutes)
+    },
+    timerContainerLow: {
+        backgroundColor: '#FF9500', // Yellow for low time (1-2 minutes)
+    },
+    timerContainerWarning: {
+        backgroundColor: '#FF3B30', // Red for warning (<1 minute)
+        shadowColor: '#FF3B30',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.8,
+        shadowRadius: 8,
+        elevation: 6,
+    },
+    timerContainerFlashing: {
+        backgroundColor: '#FF3B30', // Bright red for flashing (<30 seconds)
+        shadowColor: '#FF3B30',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 1,
+        shadowRadius: 12,
+        elevation: 8,
+    },
+    timerText: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: 'bold',
     },
 });
 
