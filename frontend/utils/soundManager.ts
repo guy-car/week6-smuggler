@@ -9,15 +9,44 @@ class SoundManager {
     private musicVolume: number = 0.5; // Default music volume
     private effectsVolume: number = 1.0; // Default effects volume
     private hasUserInteraction: boolean = false;
-    private currentGameEndSound: Audio.Sound | null = null; // Track current game end sound
+    private currentGameEndSound: Audio.Sound | null = null;
+    private webInteractionHandler: (() => void) | null = null;
 
-    private constructor() {}
+    private constructor() {
+        // Set up web interaction handler immediately for the entire lifecycle
+        if (Platform.OS === 'web' && typeof document !== 'undefined') {
+            this.setupWebAutoplayHandler();
+        }
+    }
 
     static getInstance(): SoundManager {
         if (!SoundManager.instance) {
             SoundManager.instance = new SoundManager();
         }
         return SoundManager.instance;
+    }
+
+    private setupWebAutoplayHandler() {
+        if (this.webInteractionHandler) {
+            // Remove existing listeners before setting up new ones
+            document.removeEventListener('click', this.webInteractionHandler);
+            document.removeEventListener('touchstart', this.webInteractionHandler);
+            document.removeEventListener('keydown', this.webInteractionHandler);
+        }
+
+        this.webInteractionHandler = () => {
+            if (!this.hasUserInteraction) {
+                console.log('First user interaction detected, enabling audio');
+                this.hasUserInteraction = true;
+                this.playBackgroundMusic().catch(error => {
+                    console.warn('Failed to play background music after interaction:', error);
+                });
+            }
+        };
+
+        document.addEventListener('click', this.webInteractionHandler);
+        document.addEventListener('touchstart', this.webInteractionHandler);
+        document.addEventListener('keydown', this.webInteractionHandler);
     }
 
     async initialize() {
@@ -27,7 +56,7 @@ class SoundManager {
             await Audio.setAudioModeAsync({
                 playsInSilentModeIOS: true,
                 staysActiveInBackground: false,
-                shouldDuckAndroid: true, // Enable ducking on Android
+                shouldDuckAndroid: true,
             });
 
             // Preload all sounds
@@ -125,41 +154,20 @@ class SoundManager {
 
             this.initialized = true;
 
-            // On web, we'll wait for user interaction before playing
-            if (Platform.OS === 'web') {
-                this.setupWebAutoplayHandler();
-            } else {
-                // On native platforms, we can start playing immediately
-                this.playBackgroundMusic();
+            // On native platforms, start playing immediately
+            if (Platform.OS !== 'web') {
+                await this.playBackgroundMusic();
             }
+            // On web, we already set up the interaction handler in constructor
         } catch (error) {
             console.error('Failed to initialize audio:', error);
-        }
-    }
-
-    private setupWebAutoplayHandler() {
-        if (Platform.OS === 'web' && typeof document !== 'undefined') {
-            const handleUserInteraction = () => {
-                if (!this.hasUserInteraction) {
-                    this.hasUserInteraction = true;
-                    this.playBackgroundMusic();
-                    // Remove listeners after first interaction
-                    document.removeEventListener('click', handleUserInteraction);
-                    document.removeEventListener('touchstart', handleUserInteraction);
-                    document.removeEventListener('keydown', handleUserInteraction);
-                }
-            };
-
-            document.addEventListener('click', handleUserInteraction);
-            document.addEventListener('touchstart', handleUserInteraction);
-            document.addEventListener('keydown', handleUserInteraction);
         }
     }
 
     async playBackgroundMusic() {
         if (!this.backgroundMusic) return;
 
-        // On web, don't try to play if we haven't had user interaction
+        // On web, check for user interaction
         if (Platform.OS === 'web' && !this.hasUserInteraction) {
             console.log('Waiting for user interaction before playing background music');
             return;
@@ -174,7 +182,11 @@ class SoundManager {
                 }
             }
         } catch (error) {
-            console.error('Error playing background music:', error);
+            if (Platform.OS === 'web' && !this.hasUserInteraction) {
+                console.log('Browser requires user interaction before playing audio');
+            } else {
+                console.error('Error playing background music:', error);
+            }
         }
     }
 
@@ -338,7 +350,8 @@ class SoundManager {
         }
         this.sounds.clear();
         this.initialized = false;
-        this.hasUserInteraction = false;
+        // Don't reset hasUserInteraction on cleanup, maintain it for the session
+        // Don't remove web interaction handlers either, keep them for the session
     }
 }
 
