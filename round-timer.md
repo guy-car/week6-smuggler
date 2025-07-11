@@ -88,12 +88,12 @@ game:
 - [x] Verify timer display shows correct remaining time format
 
 ### Phase 4: Timer Expiration Handling
-- [ ] Update `checkTimerExpiration()` method for round-based expiration
-- [ ] Ensure round ends immediately when timer expires
-- [ ] Update round end event emission with timer expiration reason
-- [ ] Verify AI wins the point when timer expires
-- [ ] Test round advancement after timer expiration
-- [ ] Verify new round timer starts correctly
+- [x] Update `checkTimerExpiration()` method for round-based expiration
+- [x] Ensure round ends immediately when timer expires
+- [x] Update round end event emission with timer expiration reason
+- [x] Verify AI wins the point when timer expires
+- [x] Test round advancement after timer expiration
+- [x] Verify new round timer starts correctly
 
 ### Phase 5: Integration Testing
 - [ ] Test timer starts at beginning of each round
