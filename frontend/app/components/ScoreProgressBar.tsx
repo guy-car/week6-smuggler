@@ -62,7 +62,8 @@ const ScoreProgressBar: React.FC<ScoreProgressBarProps> = ({
                                         elevation: 8,
                                     },
                                     !isFilled && {
-                                        borderColor: val < currentStepIdx ? '#FF3B30' : val > currentStepIdx ? '#30FF6A' : '#FFC300',
+                                        // Inverted: green to the left, red to the right
+                                        borderColor: idx < currentStepIdx ? '#30FF6A' : idx > currentStepIdx ? '#FF3B30' : '#FFC300',
                                     },
                                 ]}
                             />
