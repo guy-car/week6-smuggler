@@ -188,77 +188,80 @@ const EncoderGameScreen = () => {
                     <KeyboardAvoidingView
                         style={styles.container}
                         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
                     >
-                        <View style={{ flex: 1 }}>
-                            <View style={styles.topRow}>
-                                <TouchableOpacity style={styles.abortButton} onPress={handleQuit}>
-                                    <Text style={styles.abortButtonText}>Abort</Text>
-                                </TouchableOpacity>
-                                <View style={{ flex: 1 }}>
-                                    <ScoreProgressBar
-                                        score={score}
-                                        maxScore={6}
-                                        aiWinsScore={0}
-                                        humansWinScore={6}
-                                    />
-                                </View>
-                                <Animated.View style={[getTimerStyle(), { opacity: flashAnim }]}>
-                                    <Text style={styles.timerText}>{formatTimerDisplay(remainingTime)}</Text>
-                                </Animated.View>
-                            </View>
-                            <View style={styles.content}>
-                                <AISectionComponent
-                                    currentTurn={currentTurn}
-                                    conversationHistory={conversationHistory}
-                                    currentPlayerId={player?.id}
+                        <View style={styles.topRow}>
+                            <TouchableOpacity style={styles.abortButton} onPress={handleQuit}>
+                                <Text style={styles.abortButtonText}>Abort</Text>
+                            </TouchableOpacity>
+                            <View style={{ flex: 1 }}>
+                                <ScoreProgressBar
+                                    score={score}
+                                    maxScore={6}
+                                    aiWinsScore={0}
+                                    humansWinScore={6}
                                 />
                             </View>
-                            {/* Secret word above input field */}
-                            <SecretWordContainer secretWord={secretWord || undefined} />
-                            {/* Typing indicator above input field */}
-                            <View style={styles.typingIndicatorContainer}>
-                                <TypingIndicator
-                                    role={(typingIndicator?.role || 'encoder') as 'encoder' | 'decoder'}
-                                    isVisible={!!(typingIndicator && typingIndicator.isTyping && typingIndicator.role !== playerRole)}
-                                />
-                            </View>
+                            <Animated.View style={[getTimerStyle(), { opacity: flashAnim }]}>
+                                <Text style={styles.timerText}>{formatTimerDisplay(remainingTime)}</Text>
+                            </Animated.View>
+                        </View>
+                        
+                        <View style={styles.content}>
+                            <AISectionComponent
+                                currentTurn={currentTurn}
+                                conversationHistory={conversationHistory}
+                                currentPlayerId={player?.id}
+                            />
+                        </View>
+                        
+                        {/* Secret word above input field */}
+                        <SecretWordContainer secretWord={secretWord || undefined} />
+                        
+                        {/* Typing indicator above input field */}
+                        <View style={styles.typingIndicatorContainer}>
+                            <TypingIndicator
+                                role={(typingIndicator?.role || 'encoder') as 'encoder' | 'decoder'}
+                                isVisible={!!(typingIndicator && typingIndicator.isTyping && typingIndicator.role !== playerRole)}
+                            />
+                        </View>
+                        
+                        {/* inputContainer moved inside KeyboardAvoidingView */}
+                        <View style={styles.inputContainer}>
+                            <TextInput
+                                style={[
+                                    styles.messageInput,
+                                    !canSendMessage && styles.messageInputDisabled,
+                                ]}
+                                value={messageInput}
+                                onChangeText={handleTyping}
+                                placeholder={
+                                    canSendMessage
+                                        ? "Send a clue to your ally..."
+                                        : "Waiting for AI response..."
+                                }
+                                multiline
+                                maxLength={200}
+                                editable={canSendMessage}
+                                placeholderTextColor="white"
+                            />
+                            <TouchableOpacity
+                                style={[
+                                    styles.sendButton,
+                                    (!canSendMessage || !messageInput.trim() || isSubmitting) &&
+                                    styles.sendButtonDisabled,
+                                ]}
+                                onPress={handleSendMessage}
+                                disabled={!canSendMessage || !messageInput.trim() || isSubmitting}
+                            >
+                                <Text style={styles.sendButtonText}>
+                                    {isSubmitting ? 'Sending...' : 'Send'}
+                                </Text>
+                            </TouchableOpacity>
                         </View>
                     </KeyboardAvoidingView>
                 </View>
             </TouchableWithoutFeedback>
-            {/* inputContainer is outside TouchableWithoutFeedback, so input remains interactive */}
-            <View style={styles.inputContainer}>
-                <TextInput
-                    style={[
-                        styles.messageInput,
-                        !canSendMessage && styles.messageInputDisabled,
-                    ]}
-                    value={messageInput}
-                    onChangeText={handleTyping}
-                    placeholder={
-                        canSendMessage
-                            ? "Send a clue to your ally..."
-                            : "Waiting for AI response..."
-                    }
-                    multiline
-                    maxLength={200}
-                    editable={canSendMessage}
-                    placeholderTextColor="white"
-                />
-                <TouchableOpacity
-                    style={[
-                        styles.sendButton,
-                        (!canSendMessage || !messageInput.trim() || isSubmitting) &&
-                        styles.sendButtonDisabled,
-                    ]}
-                    onPress={handleSendMessage}
-                    disabled={!canSendMessage || !messageInput.trim() || isSubmitting}
-                >
-                    <Text style={styles.sendButtonText}>
-                        {isSubmitting ? 'Sending...' : 'Send'}
-                    </Text>
-                </TouchableOpacity>
-            </View>
             <RoundModal />
         </ImageBackground>
     );
@@ -310,6 +313,7 @@ const styles = StyleSheet.create({
         flex: 1,
         minHeight: 0,
         paddingTop: 16,
+        paddingBottom: 16,
     },
     controlsContainer: {
         flexDirection: 'row',
@@ -523,7 +527,6 @@ const styles = StyleSheet.create({
     },
     abortButtonText: {
         color: '#FFFFFF',
-        fontWeight: '600',
         fontFamily: 'Audiowide',
     },
     timerContainer: {
