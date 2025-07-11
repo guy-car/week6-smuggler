@@ -145,8 +145,7 @@ const styles = StyleSheet.create({
     },
     backButtonText: {
         color: '#fff',
-        fontWeight: 'bold',
-        fontSize: 18,
+        fontSize: 14,
         fontFamily: 'Audiowide',
     },
     roomIdContainer: {
@@ -155,14 +154,12 @@ const styles = StyleSheet.create({
     roomIdLabel: {
         color: '#fff',
         fontSize: 12,
-        fontWeight: 'bold',
         letterSpacing: 1,
         fontFamily: 'VT323',
     },
     roomId: {
         color: '#fff',
         fontSize: 34,
-        fontWeight: 'bold',
         letterSpacing: 2,
         marginTop: 2,
         fontFamily: 'VT323',
@@ -180,7 +177,6 @@ const styles = StyleSheet.create({
     introText: {
         color: '#fff',
         fontSize: 28,
-        fontWeight: 'bold',
         textAlign: 'center',
         fontFamily: 'monospace',
     },
@@ -198,7 +194,6 @@ const styles = StyleSheet.create({
     },
     pillRole: {
         color: '#fff',
-        fontWeight: 'bold',
         fontSize: 16,
         marginRight: 12,
         fontFamily: 'monospace',
@@ -210,7 +205,6 @@ const styles = StyleSheet.create({
     },
     pillStatusText: {
         color: '#fff',
-        fontWeight: 'bold',
         fontSize: 13,
         fontFamily: 'monospace',
     },
@@ -237,9 +231,8 @@ const styles = StyleSheet.create({
     },
     readyButtonText: {
         color: '#fff',
-        fontWeight: 'bold',
         fontSize: 28,
-        fontFamily: 'monospace',
+        fontFamily: 'VT323',
         letterSpacing: 2,
     },
     pillContainer: {

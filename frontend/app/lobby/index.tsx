@@ -109,7 +109,6 @@ const styles = StyleSheet.create({
     },
     title: {
         fontSize: 48,
-        fontWeight: 'bold',
         color: '#fff',
         letterSpacing: 2,
         marginTop: 24,
@@ -156,7 +155,6 @@ const styles = StyleSheet.create({
     newGameButtonText: {
         color: '#fff',
         fontSize: 52,
-        fontWeight: 'bold',
         fontFamily: 'VT323',
         letterSpacing: 2,
         textAlign: 'center',
@@ -173,7 +171,6 @@ const styles = StyleSheet.create({
     },
     joinHeader: {
         fontSize: 28,
-        fontWeight: 'bold',
         color: '#fff',
         marginBottom: 16,
         fontFamily: 'Audiowide',
@@ -204,7 +201,6 @@ const styles = StyleSheet.create({
     roomButtonLabel: {
         color: '#fff',
         fontSize: 18,
-        fontWeight: 'bold',
         letterSpacing: 2,
         marginBottom: 4,
         fontFamily: 'VT323',
@@ -212,14 +208,12 @@ const styles = StyleSheet.create({
     roomButtonId: {
         color: '#fff',
         fontSize: 44,
-        fontWeight: 'bold',
         fontFamily: 'VT323',
         letterSpacing: 2,
     },
     errorText: {
         color: '#ff3333',
         marginBottom: 12,
-        fontWeight: 'bold',
     },
     noRoomsText: {
         color: '#fff',

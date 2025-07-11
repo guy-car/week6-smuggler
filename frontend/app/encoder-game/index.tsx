@@ -290,7 +290,6 @@ const styles = StyleSheet.create({
     },
     title: {
         fontSize: 20,
-        fontWeight: 'bold',
         color: '#000000',
     },
     quitButton: {
@@ -305,7 +304,6 @@ const styles = StyleSheet.create({
     },
     quitButtonText: {
         color: '#FFFFFF',
-        fontWeight: '600',
         fontFamily: 'Audiowide',
     },
     content: {
@@ -329,7 +327,6 @@ const styles = StyleSheet.create({
     },
     controlButtonText: {
         color: '#FFFFFF',
-        fontWeight: '600',
     },
     aiSection: {
         paddingHorizontal: 16,
@@ -337,7 +334,6 @@ const styles = StyleSheet.create({
     },
     aiSectionTitle: {
         fontSize: 16,
-        fontWeight: '600',
         marginBottom: 8,
         color: '#000000',
     },
@@ -395,7 +391,6 @@ const styles = StyleSheet.create({
     },
     sendButtonText: {
         color: '#fff',
-        fontWeight: 'bold',
     },
     modalOverlay: {
         position: 'absolute',
@@ -418,13 +413,11 @@ const styles = StyleSheet.create({
     },
     modalTitle: {
         fontSize: 18,
-        fontWeight: 'bold',
         marginBottom: 16,
         textAlign: 'center',
     },
     secretWord: {
         fontSize: 24,
-        fontWeight: 'bold',
         color: '#007AFF',
         textAlign: 'center',
         marginBottom: 24,
@@ -438,7 +431,6 @@ const styles = StyleSheet.create({
     },
     modalButtonText: {
         color: '#FFFFFF',
-        fontWeight: '600',
     },
     guessesList: {
         maxHeight: 200,
@@ -451,7 +443,6 @@ const styles = StyleSheet.create({
     },
     guessText: {
         fontSize: 16,
-        fontWeight: '500',
         color: '#000000',
     },
     guessTime: {
@@ -482,13 +473,11 @@ const styles = StyleSheet.create({
     },
     secretWordTitle: {
         fontSize: 14,
-        fontWeight: '600',
         color: '#8E8E93',
         marginBottom: 4,
     },
     secretWordText: {
         fontSize: 20,
-        fontWeight: 'bold',
         color: '#007AFF',
         fontFamily: 'VT323',
     },
@@ -516,13 +505,11 @@ const styles = StyleSheet.create({
     },
     secretWordTitleUnified: {
         fontSize: 14,
-        fontWeight: '600',
         color: '#8E8E93',
         marginBottom: 4,
     },
     secretWordTextUnified: {
         fontSize: 20,
-        fontWeight: 'bold',
         color: '#007AFF',
     },
     abortButton: {
@@ -572,7 +559,6 @@ const styles = StyleSheet.create({
     timerText: {
         color: '#FFFFFF',
         fontSize: 12,
-        fontWeight: 'bold',
         textAlign: 'center',
         fontFamily: 'Audiowide',
     },

@@ -94,7 +94,6 @@ const styles = StyleSheet.create({
     },
     modalText: {
         fontSize: 32,
-        fontWeight: 'bold',
         textAlign: 'center',
         letterSpacing: 1.5,
         marginBottom: 16,
@@ -103,20 +102,17 @@ const styles = StyleSheet.create({
     },
     guessText: {
         fontSize: 20,
-        fontWeight: '600',
         textAlign: 'center',
         marginBottom: 12,
     },
     secretWordText: {
         fontSize: 20,
-        fontWeight: '600',
         textAlign: 'center',
         marginBottom: 12,
         fontFamily: 'Audiowide',
     },
     pointsText: {
         fontSize: 14,
-        fontWeight: 'bold',
         textAlign: 'center',
         marginBottom: 24,
         fontFamily: 'Audiowide',
@@ -140,7 +136,6 @@ const styles = StyleSheet.create({
     },
     nextRoundButtonText: {
         fontSize: 38,
-        fontWeight: 'bold',
         textAlign: 'center',
         fontFamily: 'VT323',
     },

@@ -30,14 +30,12 @@ const styles = StyleSheet.create({
     },
     secretWordTitleUnified: {
         fontSize: 14,
-        fontWeight: '600',
         color: '#8E8E93',
         marginBottom: 4,
         fontFamily: 'Audiowide',
     },
     secretWordTextUnified: {
         fontSize: 40,
-        fontWeight: 'bold',
         color: '#fff',
         fontFamily: 'VT323',
     },

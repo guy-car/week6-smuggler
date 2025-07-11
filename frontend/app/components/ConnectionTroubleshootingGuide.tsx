@@ -177,7 +177,6 @@ const styles = StyleSheet.create({
     },
     title: {
         fontSize: 20,
-        fontWeight: 'bold',
         color: '#000000',
     },
     closeButton: {
@@ -213,7 +212,6 @@ const styles = StyleSheet.create({
     testButtonText: {
         color: '#FFFFFF',
         fontSize: 16,
-        fontWeight: '600',
     },
     connectionTestResult: {
         padding: 16,
@@ -256,7 +254,6 @@ const styles = StyleSheet.create({
     },
     stepTitle: {
         fontSize: 16,
-        fontWeight: '600',
         color: '#000000',
         flex: 1,
     },

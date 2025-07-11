@@ -97,7 +97,6 @@ const styles = StyleSheet.create({
     },
     statusText: {
         fontSize: 16,
-        fontWeight: '600',
     },
     roundContainer: {
         backgroundColor: '#F2F2F7',
@@ -107,7 +106,6 @@ const styles = StyleSheet.create({
     },
     roundText: {
         fontSize: 14,
-        fontWeight: '500',
         color: '#8E8E93',
     },
 });

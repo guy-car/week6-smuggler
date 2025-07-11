@@ -113,7 +113,6 @@ const styles = StyleSheet.create({
     },
     errorTitle: {
         fontSize: 24,
-        fontWeight: 'bold',
         color: '#FF3B30',
         marginBottom: 16,
     },
