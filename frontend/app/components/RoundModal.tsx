@@ -37,6 +37,11 @@ const RoundModal: React.FC = () => {
         >
             <View style={styles.overlay}>
                 <View style={[styles.modalBox, { backgroundColor: bgColor }]}>
+
+
+                    <Text style={[styles.modalText, { color: textColor }]}>{message}</Text>
+                    <Text style={[styles.secretWordText, { color: textColor }]}>Secret word: {secretWord}</Text>
+
                     {/* Score Progress Bar */}
                     <View style={styles.scoreBarContainer}>
                         <ScoreProgressBar
@@ -48,13 +53,6 @@ const RoundModal: React.FC = () => {
                         />
                     </View>
 
-                    <Text style={[styles.modalText, { color: textColor }]}>{message}</Text>
-
-                    {correctGuess && (
-                        <Text style={[styles.guessText, { color: textColor }]}>Correct guess: {correctGuess}</Text>
-                    )}
-
-                    <Text style={[styles.secretWordText, { color: textColor }]}>Secret word: {secretWord}</Text>
 
                     <Text style={[styles.pointsText, { color: textColor }]}>Points: {pointsText}</Text>
 
@@ -76,11 +74,12 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0,0,0,0.7)',
         justifyContent: 'center',
         alignItems: 'center',
+        padding: 16,
     },
     modalBox: {
         borderRadius: 24,
         paddingVertical: 48,
-        paddingHorizontal: 32,
+        paddingHorizontal: 24,
         alignItems: 'center',
         justifyContent: 'center',
         minWidth: 280,
@@ -97,6 +96,7 @@ const styles = StyleSheet.create({
         letterSpacing: 1.5,
         marginBottom: 16,
         marginTop: 0,
+        fontFamily: 'Audiowide',
     },
     guessText: {
         fontSize: 20,
@@ -109,12 +109,14 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         textAlign: 'center',
         marginBottom: 12,
+        fontFamily: 'Audiowide',
     },
     pointsText: {
-        fontSize: 24,
+        fontSize: 14,
         fontWeight: 'bold',
         textAlign: 'center',
         marginBottom: 24,
+        fontFamily: 'Audiowide',
     },
     scoreBarContainer: {
         backgroundColor: 'rgba(0,0,0,0.5)',
@@ -122,9 +124,7 @@ const styles = StyleSheet.create({
         padding: 16,
         marginBottom: 4,
         width: '100%',
-        top: -30,
-        height: 100,
-    },
+        },
     nextRoundButton: {
         paddingHorizontal: 32,
         paddingVertical: 16,
@@ -136,9 +136,10 @@ const styles = StyleSheet.create({
         elevation: 4,
     },
     nextRoundButtonText: {
-        fontSize: 18,
+        fontSize: 38,
         fontWeight: 'bold',
         textAlign: 'center',
+        fontFamily: 'VT323',
     },
 });
 
