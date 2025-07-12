@@ -50,17 +50,22 @@ const DecoderGameScreen = () => {
             return;
         }
 
+        const currentGuess = guessInput.trim();
         setIsSubmitting(true);
+        // Clear input immediately for better UX
+        setGuessInput('');
+
         // Play sound and haptics immediately without awaiting
         playSendSound();
 
         triggerActionHaptics();
 
         try {
-            await submitGuess(guessInput.trim());
-            setGuessInput('');
+            await submitGuess(currentGuess);
         } catch (error: any) {
             Alert.alert('Error', error.message || 'Failed to submit guess');
+            // Restore the input if there was an error
+            setGuessInput(currentGuess);
         } finally {
             setIsSubmitting(false);
         }
@@ -84,6 +89,9 @@ const DecoderGameScreen = () => {
     const isMyTurn = currentTurn === playerRole;
 
     const flashAnim = useRef(new Animated.Value(1)).current;
+    const inputFlexAnim = useRef(new Animated.Value(1)).current;
+    const buttonAnim = useRef(new Animated.Value(1)).current;
+    const buttonWidthAnim = useRef(new Animated.Value(100)).current; // 100 = visible, 0 = hidden
 
     // Flashing animation for last 30 seconds
     useEffect(() => {
@@ -108,6 +116,46 @@ const DecoderGameScreen = () => {
             flashAnim.setValue(1);
         }
     }, [remainingTime, flashAnim]);
+
+    useEffect(() => {
+        if (canSubmitGuess) {
+            Animated.parallel([
+                Animated.timing(inputFlexAnim, {
+                    toValue: 1,
+                    duration: 300,
+                    useNativeDriver: false,
+                }),
+                Animated.timing(buttonAnim, {
+                    toValue: 1,
+                    duration: 300,
+                    useNativeDriver: false,
+                }),
+                Animated.timing(buttonWidthAnim, {
+                    toValue: 100,
+                    duration: 300,
+                    useNativeDriver: false,
+                }),
+            ]).start();
+        } else {
+            Animated.parallel([
+                Animated.timing(inputFlexAnim, {
+                    toValue: 10,
+                    duration: 300,
+                    useNativeDriver: false,
+                }),
+                Animated.timing(buttonAnim, {
+                    toValue: 0,
+                    duration: 300,
+                    useNativeDriver: false,
+                }),
+                Animated.timing(buttonWidthAnim, {
+                    toValue: 0,
+                    duration: 300,
+                    useNativeDriver: false,
+                }),
+            ]).start();
+        }
+    }, [canSubmitGuess]);
 
     const typingTimeoutRef = useRef<any>(null);
 
@@ -193,35 +241,43 @@ const DecoderGameScreen = () => {
 
                     {/* inputContainer at the bottom, will be pushed up by KeyboardAvoidingView */}
                     <View style={styles.inputContainer}>
-                        <TextInput
-                            style={[
-                                styles.guessInput,
-                                !canSubmitGuess && styles.guessInputDisabled,
-                            ]}
-                            value={guessInput}
-                            onChangeText={handleTyping}
-                            placeholder={
-                                canSubmitGuess
-                                    ? "Guess the secret word..."
-                                    : "Waiting for your clue..."
-                            }
-                            multiline
-                            maxLength={50}
-                            editable={canSubmitGuess}
-                            placeholderTextColor="white"
-                        />
-                        <TouchableOpacity
-                            style={[
-                                styles.submitButton,
-                                !canSubmitGuess && styles.submitButtonDisabled,
-                            ]}
-                            onPress={handleSubmitGuess}
-                            disabled={!canSubmitGuess}
-                        >
-                            <Text style={styles.submitButtonText}>
-                                {isSubmitting ? 'Submitting...' : 'Guess'}
-                            </Text>
-                        </TouchableOpacity>
+                        <Animated.View style={[styles.guessInput, { flex: inputFlexAnim }]}>
+                            <TextInput
+                                style={[
+                                    { flex: 1, color: '#fff', fontFamily: 'Audiowide', lineHeight: 24, textAlignVertical: 'center', minHeight: 48 },
+                                    !canSubmitGuess && styles.guessInputDisabled
+                                ]}
+                                value={guessInput}
+                                onChangeText={handleTyping}
+                                placeholder={
+                                    canSubmitGuess
+                                        ? "Guess the secret..."
+                                        : "Waiting for the clue..."
+                                }
+                                multiline
+                                maxLength={50}
+                                editable={canSubmitGuess}
+                                placeholderTextColor="white"
+                            />
+                        </Animated.View>
+                        <Animated.View style={{
+                            width: buttonWidthAnim,
+                            opacity: buttonAnim,
+                            overflow: 'hidden',
+                        }}>
+                            <TouchableOpacity
+                                style={[
+                                    styles.submitButton,
+                                    !canSubmitGuess && styles.submitButtonDisabled,
+                                ]}
+                                onPress={handleSubmitGuess}
+                                disabled={!canSubmitGuess}
+                            >
+                                <Text style={styles.submitButtonText} numberOfLines={1}>
+                                    {isSubmitting ? 'Submitting...' : 'Guess'}
+                                </Text>
+                            </TouchableOpacity>
+                        </Animated.View>
                     </View>
                 </KeyboardAvoidingView>
             </View>
@@ -260,6 +316,9 @@ const styles = StyleSheet.create({
     inputContainer: {
         flexDirection: 'row',
         padding: 16,
+        alignItems: 'center',
+        height: 56, // fixed height for stability
+        margin: 16,
         gap: 8,
     },
     guessInput: {
@@ -267,24 +326,25 @@ const styles = StyleSheet.create({
         borderWidth: 4,
         borderColor: '#FFD600',
         borderRadius: 8,
-        padding: 12,
         fontSize: 16,
-        maxHeight: 100,
         color: '#fff',
         backgroundColor: 'rgba(0,0,0,0.5)',
         fontFamily: 'Audiowide',
+        height: 48, // match the button height exactly
+        paddingVertical: 0, // remove extra vertical padding
+        textAlignVertical: 'center', // center text vertically
     },
     guessInputDisabled: {
-        borderColor: '#C7C7CC',
+        // Only dim text color, do not change background or border
         color: '#8E8E93',
-        opacity: 0.5,
+        // opacity: 0.5, // optional, can remove if not desired
     },
     submitButton: {
         borderWidth: 4,
         borderColor: '#FFD600',
         backgroundColor: 'rgba(222, 192, 0, 0.8)',
-        paddingHorizontal: 20,
-        paddingVertical: 12,
+        paddingHorizontal: 16,
+        height: 48,
         borderRadius: 8,
         justifyContent: 'center',
         shadowColor: '#FFD600',
@@ -292,12 +352,19 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.7,
         shadowRadius: 16,
         elevation: 8,
+        alignItems: 'center',
+        minWidth: 80,
     },
     submitButtonDisabled: {
         opacity: .4,
     },
     submitButtonText: {
         color: '#000',
+        fontSize: 16,
+        textAlign: 'center',
+        fontFamily: 'Audiowide',
+        includeFontPadding: false,
+        textAlignVertical: 'center',
     },
     abortButton: {
         paddingHorizontal: 16,

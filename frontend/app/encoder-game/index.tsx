@@ -53,6 +53,9 @@ const EncoderGameScreen = () => {
 
     const flashAnim = useRef(new Animated.Value(1)).current;
     const typingTimeoutRef = useRef<any>(null);
+    const inputFlexAnim = useRef(new Animated.Value(1)).current;
+    const buttonAnim = useRef(new Animated.Value(1)).current;
+    const buttonWidthAnim = useRef(new Animated.Value(100)).current; // 100 = visible, 0 = hidden
 
     // Initialize audio and load sound
     useEffect(() => {
@@ -132,17 +135,22 @@ const EncoderGameScreen = () => {
             return;
         }
 
+        const currentMessage = messageInput.trim();
         setIsSubmitting(true);
+        // Clear input immediately for better UX
+        setMessageInput('');
+
         // Play sound and haptics immediately without awaiting
         playSendSound();
 
         triggerActionHaptics();
 
         try {
-            await sendMessage(messageInput.trim());
-            setMessageInput('');
+            await sendMessage(currentMessage);
         } catch (error: any) {
             Alert.alert('Error', error.message || 'Failed to send message');
+            // Restore the input if there was an error
+            setMessageInput(currentMessage);
         } finally {
             setIsSubmitting(false);
         }
@@ -175,6 +183,46 @@ const EncoderGameScreen = () => {
     useEffect(() => {
         // This will be handled by the ConversationHistory component
     }, [conversationHistory]);
+
+    useEffect(() => {
+        if (canSendMessage) {
+            Animated.parallel([
+                Animated.timing(inputFlexAnim, {
+                    toValue: 1,
+                    duration: 300,
+                    useNativeDriver: false,
+                }),
+                Animated.timing(buttonAnim, {
+                    toValue: 1,
+                    duration: 300,
+                    useNativeDriver: false,
+                }),
+                Animated.timing(buttonWidthAnim, {
+                    toValue: 100,
+                    duration: 300,
+                    useNativeDriver: false,
+                }),
+            ]).start();
+        } else {
+            Animated.parallel([
+                Animated.timing(inputFlexAnim, {
+                    toValue: 10,
+                    duration: 300,
+                    useNativeDriver: false,
+                }),
+                Animated.timing(buttonAnim, {
+                    toValue: 0,
+                    duration: 300,
+                    useNativeDriver: false,
+                }),
+                Animated.timing(buttonWidthAnim, {
+                    toValue: 0,
+                    duration: 300,
+                    useNativeDriver: false,
+                }),
+            ]).start();
+        }
+    }, [canSendMessage]);
 
     return (
         <ImageBackground
@@ -228,36 +276,44 @@ const EncoderGameScreen = () => {
 
                     {/* inputContainer moved inside KeyboardAvoidingView */}
                     <View style={styles.inputContainer}>
-                        <TextInput
-                            style={[
-                                styles.messageInput,
-                                !canSendMessage && styles.messageInputDisabled,
-                            ]}
-                            value={messageInput}
-                            onChangeText={handleTyping}
-                            placeholder={
-                                canSendMessage
-                                    ? "Send a clue to your ally..."
-                                    : "Waiting for AI response..."
-                            }
-                            multiline
-                            maxLength={200}
-                            editable={canSendMessage}
-                            placeholderTextColor="white"
-                        />
-                        <TouchableOpacity
-                            style={[
-                                styles.sendButton,
-                                (!canSendMessage || !messageInput.trim() || isSubmitting) &&
-                                styles.sendButtonDisabled,
-                            ]}
-                            onPress={handleSendMessage}
-                            disabled={!canSendMessage || !messageInput.trim() || isSubmitting}
-                        >
-                            <Text style={styles.sendButtonText}>
-                                {isSubmitting ? 'Sending...' : 'Send'}
-                            </Text>
-                        </TouchableOpacity>
+                        <Animated.View style={[styles.messageInput, { flex: inputFlexAnim }]}>
+                            <TextInput
+                                style={[
+                                    { flex: 1, color: '#fff', fontFamily: 'Audiowide', lineHeight: 24, textAlignVertical: 'center', minHeight: 48 },
+                                    !canSendMessage && styles.messageInputDisabled
+                                ]}
+                                value={messageInput}
+                                onChangeText={handleTyping}
+                                placeholder={
+                                    canSendMessage
+                                        ? "Send a clue..."
+                                        : "Waiting for AI response..."
+                                }
+                                multiline
+                                maxLength={200}
+                                editable={canSendMessage}
+                                placeholderTextColor="white"
+                            />
+                        </Animated.View>
+                        <Animated.View style={{
+                            width: buttonWidthAnim,
+                            opacity: buttonAnim,
+                            overflow: 'hidden',
+                        }}>
+                            <TouchableOpacity
+                                style={[
+                                    styles.sendButton,
+                                    (!canSendMessage || !messageInput.trim() || isSubmitting) &&
+                                    styles.sendButtonDisabled,
+                                ]}
+                                onPress={handleSendMessage}
+                                disabled={!canSendMessage || !messageInput.trim() || isSubmitting}
+                            >
+                                <Text style={styles.sendButtonText} numberOfLines={1}>
+                                    {isSubmitting ? 'Sending...' : 'Send'}
+                                </Text>
+                            </TouchableOpacity>
+                        </Animated.View>
                     </View>
                 </KeyboardAvoidingView>
             </View>
@@ -355,45 +411,55 @@ const styles = StyleSheet.create({
     inputContainer: {
         flexDirection: 'row',
         padding: 16,
+        alignItems: 'center',
+        height: 56, // fixed height for stability
+        margin: 16,
         gap: 8,
     },
     messageInput: {
         flex: 1,
         borderWidth: 4,
-        borderColor: '#fff',
+        borderColor: '#FFD600',
         borderRadius: 8,
-        padding: 12,
         fontSize: 16,
-        maxHeight: 100,
         color: '#fff',
         backgroundColor: 'rgba(0,0,0,0.5)',
         fontFamily: 'Audiowide',
-
+        height: 48, // match the button height exactly
+        paddingVertical: 0, // remove extra vertical padding
+        textAlignVertical: 'center', // center text vertically
     },
     messageInputDisabled: {
-        borderColor: '#C7C7CC',
-        backgroundColor: '#F2F2F7',
+        // Only dim text color, do not change background or border
         color: '#8E8E93',
+        // opacity: 0.5, // optional, can remove if not desired
     },
     sendButton: {
         borderWidth: 4,
-        borderColor: '#00FF90',
-        paddingHorizontal: 20,
-        paddingVertical: 12,
+        borderColor: '#FFD600',
+        backgroundColor: 'rgba(222, 192, 0, 0.8)',
+        paddingHorizontal: 16,
+        height: 48,
         borderRadius: 8,
         justifyContent: 'center',
-        backgroundColor: 'rgba(0,255,144,0.5)',
-        shadowColor: '#00FF90',
+        shadowColor: '#FFD600',
         shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.8,
+        shadowOpacity: 0.7,
         shadowRadius: 16,
-        elevation: 10,
-        fontFamily: 'Audiowide',
+        elevation: 8,
+        alignItems: 'center',
+        minWidth: 80,
     },
     sendButtonDisabled: {
+        opacity: .4,
     },
     sendButtonText: {
-        color: '#fff',
+        color: '#000',
+        fontSize: 16,
+        textAlign: 'center',
+        fontFamily: 'Audiowide',
+        includeFontPadding: false,
+        textAlignVertical: 'center',
     },
     modalOverlay: {
         position: 'absolute',
