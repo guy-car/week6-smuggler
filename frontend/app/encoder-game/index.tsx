@@ -208,15 +208,13 @@ const EncoderGameScreen = () => {
                         </View>
                     </TouchableWithoutFeedback>
 
-                    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-                        <View style={styles.content}>
-                            <AISectionComponent
-                                currentTurn={currentTurn}
-                                conversationHistory={conversationHistory}
-                                currentPlayerId={player?.id}
-                            />
-                        </View>
-                    </TouchableWithoutFeedback>
+                    <View style={styles.content}>
+                        <AISectionComponent
+                            currentTurn={currentTurn}
+                            conversationHistory={conversationHistory}
+                            currentPlayerId={player?.id}
+                        />
+                    </View>
 
                     {/* Secret word above input field */}
                     <SecretWordContainer secretWord={secretWord || undefined} />
