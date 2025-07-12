@@ -22,6 +22,7 @@ import { useGameStore } from '../../store/gameStore';
 import AISectionComponent from '../components/AISectionComponent';
 import RoundModal from '../components/RoundModal';
 import ScoreProgressBar from '../components/ScoreProgressBar';
+import TypingIndicator from '../components/TypingIndicator';
 
 const DecoderGameScreen = () => {
     const {
@@ -180,6 +181,14 @@ const DecoderGameScreen = () => {
                             conversationHistory={conversationHistory}
                             currentPlayerId={player?.id}
                             conversationHistoryProps={{ emptySubtext: 'Waiting for the encoder to send a clue' }}
+                        />
+                    </View>
+
+                    {/* Typing indicator above input field */}
+                    <View style={styles.typingIndicatorContainer}>
+                        <TypingIndicator
+                            role={(typingIndicator?.role || 'encoder') as 'encoder' | 'decoder'}
+                            isVisible={!!(typingIndicator && typingIndicator.isTyping && typingIndicator.role !== playerRole)}
                         />
                     </View>
 
