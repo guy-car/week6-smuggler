@@ -174,16 +174,14 @@ const DecoderGameScreen = () => {
                         </View>
                     </TouchableWithoutFeedback>
 
-                    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-                        <View style={styles.content}>
-                            <AISectionComponent
-                                currentTurn={currentTurn}
-                                conversationHistory={conversationHistory}
-                                currentPlayerId={player?.id}
-                                conversationHistoryProps={{ emptySubtext: 'Waiting for the encoder to send a clue' }}
-                            />
-                        </View>
-                    </TouchableWithoutFeedback>
+                    <View style={styles.content}>
+                        <AISectionComponent
+                            currentTurn={currentTurn}
+                            conversationHistory={conversationHistory}
+                            currentPlayerId={player?.id}
+                            conversationHistoryProps={{ emptySubtext: 'Waiting for the encoder to send a clue' }}
+                        />
+                    </View>
 
                     {/* inputContainer at the bottom, will be pushed up by KeyboardAvoidingView */}
                     <View style={styles.inputContainer}>
