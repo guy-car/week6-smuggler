@@ -8,7 +8,6 @@ export class GameStateManager {
     private readonly WIN_SCORE = 6;
     private readonly LOSE_SCORE = 0;
     private readonly ROUND_DURATION = 180; // 3 minutes for round timer
-    private readonly MAX_ROUNDS = 5; // Maximum rounds to prevent infinite games
 
     /**
      * Create a new game state
@@ -167,8 +166,7 @@ export class GameStateManager {
      */
     public isGameEnded(gameState: GameState): boolean {
         return gameState.score >= this.WIN_SCORE ||
-            gameState.score <= this.LOSE_SCORE ||
-            gameState.currentRound >= this.MAX_ROUNDS;
+            gameState.score <= this.LOSE_SCORE;
     }
 
     /**
@@ -179,16 +177,6 @@ export class GameStateManager {
             return 'players';
         } else if (gameState.score <= this.LOSE_SCORE) {
             return 'ai';
-        } else if (gameState.currentRound >= this.MAX_ROUNDS) {
-            // Game ended due to max rounds - determine winner by score
-            if (gameState.score > this.INITIAL_SCORE) {
-                return 'players';
-            } else if (gameState.score < this.INITIAL_SCORE) {
-                return 'ai';
-            } else {
-                // Exactly tied at initial score - AI wins as tiebreaker
-                return 'ai';
-            }
         }
         return null;
     }

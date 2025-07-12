@@ -16,7 +16,6 @@ const GameEndScreen = () => {
     const {
         score,
         round,
-        maxRounds,
         secretWord,
         playerRole,
         reset,
@@ -27,7 +26,7 @@ const GameEndScreen = () => {
     useEffect(() => {
         // Pause background music
         soundManager.pauseBackgroundMusic();
-        
+
         // Play appropriate game end sound
         if (isAIWinner) {
             soundManager.playAIWinsGame();

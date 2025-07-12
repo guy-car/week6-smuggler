@@ -56,7 +56,7 @@ interface GameState {
   secretWord: string | null;
   score: number;
   round: number;
-  maxRounds: number;
+
   lastAIGuess: string | null;
   remainingTime: number; // Timer for human turns
 
@@ -74,6 +74,7 @@ interface GameState {
     correctGuess: string;
     pointsChange: number;
     secretWord: string;
+    reason?: 'timer_expired' | 'ai_guessed' | 'humans_guessed';
   } | null;
 
   // Available rooms for lobby
@@ -100,7 +101,7 @@ interface GameState {
   setSecretWord: (word: string | null) => void;
   setScore: (score: number) => void;
   setRound: (round: number) => void;
-  setMaxRounds: (maxRounds: number) => void;
+
   setCurrentScreen: (screen: GameScreen) => void;
   setIsLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
@@ -109,7 +110,7 @@ interface GameState {
   setShowSecretModal: (show: boolean) => void;
   setShowQuitConfirm: (show: boolean) => void;
   setShowRoundModal: (show: boolean) => void;
-  setRoundModalData: (data: { winner: 'ai' | 'humans'; correctGuess: string; pointsChange: number; secretWord: string } | null) => void;
+  setRoundModalData: (data: { winner: 'ai' | 'humans'; correctGuess: string; pointsChange: number; secretWord: string; reason?: 'timer_expired' | 'ai_guessed' | 'humans_guessed' } | null) => void;
   setAvailableRooms: (rooms: Room[]) => void;
   setLastAIGuess: (guess: string | null) => void;
   setRemainingTime: (time: number) => void;
@@ -138,7 +139,7 @@ export const useGameStore = create<GameState>((set) => ({
   secretWord: null,
   score: 3,
   round: 1,
-  maxRounds: 5,
+
   lastAIGuess: null,
   remainingTime: 0, // Timer for human turns
 
@@ -176,7 +177,7 @@ export const useGameStore = create<GameState>((set) => ({
   setSecretWord: (word) => set({ secretWord: word }),
   setScore: (score) => set({ score }),
   setRound: (round) => set({ round }),
-  setMaxRounds: (maxRounds) => set({ maxRounds }),
+
   setCurrentScreen: (screen) => set({ currentScreen: screen }),
   setIsLoading: (loading) => set({ isLoading: loading }),
   setError: (error) => set({ error }),
@@ -203,7 +204,7 @@ export const useGameStore = create<GameState>((set) => ({
     secretWord: null,
     score: 3, // Reset to neutral score (matches backend INITIAL_SCORE)
     round: 1,
-    maxRounds: 5,
+
     lastAIGuess: null,
     remainingTime: 0, // Reset timer
     currentScreen: 'lobby',

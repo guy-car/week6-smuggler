@@ -448,7 +448,8 @@ export function getSocket() {
         winner,
         correctGuess,
         pointsChange,
-        secretWord: useGameStore.getState().secretWord || ''
+        secretWord: useGameStore.getState().secretWord || '',
+        reason: data.reason || (data.humansWon ? 'humans_guessed' : 'ai_guessed')
       });
       useGameStore.getState().setShowRoundModal(true);
 

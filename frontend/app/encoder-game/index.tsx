@@ -33,7 +33,6 @@ const EncoderGameScreen = () => {
         playerRole,
         gameStatus,
         round,
-        maxRounds,
         score,
         player,
         roomId,
