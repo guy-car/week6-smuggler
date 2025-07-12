@@ -16,6 +16,8 @@ const introText: TextPart[] = [
 const CONTAINER_HEIGHT = 300; // Default height that will be constrained by parent flex
 const SCROLL_DURATION = 25000; // 25 seconds for one complete scroll
 
+const isWeb = typeof window !== 'undefined' && typeof document !== 'undefined';
+
 const ScrollArea = () => {
   const [isCrawling, setIsCrawling] = useState(true);
   const [textHeight, setTextHeight] = useState(0);
@@ -166,6 +168,11 @@ const styles = StyleSheet.create({
   lineContainer: {
     marginVertical: 4,
   },
+  hideScrollbar: isWeb ? {
+    /* Hide scrollbar for Chrome, Safari and Opera */
+    scrollbarWidth: 'none', /* Firefox */
+    msOverflowStyle: 'none', /* IE and Edge */
+  } : {},
 });
 
 export default ScrollArea; 

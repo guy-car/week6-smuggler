@@ -6,7 +6,7 @@ interface SecretWordContainerProps {
 }
 
 const SecretWordContainer: React.FC<SecretWordContainerProps> = ({ secretWord }) => (
-    <View style={[styles.secretWordContainerUnified, { marginTop: 0 }]}> 
+    <View style={[styles.secretWordContainerUnified, { marginTop: 16 }]}>
         <Text style={styles.secretWordTitleUnified}>Secret Word:</Text>
         <Text style={styles.secretWordTextUnified}>{secretWord || 'Loading...'}</Text>
     </View>
@@ -15,11 +15,9 @@ const SecretWordContainer: React.FC<SecretWordContainerProps> = ({ secretWord })
 const styles = StyleSheet.create({
     secretWordContainerUnified: {
         padding: 16,
-        width: '95%',
-        maxWidth: 500,
+        width: '100%', // Fill available width
         backgroundColor: 'rgba(0,0,0,0.5)',
         borderRadius: 12,
-        marginHorizontal: 'auto',
         borderWidth: 4,
         borderColor: '#00FF90',
         shadowColor: '#00FF90',

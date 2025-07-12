@@ -4,6 +4,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
+import './global.css';
 
 const useFonts = (fontMap: Record<string, number>) => {
   const [loaded, setLoaded] = React.useState(false);

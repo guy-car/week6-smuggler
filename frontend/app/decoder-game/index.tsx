@@ -89,9 +89,39 @@ const DecoderGameScreen = () => {
     const isMyTurn = currentTurn === playerRole;
 
     const flashAnim = useRef(new Animated.Value(1)).current;
-    const inputFlexAnim = useRef(new Animated.Value(1)).current;
     const buttonAnim = useRef(new Animated.Value(1)).current;
     const buttonWidthAnim = useRef(new Animated.Value(100)).current; // 100 = visible, 0 = hidden
+
+    // Animate button based on canSubmitGuess state
+    useEffect(() => {
+        if (canSubmitGuess) {
+            Animated.parallel([
+                Animated.timing(buttonAnim, {
+                    toValue: 1,
+                    duration: 300,
+                    useNativeDriver: false,
+                }),
+                Animated.timing(buttonWidthAnim, {
+                    toValue: 100,
+                    duration: 300,
+                    useNativeDriver: false,
+                }),
+            ]).start();
+        } else {
+            Animated.parallel([
+                Animated.timing(buttonAnim, {
+                    toValue: 0,
+                    duration: 300,
+                    useNativeDriver: false,
+                }),
+                Animated.timing(buttonWidthAnim, {
+                    toValue: 0,
+                    duration: 300,
+                    useNativeDriver: false,
+                }),
+            ]).start();
+        }
+    }, [canSubmitGuess]);
 
     // Flashing animation for last 30 seconds
     useEffect(() => {
@@ -117,45 +147,13 @@ const DecoderGameScreen = () => {
         }
     }, [remainingTime, flashAnim]);
 
-    useEffect(() => {
-        if (canSubmitGuess) {
-            Animated.parallel([
-                Animated.timing(inputFlexAnim, {
-                    toValue: 1,
-                    duration: 300,
-                    useNativeDriver: false,
-                }),
-                Animated.timing(buttonAnim, {
-                    toValue: 1,
-                    duration: 300,
-                    useNativeDriver: false,
-                }),
-                Animated.timing(buttonWidthAnim, {
-                    toValue: 100,
-                    duration: 300,
-                    useNativeDriver: false,
-                }),
-            ]).start();
-        } else {
-            Animated.parallel([
-                Animated.timing(inputFlexAnim, {
-                    toValue: 10,
-                    duration: 300,
-                    useNativeDriver: false,
-                }),
-                Animated.timing(buttonAnim, {
-                    toValue: 0,
-                    duration: 300,
-                    useNativeDriver: false,
-                }),
-                Animated.timing(buttonWidthAnim, {
-                    toValue: 0,
-                    duration: 300,
-                    useNativeDriver: false,
-                }),
-            ]).start();
-        }
-    }, [canSubmitGuess]);
+    // Animated border color for input
+    const borderColorAnim = flashAnim.interpolate({
+        inputRange: [0.3, 1],
+        outputRange: ['#FF3B30', '#FFD600'],
+    });
+
+    // Remove inputWidthAnim and all related animation logic
 
     const typingTimeoutRef = useRef<any>(null);
 
@@ -240,43 +238,46 @@ const DecoderGameScreen = () => {
                     </View>
 
                     {/* inputContainer at the bottom, will be pushed up by KeyboardAvoidingView */}
-                    <View style={styles.inputContainer}>
-                        <Animated.View style={[styles.guessInput, { flex: inputFlexAnim }]}>
-                            <TextInput
-                                style={[
-                                    { flex: 1, color: '#fff', fontFamily: 'Audiowide', lineHeight: 24, textAlignVertical: 'center', minHeight: 48 },
-                                    !canSubmitGuess && styles.guessInputDisabled
-                                ]}
-                                value={guessInput}
-                                onChangeText={handleTyping}
-                                placeholder={
-                                    canSubmitGuess
-                                        ? "Guess the secret..."
-                                        : "Waiting for the clue..."
-                                }
-                                multiline
-                                maxLength={50}
-                                editable={canSubmitGuess}
-                                placeholderTextColor="white"
-                            />
-                        </Animated.View>
-                        <Animated.View style={{
-                            width: buttonWidthAnim,
-                            opacity: buttonAnim,
-                            overflow: 'hidden',
-                        }}>
-                            <TouchableOpacity
-                                style={[
-                                    styles.submitButton,
-                                    !canSubmitGuess && styles.submitButtonDisabled,
-                                ]}
-                                onPress={handleSubmitGuess}
-                                disabled={!canSubmitGuess}
-                            >
-                                <Text style={styles.submitButtonText} numberOfLines={1}>
-                                    {isSubmitting ? 'Submitting...' : 'Guess'}
-                                </Text>
-                            </TouchableOpacity>
+                    <View style={[styles.inputContainer, canSubmitGuess && { gap: 8 }]}>
+                        <View style={{ flex: 1, minWidth: 120, marginRight: canSubmitGuess ? 8 : 0 }}>
+                            <Animated.View style={[styles.inputOuter, { borderColor: borderColorAnim }]}>
+                                <TextInput
+                                    style={[
+                                        styles.guessInput,
+                                        Platform.OS === 'web'
+                                            ? { outline: 'none', boxSizing: 'border-box', height: 48, lineHeight: 48, paddingTop: 0, paddingBottom: 0 }
+                                            : { paddingVertical: 10, lineHeight: 20 },
+                                        !canSubmitGuess && styles.guessInputDisabled
+                                    ]}
+                                    value={guessInput}
+                                    onChangeText={handleTyping}
+                                    placeholder={
+                                        canSubmitGuess
+                                            ? "Guess the secret..."
+                                            : "Waiting for the clue..."
+                                    }
+                                    multiline
+                                    maxLength={50}
+                                    editable={canSubmitGuess}
+                                    placeholderTextColor="white"
+                                    autoCorrect={false}
+                                    autoCapitalize="none"
+                                    spellCheck={false}
+                                />
+                            </Animated.View>
+                        </View>
+                        <Animated.View style={{ width: buttonWidthAnim, opacity: buttonAnim, overflow: 'hidden' }}>
+                            <Animated.View style={[styles.submitButton, { borderColor: borderColorAnim }]}>
+                                <TouchableOpacity
+                                    style={[{ flex: 1, height: 48, justifyContent: 'center', alignItems: 'center', backgroundColor: 'transparent' }, !canSubmitGuess && styles.submitButtonDisabled]}
+                                    onPress={handleSubmitGuess}
+                                    disabled={!canSubmitGuess}
+                                >
+                                    <Text style={styles.submitButtonText} numberOfLines={1}>
+                                        {isSubmitting ? 'Submitting...' : 'Guess'}
+                                    </Text>
+                                </TouchableOpacity>
+                            </Animated.View>
                         </Animated.View>
                     </View>
                 </KeyboardAvoidingView>
@@ -295,6 +296,7 @@ const styles = StyleSheet.create({
     overlay: {
         flex: 1,
         backgroundColor: 'rgba(0, 0, 0, 0.4)',
+        padding: 16, // Add global screen padding
     },
     container: {
         flex: 1,
@@ -303,9 +305,8 @@ const styles = StyleSheet.create({
     topRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 16,
-        marginTop: 40, // Move marginTop here for spacing above header
+        // Remove paddingHorizontal and paddingVertical
+        marginTop: 40, // Keep marginTop for spacing above header
     },
     content: {
         flex: 1,
@@ -315,24 +316,28 @@ const styles = StyleSheet.create({
     },
     inputContainer: {
         flexDirection: 'row',
-        padding: 16,
         alignItems: 'center',
         height: 56, // fixed height for stability
-        margin: 16,
-        gap: 8,
+        width: '100%',
+        // Remove padding and margin here
     },
-    guessInput: {
-        flex: 1,
+    inputOuter: {
         borderWidth: 4,
         borderColor: '#FFD600',
         borderRadius: 8,
+        height: 48,
+        zIndex: 1,
+        overflow: 'hidden',
+    },
+    guessInput: {
+        flex: 1,
         fontSize: 16,
         color: '#fff',
         backgroundColor: 'rgba(0,0,0,0.5)',
         fontFamily: 'Audiowide',
-        height: 48, // match the button height exactly
-        paddingVertical: 0, // remove extra vertical padding
-        textAlignVertical: 'center', // center text vertically
+        height: 48,
+        borderWidth: 0,
+        lineHeight: 20,
     },
     guessInputDisabled: {
         // Only dim text color, do not change background or border
