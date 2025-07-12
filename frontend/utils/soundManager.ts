@@ -36,7 +36,6 @@ class SoundManager {
 
         this.webInteractionHandler = () => {
             if (!this.hasUserInteraction) {
-                console.log('First user interaction detected, enabling audio');
                 this.hasUserInteraction = true;
                 this.playBackgroundMusic().catch(error => {
                     console.warn('Failed to play background music after interaction:', error);
@@ -65,7 +64,7 @@ class SoundManager {
                 { shouldPlay: false, volume: this.effectsVolume, isLooping: false },
                 (status) => {
                     if (status.isLoaded) {
-                        console.log('Click sound loaded successfully');
+                        // Click sound loaded successfully
                     }
                 },
                 true // Download first
@@ -77,7 +76,7 @@ class SoundManager {
                 { shouldPlay: false, volume: this.effectsVolume, isLooping: false },
                 (status) => {
                     if (status.isLoaded) {
-                        console.log('Send sound loaded successfully');
+                        // Send sound loaded successfully
                     }
                 },
                 true // Download first
@@ -90,7 +89,7 @@ class SoundManager {
                 { shouldPlay: false, volume: this.effectsVolume, isLooping: false },
                 (status) => {
                     if (status.isLoaded) {
-                        console.log('AI wins game sound loaded successfully');
+                        // AI wins game sound loaded successfully
                     }
                 },
                 true
@@ -102,7 +101,7 @@ class SoundManager {
                 { shouldPlay: false, volume: this.effectsVolume, isLooping: false },
                 (status) => {
                     if (status.isLoaded) {
-                        console.log('Humans win game sound loaded successfully');
+                        // Humans win game sound loaded successfully
                     }
                 },
                 true
@@ -115,7 +114,7 @@ class SoundManager {
                 { shouldPlay: false, volume: this.effectsVolume, isLooping: false },
                 (status) => {
                     if (status.isLoaded) {
-                        console.log('AI wins round sound loaded successfully');
+                        // AI wins round sound loaded successfully
                     }
                 },
                 true
@@ -127,7 +126,7 @@ class SoundManager {
                 { shouldPlay: false, volume: this.effectsVolume, isLooping: false },
                 (status) => {
                     if (status.isLoaded) {
-                        console.log('Humans win round sound loaded successfully');
+                        // Humans win round sound loaded successfully
                     }
                 },
                 true
@@ -137,15 +136,15 @@ class SoundManager {
             // Load background music
             const bgMusic = await Audio.Sound.createAsync(
                 require('../assets/sound-FX/lobby-sound.mp3'),
-                { 
-                    shouldPlay: false, 
-                    volume: this.musicVolume, 
+                {
+                    shouldPlay: false,
+                    volume: this.musicVolume,
                     isLooping: true,
                     progressUpdateIntervalMillis: 1000,
                 },
                 (status) => {
                     if (status.isLoaded) {
-                        console.log('Background music loaded successfully');
+                        // Background music loaded successfully
                     }
                 },
                 true // Download first
@@ -169,7 +168,6 @@ class SoundManager {
 
         // On web, check for user interaction
         if (Platform.OS === 'web' && !this.hasUserInteraction) {
-            console.log('Waiting for user interaction before playing background music');
             return;
         }
 
@@ -183,7 +181,7 @@ class SoundManager {
             }
         } catch (error) {
             if (Platform.OS === 'web' && !this.hasUserInteraction) {
-                console.log('Browser requires user interaction before playing audio');
+                // Browser requires user interaction before playing audio
             } else {
                 console.error('Error playing background music:', error);
             }
@@ -229,7 +227,6 @@ class SoundManager {
     }
 
     playClick() {
-        console.log('🔊 Playing click sound');
         const sound = this.sounds.get('click');
         if (sound) {
             try {
@@ -244,7 +241,6 @@ class SoundManager {
     }
 
     playSend() {
-        console.log('🔊 Playing send sound');
         const sound = this.sounds.get('send');
         if (sound) {
             try {
@@ -259,7 +255,6 @@ class SoundManager {
     }
 
     async playAIWinsGame() {
-        console.log('🔊 Playing AI wins game sound');
         const sound = this.sounds.get('ai-wins-game');
         if (sound) {
             try {
@@ -279,7 +274,6 @@ class SoundManager {
     }
 
     async playHumansWinGame() {
-        console.log('🔊 Playing humans win game sound');
         const sound = this.sounds.get('humans-win-game');
         if (sound) {
             try {
@@ -310,7 +304,6 @@ class SoundManager {
     }
 
     playAIWinsRound() {
-        console.log('🔊 Playing AI wins round sound');
         const sound = this.sounds.get('ai-wins-round');
         if (sound) {
             try {
@@ -325,7 +318,6 @@ class SoundManager {
     }
 
     playHumansWinRound() {
-        console.log('🔊 Playing humans win round sound');
         const sound = this.sounds.get('humans-win-round');
         if (sound) {
             try {

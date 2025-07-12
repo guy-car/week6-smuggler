@@ -149,13 +149,13 @@ const DecoderGameScreen = () => {
             style={styles.background}
             resizeMode="cover"
         >
-            <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-                <View style={styles.overlay}>
-                    <KeyboardAvoidingView
-                        style={styles.container}
-                        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
-                    >
+            <View style={styles.overlay}>
+                <KeyboardAvoidingView
+                    style={styles.container}
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+                >
+                    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
                         <View style={styles.topRow}>
                             <TouchableOpacity style={styles.abortButton} onPress={handleAbort}>
                                 <Text style={styles.abortButtonText}>Abort</Text>
@@ -172,7 +172,9 @@ const DecoderGameScreen = () => {
                                 <Text style={styles.timerText}>{formatTimerDisplay(remainingTime)}</Text>
                             </Animated.View>
                         </View>
-                        
+                    </TouchableWithoutFeedback>
+
+                    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
                         <View style={styles.content}>
                             <AISectionComponent
                                 currentTurn={currentTurn}
@@ -181,42 +183,42 @@ const DecoderGameScreen = () => {
                                 conversationHistoryProps={{ emptySubtext: 'Waiting for the encoder to send a clue' }}
                             />
                         </View>
-                        
-                        {/* inputContainer at the bottom, will be pushed up by KeyboardAvoidingView */}
-                        <View style={styles.inputContainer}>
-                            <TextInput
-                                style={[
-                                    styles.guessInput,
-                                    !canSubmitGuess && styles.guessInputDisabled,
-                                ]}
-                                value={guessInput}
-                                onChangeText={handleTyping}
-                                placeholder={
-                                    canSubmitGuess
-                                        ? "Guess the secret word..."
-                                        : "Waiting for your clue..."
-                                }
-                                multiline
-                                maxLength={50}
-                                editable={canSubmitGuess}
-                                placeholderTextColor="white"
-                            />
-                            <TouchableOpacity
-                                style={[
-                                    styles.submitButton,
-                                    !canSubmitGuess && styles.submitButtonDisabled,
-                                ]}
-                                onPress={handleSubmitGuess}
-                                disabled={!canSubmitGuess}
-                            >
-                                <Text style={styles.submitButtonText}>
-                                    {isSubmitting ? 'Submitting...' : 'Guess'}
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
-                    </KeyboardAvoidingView>
-                </View>
-            </TouchableWithoutFeedback>
+                    </TouchableWithoutFeedback>
+
+                    {/* inputContainer at the bottom, will be pushed up by KeyboardAvoidingView */}
+                    <View style={styles.inputContainer}>
+                        <TextInput
+                            style={[
+                                styles.guessInput,
+                                !canSubmitGuess && styles.guessInputDisabled,
+                            ]}
+                            value={guessInput}
+                            onChangeText={handleTyping}
+                            placeholder={
+                                canSubmitGuess
+                                    ? "Guess the secret word..."
+                                    : "Waiting for your clue..."
+                            }
+                            multiline
+                            maxLength={50}
+                            editable={canSubmitGuess}
+                            placeholderTextColor="white"
+                        />
+                        <TouchableOpacity
+                            style={[
+                                styles.submitButton,
+                                !canSubmitGuess && styles.submitButtonDisabled,
+                            ]}
+                            onPress={handleSubmitGuess}
+                            disabled={!canSubmitGuess}
+                        >
+                            <Text style={styles.submitButtonText}>
+                                {isSubmitting ? 'Submitting...' : 'Guess'}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                </KeyboardAvoidingView>
+            </View>
             <RoundModal />
         </ImageBackground>
     );
