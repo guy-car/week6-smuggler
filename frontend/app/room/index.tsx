@@ -49,7 +49,8 @@ const RoomScreen = () => {
         useGameStore.getState().setPlayers([]);
         useGameStore.getState().reset();
     };
-    //console.log('roomId:', roomId, typeof roomId);
+
+    // DEBUG: Let's start with the absolute minimal version
     return (
         <View style={{ flex: 1 }}>
             <StatusBar style="light" translucent backgroundColor="transparent" />
@@ -61,9 +62,8 @@ const RoomScreen = () => {
                 shouldPlay
                 isMuted
             />
-            <View style={[styles.overlay, { flex: 1 }]}> {/* Overlay for readability */}
-                {/* Header - absolutely positioned, full-bleed */}
-                <BlurView intensity={40} tint="dark" style={[styles.headerBlur, { position: 'absolute', top: 0, left: 0, right: 0, paddingTop: insets.top }]}> 
+            <View style={[styles.overlay, { flex: 1 }]}>
+                <BlurView intensity={40} tint="dark" style={[styles.headerBlur, { position: 'absolute', top: 0, left: 0, right: 0, paddingTop: 40 }]}>
                     <View style={styles.header}>
                         <TouchableOpacity onPress={handleLeave} style={styles.backButton}>
                             <Text style={styles.backButtonText}>BACK</Text>
@@ -71,25 +71,21 @@ const RoomScreen = () => {
                         <View style={styles.roomIdContainer}>
                             <Text style={styles.roomIdLabel}>ROOM ID</Text>
                             <Text style={styles.roomId}>
-                            {typeof roomId === 'string' ? roomId.slice(0, 8).toUpperCase() : ''}
+                                {typeof roomId === 'string' ? roomId.slice(0, 8).toUpperCase() : ''}
                             </Text>
                         </View>
-                        <View style={{ width: 60 }} /> {/* Spacer for symmetry */}
+                        <View style={{ width: 60 }} />
                     </View>
                 </BlurView>
-                {/* Main content area with flex layout */}
                 <View style={styles.mainContent}>
                     <ScrollArea />
-                </View>
-                {/* Footer stack */}
-                <View style={styles.footerStack}>
-                    <View style={styles.pillsRow}>
+                    <View style={{ flexDirection: 'column', justifyContent: 'space-evenly', alignItems: 'center', marginVertical: 20 }}>
                         <View style={styles.pillContainer}>
                             <BlurView intensity={40} tint="dark" style={styles.pillBlur}>
                                 <View style={styles.pillContent}>
                                     <Text style={styles.pillRole}>ENCODER</Text>
-                                    <View style={[styles.pillStatus, { backgroundColor: encoder?.ready ? '#34C759' : '#FF3B30' }]}> 
-                                        <Text style={styles.pillStatusText}>{encoder?.ready ? 'READY' : 'NOT READY'}</Text>
+                                    <View style={[styles.pillStatus, { backgroundColor: players[0]?.ready ? '#34C759' : '#FF3B30' }]}>
+                                        <Text style={styles.pillStatusText}>{players[0]?.ready ? 'READY' : 'NOT READY'}</Text>
                                     </View>
                                 </View>
                             </BlurView>
@@ -98,8 +94,8 @@ const RoomScreen = () => {
                             <BlurView intensity={40} tint="dark" style={styles.pillBlur}>
                                 <View style={styles.pillContent}>
                                     <Text style={styles.pillRole}>DECODER</Text>
-                                    <View style={[styles.pillStatus, { backgroundColor: decoder?.ready ? '#34C759' : '#FF3B30' }]}> 
-                                        <Text style={styles.pillStatusText}>{decoder?.ready ? 'READY' : 'NOT READY'}</Text>
+                                    <View style={[styles.pillStatus, { backgroundColor: players[1]?.ready ? '#34C759' : '#FF3B30' }]}>
+                                        <Text style={styles.pillStatusText}>{players[1]?.ready ? 'READY' : 'NOT READY'}</Text>
                                     </View>
                                 </View>
                             </BlurView>
@@ -114,9 +110,9 @@ const RoomScreen = () => {
                             <Text style={styles.readyButtonText}>{isReady ? 'UNREADY' : 'READY'}</Text>
                         </TouchableOpacity>
                     </BlurView>
+                    <Text>Main Content</Text>
                 </View>
             </View>
-            
         </View>
     );
 };
@@ -217,6 +213,8 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         paddingHorizontal: 50,
         paddingVertical: 18,
+        marginHorizontal: 20,
+        marginBottom: 20,
         alignItems: 'center',
         borderWidth: 2,
         borderColor: '#00FFB2',
