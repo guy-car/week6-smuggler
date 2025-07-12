@@ -45,11 +45,24 @@ const RoundModal: React.FC = () => {
         return null;
     }
 
-    const { winner, correctGuess, pointsChange, secretWord } = roundModalData;
+    const { winner, correctGuess, pointsChange, secretWord, reason } = roundModalData;
     const isAI = winner === 'ai';
     const bgColor = isAI ? 'rgba(255, 59, 48, 0.95)' : 'rgba(76, 217, 100, 0.95)';
     const textColor = '#fff';
-    const message = isAI ? 'AI WINS THE ROUND' : 'HUMANS WIN THE ROUND';
+
+    // Determine message based on reason
+    let message = '';
+    if (reason === 'timer_expired') {
+        message = 'AI WINS THE ROUND BY TIMEOUT';
+    } else if (reason === 'ai_guessed') {
+        message = 'AI WINS THE ROUND BY GUESSING THE SECRET';
+    } else if (reason === 'humans_guessed') {
+        message = 'HUMANS WIN THE ROUND BY GUESSING THE SECRET';
+    } else {
+        // Fallback for backward compatibility
+        message = isAI ? 'AI WINS THE ROUND' : 'HUMANS WIN THE ROUND';
+    }
+
     const pointsText = pointsChange > 0 ? `+${pointsChange}` : `${pointsChange}`;
 
     return (
@@ -141,7 +154,7 @@ const styles = StyleSheet.create({
         padding: 16,
         marginBottom: 4,
         width: '100%',
-        },
+    },
     nextRoundButton: {
         paddingHorizontal: 32,
         paddingVertical: 16,

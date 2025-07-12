@@ -31,7 +31,6 @@ const DecoderGameScreen = () => {
         playerRole,
         gameStatus,
         round,
-        maxRounds,
         score,
         player,
         roomId,

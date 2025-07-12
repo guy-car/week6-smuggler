@@ -428,7 +428,8 @@ export class GameHandlers {
                         gameEnded: false,
                         newSecretWord,
                         currentTurn: newGameState.currentTurn,
-                        roles: newRoles // Include new roles in round_end event
+                        roles: newRoles, // Include new roles in round_end event
+                        reason: 'humans_guessed'
                     };
 
                     socket.to(roomId).emit('round_end', roundEndData);
@@ -706,7 +707,8 @@ export class GameHandlers {
                         gameEnded: false,
                         newSecretWord,
                         currentTurn: newGameState.currentTurn,
-                        roles: newRoles // Include new roles in round_end event
+                        roles: newRoles, // Include new roles in round_end event
+                        reason: 'ai_guessed'
                     };
 
                     this.io.to(roomId).emit('round_end', roundEndData);
@@ -857,7 +859,8 @@ export class GameHandlers {
                         gameEnded: false,
                         newSecretWord,
                         currentTurn: newGameState.currentTurn,
-                        roles: newRoles // Include new roles in round_end event
+                        roles: newRoles, // Include new roles in round_end event
+                        reason: 'ai_guessed'
                     };
 
                     this.io.to(roomId).emit('round_end', roundEndData);

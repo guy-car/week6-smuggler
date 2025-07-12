@@ -7,7 +7,6 @@ interface GameStatusIndicatorProps {
     currentTurn: 'encoder' | 'ai' | 'decoder' | null;
     playerRole: 'encoder' | 'decoder' | null;
     round: number;
-    maxRounds: number;
     isLoading?: boolean;
 }
 
@@ -16,7 +15,6 @@ const GameStatusIndicator: React.FC<GameStatusIndicatorProps> = ({
     currentTurn,
     playerRole,
     round,
-    maxRounds,
     isLoading = false,
 }) => {
     const getStatusText = () => {
