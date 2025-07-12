@@ -15,6 +15,7 @@ const TypingIndicator: React.FC<TypingIndicatorProps> = ({ role, isVisible }) =>
     const [shouldRender, setShouldRender] = useState(isVisible);
     const intervalRef = useRef<any>(null);
     const fadeAnim = useRef(new Animated.Value(isVisible ? 1 : 0)).current;
+    const pendingHideRef = useRef(false);
 
     useEffect(() => {
         if (isVisible) {
@@ -32,10 +33,19 @@ const TypingIndicator: React.FC<TypingIndicatorProps> = ({ role, isVisible }) =>
                 duration: FADE_DURATION,
                 useNativeDriver: true,
             }).start(() => {
-                setShouldRender(false);
+                // Instead of setting state here, set a flag
+                pendingHideRef.current = true;
             });
         }
     }, [isVisible, fadeAnim]);
+
+    // Separate effect to safely update state after fade-out
+    useEffect(() => {
+        if (!isVisible && pendingHideRef.current) {
+            setShouldRender(false);
+            pendingHideRef.current = false;
+        }
+    }, [isVisible, shouldRender]);
 
     useEffect(() => {
         if (shouldRender) {
